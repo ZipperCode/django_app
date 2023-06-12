@@ -18,10 +18,15 @@ from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt
 
 from web_app import views, settings
+from web_app.restfuls import user_restful
 
 urlpatterns = [
-    path('index/list', views.index_view),
-    re_path('download/(?P<name>.+)$', csrf_exempt(views.file_down)),
-    path('login', views.login),
+    path('.', views.login_view),
+    path('view/auth/index', views.index_view),
+
+    path('view/login', views.login_view),
+    path('404.html', views.not_found_view),
+
+    path('api/login', user_restful.login),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

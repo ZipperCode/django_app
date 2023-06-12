@@ -1,1 +1,1 @@
-web: python manage.py migrate | gunicorn web_tg_chat.wsgi
+web: python manage.py migrate | gunicorn web_app.wsgi

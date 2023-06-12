@@ -24,3 +24,18 @@ class RestResponse(JsonResponse):
 
     def __init__(self, data):
         super().__init__(data, encoder=CJsonEncoder)
+
+    @classmethod
+    def success(cls, msg: str = "操作成功", data=None):
+        return RestResponse({
+            'code': 0,
+            'msg': msg,
+            'data': data
+        })
+
+    @classmethod
+    def failure(cls, msg: str):
+        return RestResponse({
+            'code': 0,
+            'msg': msg
+        })

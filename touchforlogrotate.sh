@@ -11,12 +11,12 @@ if [ ! -d "$LOGDIR" ];then
   chmod 777 -R "$LOGDIR"
 fi
 
-sourcelogpath="${DIR}/compose/uwsgi/web_tg-uwsgi.log"
+sourcelogpath="${DIR}/compose/uwsgi/web_app-uwsgi.log"
 touchfile="${DIR}/compose/uwsgi/.touchforlogrotate"
 
 DATE=`date -d "yesterday" +"%Y-%m-%d"`
 echo $DATE
-destlogpath="${LOGDIR}/web_tg-uwsgi-${DATE}.log"
+destlogpath="${LOGDIR}/web_app-uwsgi-${DATE}.log"
 
 echo "$touchfile touchfile文件"
 echo "$sourcelogpath 源文件目录"
