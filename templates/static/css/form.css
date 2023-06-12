@@ -1,0 +1,9 @@
+.layui-input {
+    height: 30px;
+}
+
+/* layui-input 默认太高了，这里固定高度*/
+label.required:after { /* 给红色的必填项打红色星号（文字后）如果打前面用before*/
+    content: ' *';
+    color: red;
+}

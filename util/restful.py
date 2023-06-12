@@ -1,0 +1,26 @@
+from datetime import datetime, date
+
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import JsonResponse
+
+from util import time_utils, utils
+
+
+class CJsonEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        try:
+            if isinstance(obj, datetime):
+                return time_utils.convert_timezone(obj).strftime('%Y-%m-%d %H:%M:%S')
+            elif isinstance(obj, date):
+                return time_utils.convert_timezone(obj).strftime('%Y-%m-%d')
+            else:
+                # return json.JSONEncoder.default(self, obj)
+                return DjangoJSONEncoder.default(self, obj)
+        except TypeError:
+            return utils.object_to_json(obj)
+
+
+class RestResponse(JsonResponse):
+
+    def __init__(self, data):
+        super().__init__(data, encoder=CJsonEncoder)

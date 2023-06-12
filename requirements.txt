@@ -1,0 +1,23 @@
+Django==4.1
+gunicorn>=20.0,<21.0
+whitenoise>=6.0,<7.0
+Telethon==1.24.0
+
+telegram~=0.0.1
+PySocks==1.7.1
+python-socks==2.0.3
+socks==0
+async-timeout==4.0.2
+# uwsgi==2.0.20
+django_apscheduler~=0.6.2
+cryptography==38.0.1
+
+emoji~=2.0.0
+uvicorn~=0.18.3
+PyMySQL~=1.0.2
+starlette~=0.20.4
+asgiref~=3.5.2
+
+djangorestframework==3.14.0
+django-cors-headers==3.13.0
+Pillow==9.3.0
