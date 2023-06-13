@@ -23,9 +23,12 @@ from web_app.restfuls import user_restful
 urlpatterns = [
     path('.', views.login_view),
     path('view/auth/index', views.index_view),
+    path('view/auth/console.html', views.console_view),
+    path('view/auth/user/modify_pwd', views.modify_pwd),
 
     path('view/login', views.login_view),
     path('404.html', views.not_found_view),
+
 
     path('api/login', user_restful.login),
 

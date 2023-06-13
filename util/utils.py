@@ -6,9 +6,6 @@ import zipfile
 from datetime import datetime
 from typing import Iterable
 
-import emoji
-from django.core import serializers
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Q
 from django.http import HttpRequest
 
@@ -73,19 +70,6 @@ def model2json(query) -> list:
     for e in query:
         res.append(object_to_json(e))
     return res
-
-
-def emoji_username(name: str, is_decode: bool = False) -> str:
-    try:
-        if str_is_null(name):
-            return name
-        if is_decode:
-            return emoji.demojize(name)
-        return emoji.emojize(name)
-    except BaseException as e:
-        logging.exception(e)
-        return name
-
 
 def model_serialize(query):
     """

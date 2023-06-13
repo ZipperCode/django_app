@@ -22,11 +22,11 @@ async def hello(request: HttpRequest):
             "name": "admin"
         }
     }
-    return render(request, 'index.html', context)
+    return render(request, 'index1.html', context)
 
 
 def index_view(request: HttpRequest):
-    logging.info("render index.html")
+    logging.info("render index1.html")
     return render(request, 'index.html')
 
 
@@ -38,3 +38,13 @@ def login_view(request: HttpRequest):
 def not_found_view(request: HttpRequest):
     logging.info("render not_found_view.html")
     return render(request, 'static/404.html')
+
+
+def console_view(request: HttpRequest):
+    logging.info("render console_view.html")
+    return render(request, 'console.html')
+
+
+def modify_pwd(request: HttpRequest):
+    logging.info("render modify_pwd.html")
+    return render(request, 'modify_pwd.html')

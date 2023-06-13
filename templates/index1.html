@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>管理界面</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/static/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="/static/css/index.css">
+    <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+<!--[if lt IE 9]>
+<script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+<script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+
+{#<iframe src="layout-admin.html" frameborder="0" id="demoAdmin" style="width: 100%; height: 300px; border-radius: 2px;"></iframe>#}
+
+<div class="layui-layout layui-layout-admin">
+    <div class="layui-header" style="background-color: #393d49">
+        <div class="layui-logo layui-hide-xs layui-bg-black"><a href="/main" class="tab_nav_a" style="color: white">后台管理</a></div>
+        <!-- 头部区域（可配合layui 已有的水平导航） -->
+        <ul class="layui-nav layui-layout-right">
+            <li class="layui-nav-item layui-hide layui-show-md-inline-block">
+                <a href="javascript:;">
+                    <img src="//tva1.sinaimg.cn/crop.0.0.118.118.180/5db11ff4gw1e77d3nqrv8j203b03cweg.jpg"
+                         class="layui-nav-img">
+                    {{ username }}
+                </a>
+                <dl class="layui-nav-child">
+                    <dd><a href="/logout">注销</a></dd>
+                </dl>
+            </li>
+{#            <li class="layui-nav-item" lay-header-event="menuRight" lay-unselect>#}
+{#                <a href="javascript:;">#}
+{#                    <i class="layui-icon layui-icon-more-vertical"></i>#}
+{#                </a>#}
+{#            </li>#}
+        </ul>
+    </div>
+
+    <div class="layui-side layui-bg-black">
+        <div class="layui-side-scroll">
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree" lay-filter="test">
+                <li class="layui-nav-item layui-nav-itemed">
+                    <a class="" href="javascript:;">TG账号管理</a>
+                    <dl class="layui-nav-child">
+                        <dd><a href="/account_list_view" class="tab_nav_a">账号列表</a></dd>
+{#                        <dd><a href="/tg_user_list" class="tab_nav_a">用户列表</a></dd>#}
+                    </dl>
+                </li>
+                <li class="layui-nav-item layui-nav-itemed">
+                    <a class="" href="javascript:;">TG机器人管理</a>
+                    <dl class="layui-nav-child">
+                        <dd><a href="/bot_list" class="tab_nav_a">机器人列表</a></dd>
+                        <dd><a href="/tb_user_list_view" class="tab_nav_a">用户管理</a></dd>
+                        <dd><a href="/bot_config_list" class="tab_nav_a">机器人配置管理</a></dd>
+                        <dd><a href="/lds_list_view" class="tab_nav_a">抽奖策略管理</a></dd>
+                        <dd><a href="/prize_list_view" class="tab_nav_a">奖品管理</a></dd>
+                        <dd><a href="/signin_list_view" class="tab_nav_a">签到记录</a></dd>
+                        <dd><a href="/ldc_list_view" class="tab_nav_a">抽奖记录</a></dd>
+                        <dd><a href="/luck_draw_stock_list_view" class="tab_nav_a">抽奖库存记录</a></dd>
+                        <dd><a href="/integral_list_view" class="tab_nav_a">积分记录</a></dd>
+                    </dl>
+                </li>
+                <li class="layui-nav-item"><a href="javascript:;">通知管理（占位）</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layui-body page-content">
+        <div id="menu_tab_id" class="layui-tab layui-tab-card" lay-filter="menu_tab" lay-allowclose="true"
+             style="height: 100%">
+            <ul class="layui-tab-title">
+                <li class="layui-this" lay-id="0">主页</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <iframe class="layui-layer-iframe tab_frame" src='/main' width="100%" frameborder="0"
+                            scrolling="auto" name="frame_content_1" tab-id="1"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Tab菜单右键弹出菜单-->
+<ul class="rightMenu" id="rightMenu">
+	<li data-type="fresh">刷新</li>
+	<li data-type="current">关闭当前</li>
+	<li data-type="other">关闭其它</li>
+	<li data-type="all">关闭所有</li>
+</ul>
+<script src="/static/layui/layui.js" charset="utf-8"></script>
+<script>
+    layui.config({
+        // js模块目录
+        base: '/static/js/'
+    })
+    //JS
+    layui.use(['element', 'layer', 'util', 'menu_tab'], function () {
+        const element = layui.element
+            , layer = layui.layer
+            , util = layui.util
+            , $ = layui.$
+            , menuTab = layui.menu_tab;
+
+        console.log("menutab = ", menuTab);
+
+        //头部事件
+        util.event('lay-header-event', {
+            //左侧菜单事件
+            menuLeft: function (othis) {
+                layer.msg('展开左侧菜单的操作', {icon: 0});
+            }
+            , menuRight: function () {
+                layer.open({
+                    type: 1
+                    , content: '<div style="padding: 15px;">处理右侧面板的操作</div>'
+                    , area: ['260px', '100%']
+                    , offset: 'rt' //右上角
+                    , anim: 5
+                    , shadeClose: true
+                });
+            }
+        });
+
+        $(function () {
+            setTimeout(function () {
+                menuTab.resizeIFrame();
+            }, 500)
+        })
+    });
+</script>
+<script>
+</script>
+
+</body>
+</html>

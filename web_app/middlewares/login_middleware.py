@@ -20,6 +20,11 @@ logging.basicConfig(
 class LoginMiddleware(MiddlewareMixin):
     def process_request(self, request: HttpRequest):
         # logging.info("login拦截器，request => path = %s", str(request.path))
+        user = {
+            'username': 'admin',
+            'name': 'admin'
+        }
+        request.session['user'] = user
         return None
 
     def process_response(self, request, response: HttpResponse):
@@ -32,9 +37,9 @@ class LoginMiddleware(MiddlewareMixin):
         p = str(request.path)
         logging.info("login拦截器，view => path = %s", p)
         # 非登录接口，且需要跳转到授权接口
-        if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
-            if not request.session.get('user', None):
-                return views.login_view(request)
+        # if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
+        #     if not request.session.get('user', None):
+        #         return views.login_view(request)
 
         return view_func(request)
 
