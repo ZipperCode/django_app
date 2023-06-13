@@ -36,6 +36,6 @@ class RestResponse(JsonResponse):
     @classmethod
     def failure(cls, msg: str):
         return RestResponse({
-            'code': 0,
+            'code': -1,
             'msg': msg
         })

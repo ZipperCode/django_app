@@ -77,31 +77,6 @@
 </div>
 
 <script type="text/javascript" src="static/admin/js/login.js"></script>
-<script>
-    layui.use(['form', 'layedit', 'laydate'], function () {
-        const form = layui.form(),
-            layer = layui.layer;
 
-        //自定义验证规则
-        form.verify({
-            username: function (value) {
-                if (value.length < 5) {
-                    return '标题至少得5个字符啊';
-                }
-            },
-            password: [/(.+){6,12}$/, '密码必须6到12位'],
-        });
-
-
-        //监听提交
-        form.on('submit(login)', function (data) {
-            layer.alert(JSON.stringify(data.field), {
-                title: '最终的提交信息'
-            })
-            return false;
-        });
-        form.render()
-    });
-</script>
 </body>
 </html>

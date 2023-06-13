@@ -37,13 +37,13 @@
                 <dl>
                     <span class="triangle"></span>
                     <dd>
-                        <a data-url="/view/auth/user/modify_pwd" onclick="pageOpen($(this))" >
+                        <a data-url="/view/auth/user/modify_pwd" onclick="pageOpen($(this))">
                             <i class="iconfont icon-guanji"></i>
                             <span>修改密码</span>
                         </a>
                     </dd>
                     <dd>
-                        <a href="login.html">
+                        <a href="/logout">
                             <i class="iconfont icon-guanji"></i>
                             <span>退出</span>
                         </a>
@@ -56,7 +56,7 @@
     <div class="admin-menu">
         <div>
             <div class="logo flex-c">
-                <div class="web">后台框架</div>
+                <div class="web">后台管理</div>
                 <div class="wap">0.0</div>
             </div>
             <ul class="nav-list scrollbar-inner">
@@ -68,22 +68,21 @@
                 </li>
                 <li>
                     <a data-url="static/admin/iconfont/demo_index.html">
-                        <i class="iconfont layui-icon layui-icon-note"></i>
+                        <i class="iconfont layui-icon icon-guanliyuan"></i>
                         <span>Iconfont</span>
                     </a>
                 </li>
                 <li>
-                    <a data-url="admin/shuiji">
-                        <i class="iconfont icon-quanxian"></i>
-                        <span>权限</span>
+                    <a>
+                        <i class="iconfont icon-guanliyuan"></i>
+                        <span>用户管理</span>
                         <i class="iconfont icon-jiantouyou1"></i>
                     </a>
                     <dl>
                         <dd>
-                            <!--                            <a data-url="{:url('user/index')}">-->
-                            <a data-url="user.html">
+                            <a data-url="/view/auth/user_view">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>管理员列表</span>
+                                <span>用户列表</span>
                             </a>
                         </dd>
                         <dd>
@@ -141,7 +140,7 @@
                     </a>
                 </li>
                 <li>
-                    <a data-url="setting.html">
+                    <a data-url="/view/auth/setting.html">
                         <i class="iconfont icon-set"></i>
                         <span>设置</span>
                     </a>

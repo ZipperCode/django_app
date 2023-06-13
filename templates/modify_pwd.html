@@ -4,67 +4,154 @@
     <meta charset="UTF-8">
     <title>修改密码</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css" />
-    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css" />
-    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/css/form.css"/>
     <style>
-        .tjxz{color:green;}
-        .scxz{color:black;transition: all .2s;}
-        .scxz:hover{color:red;}
-        .xzjs{height: 40px;margin-bottom:5px;}
-        .xzjs .layui-form-select{width: calc(100% - 25px);display: inline-block;}
-        .xzjs i{float:right;line-height:40px;cursor:pointer;font-size: 20px;}
-        .layui-form-item .layui-form-label{width: 3em;}
-        .layui-form-item .layui-input-inline{margin-left: calc(3em + 30px);margin-bottom: 0;}
+        .tjxz {
+            color: green;
+        }
+
+        .scxz {
+            color: black;
+            transition: all .2s;
+        }
+
+        .scxz:hover {
+            color: red;
+        }
+
+        .xzjs {
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .xzjs .layui-form-select {
+            width: calc(100% - 25px);
+            display: inline-block;
+        }
+
+        .xzjs i {
+            float: right;
+            line-height: 40px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .page-container {
+            width: 400px;
+            background: white;
+        }
+
     </style>
 </head>
 <body>
 <div class="page-main scrollbar-inner">
     <div class="page-container">
-        <div class="layui-form" lay-filter="layer_form" id="layer_form">
-            <div class="layui-form-item">
-                <label class="layui-form-label">管理员</label>
-                <div class="layui-input-inline">
-                    <input type="text" name="uName" lay-verify="required" value="lhh" placeholder="请输入用户名" autocomplete="off" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">手机</label>
-                <div class="layui-input-inline">
-                    <input type="text" name="tel" lay-verify="phone" value="13333333333" placeholder="请输入号码" autocomplete="off" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">邮箱</label>
-                <div class="layui-input-inline">
-                    <input type="text" name="email" lay-verify="email" value="1913555371@qq.com" placeholder="请输入邮箱" autocomplete="off" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">密码</label>
-                <div class="layui-input-inline">
-                    <input type="password" name="pwd" lay-verify="password" placeholder="请输入密码" autocomplete="off" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">角色</label>
-                <div class="layui-input-inline" id="roles"></div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">状态</label>
-                <div class="layui-input-inline">
-                    <input type="checkbox" value="1" lay-filter="switch" name="status" lay-skin="switch" lay-text="可用|禁用">
-                </div>
-            </div>
+        <div class="layui-form layui-form-pane" lay-filter="modify_form" id="modify_form">
             <div class="layui-form-item layui-hide">
-                <input type="button" lay-submit lay-filter="layer_submit" id="layer_submit" value="确认">
+                <input type="text" name="username" value="{{ request.session.user.username }}" autocomplete="off"
+                       class="layui-input">
             </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">原密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="password" placeholder="请输入原密码" autocomplete="off"
+                           lay-verify="password"
+                           class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">新密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="password_new" required placeholder="请输入新密码" autocomplete="off"
+                           class="layui-input" lay-verify="password_new">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">确认新密码</label>
+                <div class="layui-input-inline">
+                    <input type="password" name="password_new2" required placeholder="请输入密码" autocomplete="off"
+                           class="layui-input" lay-verify="password_new2">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" lay-filter="modify_submit">
+                    确认修改
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
 <script type="text/javascript" src="/static/jquery/jquery-3.4.1.js"></script>
+<script type="text/javascript" src="/static/jquery/jquery-md5.js"></script>
 <script type="text/javascript" src="/static/scrollbar/jquery.scrollbar.min.js"></script>
 <script type="text/javascript" src="/static/layui/layui.js"></script>
+<script type="text/javascript" src="/static/admin/js/admin.js"></script>
 </body>
+{% csrf_token %}
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function () {
+        const form = layui.form;
+        const layer = layui.layer;
+
+        //自定义验证规则
+        form.verify({
+            password: function (value, item) {   //密码验证
+                console.log("密码验证");
+                if (!/^.+$/.test(value)) {
+                    $(item).focus();
+                    return '原密码不能为空';
+                }
+            },
+            password_new: function (value, item) {   //密码验证
+                if (!/^.+$/.test(value)) {
+                    $(item).focus();
+                    return '新密码不能为空';
+                }
+                // if (!/(.+){6,12}$/.test(value)) {
+                // $(item).focus();
+                //return '密码必须6到12位';
+                // }
+            },
+            password_new2: function (value, item) {   //密码验证
+                if (!/^.+$/.test(value)) {
+                    $(item).focus();
+                    return '确认密码不能为空';
+                }
+                /* if (!/(.+){6,12}$/.test(value)) {
+                    $(item).focus();
+                    return '密码必须6到12位';
+                }
+                if ($("#password_new").val() !== $(item).val()) {
+                    $(item).focus();
+                    return '两次输入密码不一致';
+                }
+                */
+            },
+        });
+
+
+        //监听提交
+        form.on('submit(modify_submit)', function (data) {
+            modifyPassword(layer, data.field, res => {
+                if (res.code === 0) {
+                    layer.msg("修改成功", {icon: 1});
+                    return
+                }
+                console.log(res);
+                layer.msg(res.msg, {icon: 2});
+            });
+            return false;
+        });
+        form.render()
+    });
+</script>
 </html>

@@ -1,0 +1,6 @@
+@charset "UTF-8";
+
+label.required:after { /* 给红色的必填项打红色星号（文字后）如果打前面用before*/
+    content: ' *';
+    color: red;
+}

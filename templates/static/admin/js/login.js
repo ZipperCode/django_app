@@ -52,5 +52,5 @@ layui.use(['layer', 'form'], function () {
         });
         return false;
     });
-
+    form.render();
 });

@@ -35,6 +35,14 @@ def login_view(request: HttpRequest):
     return render(request, 'login.html')
 
 
+def logout(request):
+    context = {
+        "msg": "注销成功"
+    }
+    request.session.flush()
+    return render(request, 'login.html', context)
+
+
 def not_found_view(request: HttpRequest):
     logging.info("render not_found_view.html")
     return render(request, 'static/404.html')
@@ -48,3 +56,23 @@ def console_view(request: HttpRequest):
 def modify_pwd(request: HttpRequest):
     logging.info("render modify_pwd.html")
     return render(request, 'modify_pwd.html')
+
+
+def setting_view(request: HttpRequest):
+    logging.info("render setting.html")
+    return render(request, 'setting.html')
+
+
+def user_list_view(request: HttpRequest):
+    logging.info("render user.html")
+    return render(request, 'user/user.html')
+
+
+def user_add_view(request: HttpRequest):
+    logging.info("render user_add.html")
+    return render(request, 'user/user_add.html')
+
+
+def user_edit_view(request: HttpRequest):
+    logging.info("render user_edit.html")
+    return render(request, 'user/user_edit.html')

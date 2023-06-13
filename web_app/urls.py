@@ -25,11 +25,21 @@ urlpatterns = [
     path('view/auth/index', views.index_view),
     path('view/auth/console.html', views.console_view),
     path('view/auth/user/modify_pwd', views.modify_pwd),
+    path('view/auth/setting.html', views.setting_view),
+    path('view/auth/user_view', views.user_list_view),
+    path('view/auth/user_add_view', views.user_add_view),
+    path('view/auth/user_add_view', views.user_add_view),
+    path('view/auth/user_edit_view', views.user_edit_view),
 
     path('view/login', views.login_view),
+    path('logout', views.logout),
     path('404.html', views.not_found_view),
 
 
     path('api/login', user_restful.login),
+    path('api/modify_pwd', user_restful.modify_password),
+    path('api/user_list', user_restful.user_list),
+    path('api/user_add', user_restful.user_add),
+    path('api/user_update', user_restful.user_add),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
