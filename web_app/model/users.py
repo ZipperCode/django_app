@@ -11,3 +11,5 @@ class User(models.Model):
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
 
+
+

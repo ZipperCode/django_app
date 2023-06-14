@@ -189,6 +189,23 @@ def bytes2str(byte_str: str) -> str:
     return byte_str
 
 
+def handle_uploaded_file(path, f):
+    try:
+        parent_path = os.path.dirname(path)
+        if not os.path.exists(parent_path):
+            os.makedirs(parent_path)
+
+        if os.path.exists(path):
+            os.remove(path)
+
+        with open(path, "wb+") as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+            return path
+    except Exception:
+        return None
+
+
 if __name__ == '__main__':
     print(datetime.fromtimestamp(int(1667036550526) / 1000))
     s = "\xe6\x9d\x8e\xe6\x85\xa7\xe9\xa6\xa8"
