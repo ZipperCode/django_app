@@ -175,10 +175,7 @@
 
         /*表格行工具监听*/
         table.on('tool(list)', function (obj) {
-            console.log("tool(list) ", obj.event)
-            const data = obj.data; //获得当前行数据
             const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
-            eval(layEvent + '(obj)');   //直接出发事件并吧obj传过去
             if (layEvent === 'edit') {
                 layer.open({
                     type: 1,
@@ -186,7 +183,9 @@
                     area: ['800px', '600px'],
                     content: $("#editForm")
                 });
-                initEditForm(obj)
+                initEditForm(obj);
+            } else if (layEvent === 'del') {
+                handleDel(obj);
             }
         });
 
@@ -275,56 +274,20 @@
             });
         }
 
-        /*编辑*/
-        function edit(obj) {
-            console.log("edit")
-            layer.open({
-                type: 2
-                , title: '编辑管理员'
-                , content: "/view/auth/user_edit_view"
-                , area: ['420px', '420px']
-                , btn: ['确定', '取消']
-                , success: function (layero, index) {
-                    const iframeWindow = window['layui-layer-iframe' + index]
-                    const username = obj.data.username
-                    const password = obj.data.password
-                    const name = obj.data.name
-
-                    const doc = iframeWindow.document
-                    const input = doc.createElement("input")
-                    input.setAttribute('type', 'hidden')
-                    input.setAttribute("name", 'username')
-                    input.setAttribute('value', obj.data.username)
-
-                    doc.getElementById("layer_form").appendChild(input)
-                    doc.getElementById("username").innerHTML = username
-
-                    doc.querySelector('[name=password]').value = password
-                    doc.querySelector('[name=name]').value = name
-
-
-                }
-
-            });
-        }
-
-
-        /*删除*/
-        function del(obj) {
-            console.log('删除');
-
+        function handleDel(obj) {
             layer.confirm('确定删除吗？', function (index) {
                 layer.close(index);
-                var index2 = layer.load(0);
+                const index2 = layer.load(0);
                 $.ajax({
-                    url: "{:url('/admin/adminuser/del')}",
-                    data: {id: ids},
+                    url: "/api/user_del",
+                    data: {id: obj.data.id, username: obj.data.username},
                     type: "post",
+                    headers: headers,
                     dataType: "JSON",
                     success: function (msg) {
-                        if (msg.code == 0) {
+                        if (msg.code === 0) {
                             layer.msg(msg.msg);
-                            table.reload('LAY-user-back-manage'); //数据刷新
+                            table.reload('list'); //数据刷新
                             layer.close(index); //关闭弹层
                             return;
                         }
@@ -339,17 +302,9 @@
                 });
             });
         }
-
         //滚动条
         jQuery(".page-main").scrollbar();
 
-        function getCsrfTokenHeaders(doc) {
-            const csrftoken = doc.querySelector('[name=csrfmiddlewaretoken]').value;
-            return {
-                "Accept": "application/json; charset=utf-8",
-                "X-CSRFToken": csrftoken
-            };
-        }
 
     });
 </script>

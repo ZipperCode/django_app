@@ -1,12 +1,14 @@
 import logging
 import os
 
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from util import utils, http_utils
 from util.restful import RestResponse, CJsonEncoder
 from web_app.dao import user_dao
+from web_app.decorators.admin_decorator import log_func
 from web_app.model.users import User
 from web_app.settings import BASE_DIR
 
@@ -105,43 +107,77 @@ def modify_password(request: HttpRequest):
 
 
 def user_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    data, count = user_dao.user_list(start_row, end_row)
     result = {
         'code': 0,
-        "count": 2,
-        'data': [
-            {
-                'id':1,
-                'username': 'admin',
-                'name': 'admin',
-                'create_time': '2023-1-1 11:11:11',
-                'update_time': '2023-1-1 11:11:11',
-            },
-            {
-                'id': 1,
-                'username': 'admin',
-                'name': 'admin',
-                'create_time': '2023-1-1 11:11:11',
-                'update_time': '2023-1-1 11:11:11',
-            },
-            {
-                'id': 1,
-                'username': 'admin',
-                'name': 'admin',
-                'create_time': '2023-1-1 11:11:11',
-                'update_time': '2023-1-1 11:11:11',
-            },
-        ]
+        "count": count,
+        'data': data
     }
-    return JsonResponse(result, encoder=CJsonEncoder)
+    return RestResponse.success(data=result)
 
 
+@log_func
 def user_add(request: HttpRequest):
+    body = utils.request_body(request)
+    username = body.get("username", "")
+    password = body.get('password', '')
+    name = body.get('name', '')
+    logging.info("user_add#username = " + str(username))
+    logging.info("user_add#password = " + str(password))
+    logging.info("user_add#name = " + str(name))
+    if utils.str_is_null(str(username)):
+        return RestResponse.failure("添加失败，用户名不能为空")
+    if utils.str_is_null(password):
+        return RestResponse.failure("添加失败，密码不能为空")
+    query = User.objects.filter(username=username)
+    if query.exists():
+        return RestResponse.failure("添加失败，用户已存在")
 
-    return RestResponse.failure("not impl")
+    create_user = User.objects.create(username=username, password=password, name=name)
+    create_user.password = ''
+    return RestResponse.success(data=utils.object_to_json(create_user))
 
+
+@log_func
 def user_update(request: HttpRequest):
+    body = utils.request_body(request)
+    u_id = body.get("id", "")
+    username = body.get("username", "")
+    if utils.str_is_null(username) or (not str(u_id).isdigit() and int(u_id) <= 0):
+        RestResponse.failure("参数错误，需要username或id")
+    q = Q(id=u_id) or Q(username=username)
+    query = User.objects.filter(q)
+    if not query.exists():
+        return RestResponse.failure("更新失败，记录不存在")
 
-    return RestResponse.failure("not impl")
+    password = body.get('password', '')
+    if utils.str_is_null(password):
+        return RestResponse.failure("更新失败，密码不能为空")
+    name = body.get('name', '')
+    rows = query.update(password=password, name=name)
+    return RestResponse.success(data={
+        'rows': rows
+    })
+
+
+@log_func
+def user_del(request: HttpRequest):
+    body = utils.request_body(request)
+    u_id = body.get("id", "")
+    username = body.get("username", "")
+    if utils.str_is_null(username) or (not str(u_id).isdigit() and int(u_id) <= 0):
+        RestResponse.failure("参数错误，需要username或id")
+    q = Q(id=u_id) or Q(username=username)
+    query = User.objects.filter(q)
+    if not query.exists():
+        return RestResponse.failure("删除失败，记录不存在")
+    deleted, del_count = query.delete()
+    return RestResponse.success(data={
+        'deleted': deleted,
+        'delete_count': del_count
+    })
+
 
 def file_down(request, name: str):
     p = os.path.join(BASE_DIR, "data", name)
