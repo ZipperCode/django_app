@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Tuple
 
@@ -25,9 +26,9 @@ def user_list(start_row, end_row) -> tuple:
     分页获取用户列表
     """
     query = User.objects
-    res = query.all()[start_row: end_row]
+    res = query.values('id', 'username', 'name', 'is_admin', 'create_time', 'update_time')[start_row: end_row]
     count = query.count()
-    return utils.model2json(res), count
+    return list(res), count
 
 
 def delete_user(u_id, username: str = None) -> Tuple[bool, int]:

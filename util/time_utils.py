@@ -1,5 +1,6 @@
 import logging
 from datetime import timezone, timedelta, datetime
+from typing import Optional
 
 import pytz
 from pytz import UTC
@@ -42,6 +43,21 @@ def fmt_utc2sydney_time(t):
         logging.exception(e)
         pass
     return t
+
+
+def convert_date(t_str: str) -> Optional[datetime]:
+    return convert_time(t_str, DATE_FORMAT)
+
+
+def convert_time(t_str: str, fmt: str = DATE_TIME_FORMAT) -> Optional[datetime]:
+    if t_str is None or len(str) == 0:
+        return None
+    try:
+        return datetime.strptime(t_str, fmt)
+    except BaseException as e:
+        logging.exception(e)
+        pass
+    return None
 
 
 def get_utc_time() -> datetime:

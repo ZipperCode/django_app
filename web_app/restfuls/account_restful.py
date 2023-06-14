@@ -3,13 +3,14 @@ import os
 import uuid
 from pathlib import Path
 
+from django.db.models import Q
 from django.http import HttpRequest
 
 from util import utils
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
+from web_app.dao import account_dao
 from web_app.decorators.admin_decorator import log_func
-from web_app.forms.upload_form import UploadFileForm
 from web_app.model.accounts import AccountId
 from web_app.model.users import User
 from web_app.settings import BASE_DIR
@@ -20,6 +21,14 @@ logging.basicConfig(
 )
 
 TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
+
+
+@log_func
+def account_id_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    res, count = account_dao.search_account_id_page(body, start_row, end_row)
+    return RestResponse.success_list(count=count, data=res)
 
 
 def account_id_add(request: HttpRequest):

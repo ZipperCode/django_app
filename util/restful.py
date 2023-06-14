@@ -34,6 +34,15 @@ class RestResponse(JsonResponse):
         })
 
     @classmethod
+    def success_list(cls, msg: str = "操作成功", count=0, data: list = None):
+        return RestResponse({
+            'code': 0,
+            'msg': msg,
+            'count': count,
+            'data': data
+        })
+
+    @classmethod
     def failure(cls, msg: str):
         return RestResponse({
             'code': -1,

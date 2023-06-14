@@ -1,8 +1,50 @@
 import logging
 
+from django.db.models import Q
+
+from util import utils
+from util.time_utils import convert_time, convert_date
+from web_app.model.accounts import AccountId
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.DEBUG
 )
 
 
+def search_account_id_page(body, start_row, end_row):
+    a_id = body.get('a_id')
+    country = body.get("country")
+    date_start = body.get('date_start')
+    date_end = body.get('date_end')
+    op_user_id = body.get("op_user_select")
+    logging.info("account_id_list#a_id = %s", a_id)
+    logging.info("account_id_list#country = %s", country)
+    logging.info("account_id_list#date_start = %s", date_start)
+    logging.info("account_id_list#date_end = %s", date_end)
+    logging.info("account_id_list#op_user_id = %s", op_user_id)
+
+    if not utils.str_is_null(a_id):
+        logging.info("account_id_list#id不为空直接查找id")
+        query = AccountId.objects.values()[start_row: end_row]
+        return list(query), query.count()
+
+    query = AccountId.objects
+
+    if not utils.str_is_null(country):
+        query = query.filter(country=country)
+
+    if not utils.str_is_null(start_row):
+        start = convert_date(date_start)
+        if start is not None:
+            query = query.filter(create_time__gte=start)
+    if not utils.str_is_null(date_end):
+        end = convert_date(date_end)
+        if end is not None:
+            query = query.filter(create_time__lt=end)
+
+    if utils.is_int(op_user_id):
+        query = query.filter(op_user_id=op_user_id)
+
+    res = list(query.values())[start_row: end_row]
+    return list(res), query.count()

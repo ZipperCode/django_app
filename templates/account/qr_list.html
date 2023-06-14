@@ -41,12 +41,11 @@
 <script type="text/javascript" src="/static/layui/layui.js"></script>
 <script type="text/javascript" src="/static/admin/js/user_form.js"></script>
 <script type="text/javascript" src="/static/admin/js/utils.js"></script>
-<script type="text/javascript" src="/static/admin/js/admin.js"></script>
+
 
 {% comment %} component {% endcomment %}
 <script type="text/html" id="table_control">
-    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
+    <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
 
@@ -96,8 +95,16 @@
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
             <div class="layui-form-item">
                 <label class="layui-form-label required">账号</label>
-                <div class="layui-input-block required">
+                <div class="layui-input-block required">=
                     <input type="text" name="username" disabled="disabled" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">密码</label>
+                <div class="layui-input-block required">
+                    <input type="password" name="password"
+                           required lay-verify="required"
+                           autocomplete="off" placeholder="请输入密码" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -118,47 +125,6 @@
             </div>
         </form>
     </div>
-</div>
-
-
-<div class="layui-form layui-form-pane" lay-filter="modifyPwdSubmit" id="modifyPwdForm" style="display: none">
-    <div class="layui-col-md12">
-        <div class="layui-form-item layui-hide">
-            <input type="hidden" name="username" autocomplete="off" class="layui-input">
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">原密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password" placeholder="请输入原密码" autocomplete="off"
-                       lay-verify="password"
-                       class="layui-input">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">新密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password_new" required placeholder="请输入新密码" autocomplete="off"
-                       class="layui-input" lay-verify="password_new">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">确认新密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password_new2" required placeholder="请输入密码" autocomplete="off"
-                       class="layui-input" lay-verify="password_new2">
-            </div>
-        </div>
-        <div class="layui-form-item">
-            <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" lay-filter="modifyPwdSubmit">
-                确认修改
-            </button>
-        </div>
-    </div>
-
-
 </div>
 
 {% comment %} {% endcomment %}
@@ -188,7 +154,7 @@
                 {field: 'name', title: '名称', align: 'center'},
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', align: 'center', width: 200}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 115}
             ]]
         });
 
@@ -214,20 +180,12 @@
                 layer.open({
                     type: 1,
                     title: "修改数据",
-                    area: ['400px', '300px'],
+                    area: ['800px', '600px'],
                     content: $("#editForm")
                 });
                 initEditForm(obj);
             } else if (layEvent === 'del') {
                 handleDel(obj);
-            } else if (layEvent === 'modify_pwd') {
-                layer.open({
-                    type: 1,
-                    title: "修改密码",
-                    area: ['400px', '300px'],
-                    content: $("#modifyPwdForm")
-                });
-                initModifyPwdForm(obj);
             }
         });
 
@@ -235,7 +193,7 @@
             form.on('submit(search)', function (data) {
                 table.reload('list', {
                     page: {
-                        curr: 0 //重新从第 1 页开始
+                        curr: 1 //重新从第 1 页开始
                     },
                     where: data.field
                 });
@@ -274,6 +232,7 @@
                 return false
             })
         }
+
 
         function initEditForm(obj) {
             const data = obj.data;
@@ -315,62 +274,6 @@
             });
         }
 
-        function initModifyPwdForm(obj) {
-            const data = obj.data;
-
-            form.val("modifyPwdForm", {
-                username: data.username
-            });
-
-            //自定义验证规则
-            form.verify({
-                password: function (value, item) {   //密码验证
-                    console.log("密码验证");
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '原密码不能为空';
-                    }
-                },
-                password_new: function (value, item) {   //密码验证
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '新密码不能为空';
-                    }
-                    // if (!/(.+){6,12}$/.test(value)) {
-                    // $(item).focus();
-                    //return '密码必须6到12位';
-                    // }
-                },
-                password_new2: function (value, item) {   //密码验证
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '确认密码不能为空';
-                    }
-                    /* if (!/(.+){6,12}$/.test(value)) {
-                        $(item).focus();
-                        return '密码必须6到12位';
-                    }
-                    if ($("#password_new").val() !== $(item).val()) {
-                        $(item).focus();
-                        return '两次输入密码不一致';
-                    }
-                    */
-                },
-            });
-
-            form.on('submit(modifyPwdForm)', function (massage) {
-                modifyPassword(layer, data.field, res => {
-                    if (res.code === 0) {
-                        layer.msg("修改成功", {icon: 1});
-                        return
-                    }
-                    console.log(res);
-                    layer.msg(res.msg, {icon: 2});
-                });
-                return false
-            });
-        }
-
         function handleDel(obj) {
             layer.confirm('确定删除吗？', function (index) {
                 layer.close(index);
@@ -399,7 +302,6 @@
                 });
             });
         }
-
         //滚动条
         jQuery(".page-main").scrollbar();
 

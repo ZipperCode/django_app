@@ -29,3 +29,4 @@ class AccountQr(models.Model):
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
+

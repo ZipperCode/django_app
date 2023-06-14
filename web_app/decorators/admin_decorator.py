@@ -18,7 +18,7 @@ def log_func(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kw):
-        logging.debug(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> {func.__name__} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        logging.info(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> {func.__name__} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         return func(*args, **kw)
 
     return wrapper

@@ -106,15 +106,19 @@ def modify_password(request: HttpRequest):
     return RestResponse.success("密码修改成功")
 
 
+@log_func
 def user_list(request: HttpRequest):
     start_row, end_row = utils.page_query(request)
-    data, count = user_dao.user_list(start_row, end_row)
-    result = {
-        'code': 0,
-        "count": count,
-        'data': data
-    }
-    return RestResponse.success(data=result)
+    query = User.objects.values('id', 'username', 'name', 'is_admin', 'create_time', 'update_time')[start_row: end_row]
+    count = query.count()
+    return RestResponse.success_list(count=count, data=list(query))
+
+
+@log_func
+def user_simple_list(request: HttpRequest):
+    res_list = User.objects.filter(is_admin=False) \
+        .values('id', 'username', 'name')
+    return RestResponse.success(data=list(res_list))
 
 
 @log_func
@@ -146,7 +150,7 @@ def user_update(request: HttpRequest):
     username = body.get("username", "")
     if utils.str_is_null(username) or (not str(u_id).isdigit() and int(u_id) <= 0):
         RestResponse.failure("参数错误，需要username或id")
-    q = Q(id=u_id) or Q(username=username)
+    q = Q(id=u_id) | Q(username=username)
     query = User.objects.filter(q)
     if not query.exists():
         return RestResponse.failure("更新失败，记录不存在")
@@ -168,7 +172,7 @@ def user_del(request: HttpRequest):
     username = body.get("username", "")
     if utils.str_is_null(username) or (not str(u_id).isdigit() and int(u_id) <= 0):
         RestResponse.failure("参数错误，需要username或id")
-    q = Q(id=u_id) or Q(username=username)
+    q = Q(id=u_id) | Q(username=username)
     query = User.objects.filter(q)
     if not query.exists():
         return RestResponse.failure("删除失败，记录不存在")

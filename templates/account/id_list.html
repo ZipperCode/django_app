@@ -15,8 +15,38 @@
         <div class="page-fluid">
             <form class="layui-form layui-unselect table-form" action="">
                 <div class="layui-inline">
-                    <input type="text" id="username" placeholder="请输入用户名" autocomplete="off" lay-verify="username"
-                           class="layui-input"/>
+                    <label class="layui-form-label">ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入ID" autocomplete="off" name="a_id"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">国家</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入国家" name="country" autocomplete="off"
+                               lay-verify="country"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">范围日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_start">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_end">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">上传人</label>
+                    <div class="layui-input-inline">
+                        <select name="op_user_select" lay-search="">
+                            <option value="">直接选择或搜索选择</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
@@ -25,7 +55,9 @@
             </form>
 
             <script type="text/html" id="toolbar">
-                <a class="layui-btn layui-btn-sm" lay-event="add">添加用户</a>
+                <a class="layui-btn layui-btn-sm" lay-event="add">上传</a>
+                <a class="layui-btn layui-btn-sm" lay-event="batch_add">批量上传</a>
+                <a class="layui-btn layui-btn-sm" lay-event="batch_add">批量上传</a>
             </script>
 
             <table id="list" lay-filter="list"></table>
@@ -41,12 +73,11 @@
 <script type="text/javascript" src="/static/layui/layui.js"></script>
 <script type="text/javascript" src="/static/admin/js/user_form.js"></script>
 <script type="text/javascript" src="/static/admin/js/utils.js"></script>
-<script type="text/javascript" src="/static/admin/js/admin.js"></script>
+
 
 {% comment %} component {% endcomment %}
 <script type="text/html" id="table_control">
-    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
+    <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
 </script>
 
@@ -55,28 +86,11 @@
     <div class="layui-col-md10">
         <form class="layui-form" action="" style="margin-top:20px" lay-filter="addForm">
             <div class="layui-form-item">
-                <label class="layui-form-label required">账号</label>
+                <label class="layui-form-label required">ID<span style="color: red">*</span> </label>
                 <div class="layui-input-block required">
-                    <input type="text" name="username"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入账号" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label required">密码</label>
-                <div class="layui-input-block required">
-                    <input type="password" name="password"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入密码" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label required">用户名</label>
-                <div class="layui-input-block required">
-                    <input type="text" name="name"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入名称"
-                           class="layui-input">
+                    <input type="text" name="a_id"
+                           required lay-verify="a_id"
+                           autocomplete="off" placeholder="请输入ID" class="layui-input">
                 </div>
             </div>
 
@@ -84,7 +98,6 @@
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
                     </button>
-                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
                 </div>
             </div>
         </form>
@@ -94,19 +107,50 @@
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
+            <input type="hidden" name="id">
             <div class="layui-form-item">
-                <label class="layui-form-label required">账号</label>
+                <label class="layui-form-label required">ID</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="username" disabled="disabled" class="layui-input">
+                    <input type="text" name="account_id" disabled="disabled" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label required">用户名</label>
+                <label class="layui-form-label required">国家</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="name"
+                    <input type="text" name="country"
                            required lay-verify="required"
-                           autocomplete="off" placeholder="请输入名称"
+                           autocomplete="off" placeholder="请输入国家" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">年龄</label>
+                <div class="layui-input-block required">
+                    <input type="number" name="age"
+                           required
+                           autocomplete="off" placeholder="请输入年龄" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">工作</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="work"
+                           required lay-verify="required"
+                           autocomplete="off" placeholder="请输入工作"
                            class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">收入</label>
+                <div class="layui-input-inline" style="width: 100px;">
+                    <input type="number" name="money" placeholder="￥" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                        <textarea name="mark"
+                                  placeholder="备注信息"
+                                  class="layui-textarea"></textarea>
                 </div>
             </div>
 
@@ -120,75 +164,52 @@
     </div>
 </div>
 
-
-<div class="layui-form layui-form-pane" lay-filter="modifyPwdSubmit" id="modifyPwdForm" style="display: none">
-    <div class="layui-col-md12">
-        <div class="layui-form-item layui-hide">
-            <input type="hidden" name="username" autocomplete="off" class="layui-input">
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">原密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password" placeholder="请输入原密码" autocomplete="off"
-                       lay-verify="password"
-                       class="layui-input">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">新密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password_new" required placeholder="请输入新密码" autocomplete="off"
-                       class="layui-input" lay-verify="password_new">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">确认新密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password_new2" required placeholder="请输入密码" autocomplete="off"
-                       class="layui-input" lay-verify="password_new2">
-            </div>
-        </div>
-        <div class="layui-form-item">
-            <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" lay-filter="modifyPwdSubmit">
-                确认修改
-            </button>
-        </div>
-    </div>
-
-
-</div>
-
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
-    layui.use(['layer', 'form', 'table', 'laytpl'], function () {
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate'], function () {
         const layer = layui.layer,
             form = layui.form,
             table = layui.table
+        const laydate = layui.laydate;
         const laytpl = layui.laytpl;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
+
+        lay('.test-item').each(function () {
+            const date = new Date()
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+            laydate.render({
+                elem: this,
+                type: 'date',
+                min: '2023-1-1',
+                max: max
+                , trigger: 'click'
+            });
+        });
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/user_list',
+            url: '/api/account_id/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
             cols: [[
-                {field: 'id', title: '序号', width: 80, align: 'center'},
-                {field: 'username', title: '用户名', align: 'center'},
-                {field: 'name', title: '名称', align: 'center'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: '编号', width: 80, align: 'center'},
+                {field: 'account_id', title: 'ID', align: 'center'},
+                {field: 'country', title: '国家', align: 'center'},
+                {field: 'age', title: '年龄', align: 'center'},
+                {field: 'work', title: '工作', align: 'center'},
+                {field: 'money', title: '收入', align: 'center'},
+                {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', align: 'center', width: 200}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 115}
             ]]
         });
 
@@ -214,20 +235,12 @@
                 layer.open({
                     type: 1,
                     title: "修改数据",
-                    area: ['400px', '300px'],
+                    area: ['800px', '600px'],
                     content: $("#editForm")
                 });
                 initEditForm(obj);
             } else if (layEvent === 'del') {
                 handleDel(obj);
-            } else if (layEvent === 'modify_pwd') {
-                layer.open({
-                    type: 1,
-                    title: "修改密码",
-                    area: ['400px', '300px'],
-                    content: $("#modifyPwdForm")
-                });
-                initModifyPwdForm(obj);
             }
         });
 
@@ -235,7 +248,7 @@
             form.on('submit(search)', function (data) {
                 table.reload('list', {
                     page: {
-                        curr: 0 //重新从第 1 页开始
+                        curr: 1 //重新从第 1 页开始
                     },
                     where: data.field
                 });
@@ -275,14 +288,19 @@
             })
         }
 
+
         function initEditForm(obj) {
             const data = obj.data;
             $("#p_username").innerHTML = data.username;
 
             form.val("editForm", {
-                username: data.username,
-                password: data.password,
-                name: data.name,
+                id: data.id,
+                account_id: data.account_id,
+                country: data.country,
+                age: data.age,
+                work: data.work,
+                money: data.money,
+                mark: data.mark,
             });
 
             form.on('submit(editSubmit)', function (massage) {
@@ -310,62 +328,6 @@
                             layer.msg("修改失败", {icon: 5});
                         }
                     }
-                });
-                return false
-            });
-        }
-
-        function initModifyPwdForm(obj) {
-            const data = obj.data;
-
-            form.val("modifyPwdForm", {
-                username: data.username
-            });
-
-            //自定义验证规则
-            form.verify({
-                password: function (value, item) {   //密码验证
-                    console.log("密码验证");
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '原密码不能为空';
-                    }
-                },
-                password_new: function (value, item) {   //密码验证
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '新密码不能为空';
-                    }
-                    // if (!/(.+){6,12}$/.test(value)) {
-                    // $(item).focus();
-                    //return '密码必须6到12位';
-                    // }
-                },
-                password_new2: function (value, item) {   //密码验证
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '确认密码不能为空';
-                    }
-                    /* if (!/(.+){6,12}$/.test(value)) {
-                        $(item).focus();
-                        return '密码必须6到12位';
-                    }
-                    if ($("#password_new").val() !== $(item).val()) {
-                        $(item).focus();
-                        return '两次输入密码不一致';
-                    }
-                    */
-                },
-            });
-
-            form.on('submit(modifyPwdForm)', function (massage) {
-                modifyPassword(layer, data.field, res => {
-                    if (res.code === 0) {
-                        layer.msg("修改成功", {icon: 1});
-                        return
-                    }
-                    console.log(res);
-                    layer.msg(res.msg, {icon: 2});
                 });
                 return false
             });
@@ -399,6 +361,29 @@
                 });
             });
         }
+
+        (function initUserList() {
+            $.ajax({
+                url: '/api/user_simple_list',
+                success: function (res) {
+                    if (res.code >= 0) {
+                        let data = res.data;
+                        let selectElements = $("select[name='op_user_select']");
+                        for (let j = 0; j < selectElements.length; j++) {
+                            for (let i = 0; i < data.length; i++) {
+                                let item = data[i];
+                                selectElements.eq(j).append(
+                                    `<option value="${item.id}">${item.name ?? item.username}</option>`
+                                );
+                            }
+                        }
+                        form.render('select');
+                    } else {
+                        console.log("策略列表，错误：", res.msg)
+                    }
+                }
+            });
+        })();
 
         //滚动条
         jQuery(".page-main").scrollbar();
