@@ -17,7 +17,7 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">ID</label>
                     <div class="layui-input-inline">
-                        <input type="text" placeholder="请输入ID" autocomplete="off" name="a_id"
+                        <input type="text" placeholder="请输入ID" autocomplete="off" name="account_id"
                                class="layui-input"/>
                     </div>
 
@@ -40,14 +40,16 @@
                         <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_end">
                     </div>
                 </div>
-                <div class="layui-inline">
-                    <label class="layui-form-label">上传人</label>
-                    <div class="layui-input-inline">
-                        <select name="op_user_select" lay-search="">
-                            <option value="">直接选择或搜索选择</option>
-                        </select>
+                {% if request.session.user.is_admin %}
+                    <div class="layui-inline">
+                        <label class="layui-form-label">上传人</label>
+                        <div class="layui-input-inline">
+                            <select name="op_user_select" lay-search="">
+                                <option value="">直接选择或搜索选择</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
+                {% endif %}
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
                     </button>
@@ -74,12 +76,15 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" lay-event="batch_export">批量导出</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出</a>
 </script>
 
 <script type="text/html" id="table_control">
+    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    {% if request.session.user.is_admin %}
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    {% endif %}
 </script>
 
 {% comment %} Form {% endcomment %}
@@ -89,8 +94,8 @@
             <div class="layui-form-item">
                 <label class="layui-form-label required">ID<span style="color: red">*</span> </label>
                 <div class="layui-input-block required">
-                    <input type="text" name="a_id"
-                           required lay-verify="a_id"
+                    <input type="text" name="account_id"
+                           required lay-verify="account_id"
                            autocomplete="off" placeholder="请输入ID" class="layui-input">
                 </div>
             </div>
@@ -106,11 +111,17 @@
 </div>
 
 <div class="layui-upload" id="uploadDialog" style="display: none">
-    <button type="button" class="layui-btn" id="btn_batch_upload">
-        <i class="layui-icon">&#xe67c;</i>
-        选择文件
-    </button>
-    <p id="p_upload_preview"></p>
+    <div class="layui-upload-drag" id="batchUpload">
+        <i class="layui-icon"></i>
+        <p>点击上传，或将文件拖拽到此处</p>
+        <div class="layui-hide" id="uploadDemoView">
+            <hr>
+            <span id="p_upload_preview" style="max-width: 196px"></span>
+        </div>
+    </div>
+    <br/>
+    <br/>
+    <br/>
     <button class="layui-btn  layui-btn-submit " lay-submit="" id="btnBatchUpload">确认上传</button>
 </div>
 
@@ -179,8 +190,8 @@
 <script type="text/javascript">
     layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
         const layer = layui.layer,
-            form = layui.form,
-            table = layui.table
+            form = layui.form;
+        const table = layui.table;
         const laydate = layui.laydate;
         const laytpl = layui.laytpl;
         const upload = layui.upload
@@ -201,6 +212,11 @@
                 , trigger: 'click'
             });
         });
+        let op_col_width = 120
+        {% if request.session.user.is_admin %}
+            op_col_width = 180
+        {% endif %}
+
         /*表格渲染*/
         table.render({
             id: 'list',
@@ -218,9 +234,13 @@
                 {field: 'work', title: '工作', align: 'center'},
                 {field: 'money', title: '收入', align: 'center'},
                 {field: 'mark', title: '备注', align: 'center'},
+                {% if request.session.user.is_admin %}
+                    {field: 'op_user__username', title: '操作人', align: 'center'},
+                {% endif %}
+
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 115}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]]
         });
 
@@ -244,6 +264,8 @@
                     content: $("#uploadDialog")
                 });
                 initBatchUpload()
+            } else if (layEvent === 'batch_export') {
+                handleExport()
             }
         });
 
@@ -254,12 +276,18 @@
                 layer.open({
                     type: 1,
                     title: "修改数据",
-                    area: ['800px', '600px'],
+                    area: ['600px', '600px'],
                     content: $("#editForm")
                 });
                 initEditForm(obj);
             } else if (layEvent === 'del') {
                 handleDel(obj);
+            } else if (layEvent === 'copy') {
+                const text = obj.data.account_id
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text);
+                    layer.msg("复制成功，内容为：" + text, {icon: 6});
+                }
             }
         });
 
@@ -281,7 +309,7 @@
         function initAddForm() {
             form.on('submit(addSubmit)', function (massage) {
                 console.log(massage)
-                layer.load(1);
+                layer.load();
                 $.ajax({
                     url: '/api/account_id/upload',
                     type: 'POST',
@@ -312,13 +340,17 @@
 
         function initBatchUpload() {
             const batchUpload = upload.render({
-                elem: '#btn_batch_upload',
+                elem: '#batchUpload',
                 url: '/api/account_id/bat_upload',
                 accept: 'file',
                 field: 'file',
                 headers: headers,
                 exts: 'txt',
                 auto: false,
+                data: {
+                    'filename': 'test.txt'
+                },
+                size: 30,
                 bindAction: '#btnBatchUpload',
                 before: function (obj) {
                     layer.load()
@@ -329,29 +361,27 @@
                     let files = obj.pushFile();
                     console.log("upload choose files = ", files)
                     obj.preview(function (index, file, result) {
-                        let dom = `<span style="margin-left: 20px; margin-right: 20px">要上传文件名: ${file.name}
-<button type="button" id="btn_upload_del_${index}" class="layui-btn layui-btn-sm layui-btn-normal"><i class="layui-icon"></i> 删除</button>`
-
-                        $("#p_upload_preview").append(dom)
-                        $(`btn_upload_del_${index}`).on('click', function () {
-                            delete files[index]
-                            $("#p_upload_preview").children().remove()
-                        });
+                        $('#uploadDemoView').removeClass('layui-hide');
+                        $('#p_upload_preview')[0].innerHTML = `文件：${file.name}`
+                        batchUpload.config.data.filename = file.name
                     });
-
                 },
                 done: function (res, index, upload) {
-                    console.log(`upload done res = ${re} index = ${index} upload = ${upload}`);
-                    if (res.code <= 0) {
+                    console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
+                    if (res.code < 0) {
                         layer.closeAll('loading');
                         layer.msg(res.msg, {icon: 5})
                         return
                     }
+                    layer.closeAll();//关闭所有的弹出层
+                    table.reload('list', {
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        }
+                    });
+                    $('#uploadDemoView').addClass('layui-hide');
                     layer.msg("上传成功", {icon: 6});
-                    setTimeout(function () {
-                        table.reload("list");
-                        layer.closeAll();//关闭所有的弹出层
-                    }, 1000);
+
                 },
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
@@ -419,8 +449,14 @@
                     success: function (msg) {
                         if (msg.code === 0) {
                             layer.msg(msg.msg);
-                            table.reload('list'); //数据刷新
-                            layer.close(index); //关闭弹层
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
                             return;
                         }
                         layer.msg(msg.msg, {icon: 5});
@@ -433,6 +469,37 @@
                     }
                 });
             });
+        }
+
+        function handleExport() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('get', "/api/account_id/export", true); // 也可以使用POST方式，根据接口
+            xhr.responseType = "blob"; // 返回类型blob
+            // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
+            xhr.onload = function () {
+                // 请求完成
+                if (this.status === 200) {
+                    // 返回200
+                    const blob = this.response;
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob); // 转换为base64，可以直接放入a表情href
+                    reader.onload = function (e) {
+                        // 转换完成，创建一个a标签用于下载
+                        const a = document.createElement('a');
+                        // a.download = 'data.xlsx'; // 命名下载文件
+                        a.href = e.target.result;
+                        $("body").append(a); // 修复firefox中无法触发click
+                        a.click();
+                        $(a).remove();
+                    }
+                }
+            };
+            xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
+            xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
+                alert('')
+            }
+            // 发送ajax请求
+            xhr.send(options)
         }
 
         (function initUserList() {

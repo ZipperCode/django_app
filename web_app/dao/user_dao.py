@@ -3,6 +3,7 @@ import logging
 from typing import Tuple
 
 from django.db.models import Q
+from django.http import HttpRequest
 
 from util import utils
 from web_app.model.users import User
@@ -11,6 +12,18 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.DEBUG
 )
+
+
+def get_user(request: HttpRequest):
+    user = request.session.get("user")
+    if user is None:
+        return None
+    if user.get("username") is None:
+        return None
+    query = User.objects.filter(username=user.get('username'))
+    if query.exists():
+        return query.first()
+    return None
 
 
 def update_user(username: str, password: str, name: str):

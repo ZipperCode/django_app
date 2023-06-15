@@ -51,5 +51,6 @@ urlpatterns = [
     path('api/account_id/del', account_restful.account_id_del),
     path('api/account_id/upload', account_restful.account_id_upload),
     path('api/account_id/bat_upload', account_restful.account_id_batch_upload),
+    path('api/account_id/export', account_restful.account_id_export),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -22,7 +22,8 @@ class LoginMiddleware(MiddlewareMixin):
         # logging.info("login拦截器，request => path = %s", str(request.path))
         user = {
             'username': 'admin',
-            'name': 'admin'
+            'name': 'admin',
+            'is_admin': True
         }
         request.session['user'] = user
         return None

@@ -15,18 +15,47 @@
         <div class="page-fluid">
             <form class="layui-form layui-unselect table-form" action="">
                 <div class="layui-inline">
-                    <input type="text" id="username" placeholder="请输入用户名" autocomplete="off" lay-verify="username"
-                           class="layui-input"/>
+                    <label class="layui-form-label">国家</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入国家" name="country" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+
                 </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入备注" name="mark" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">范围日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_start">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_end">
+                    </div>
+                </div>
+                {% if request.session.user.is_admin %}
+                    <div class="layui-inline">
+                        <label class="layui-form-label">上传人</label>
+                        <div class="layui-input-inline">
+                            <select name="op_user_select" lay-search="">
+                                <option value="">直接选择或搜索选择</option>
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
                     </button>
                 </div>
             </form>
-
-            <script type="text/html" id="toolbar">
-                <a class="layui-btn layui-btn-sm" lay-event="add">添加用户</a>
-            </script>
 
             <table id="list" lay-filter="list"></table>
 
@@ -44,9 +73,19 @@
 
 
 {% comment %} component {% endcomment %}
+
+<script type="text/html" id="toolbar">
+    <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
+    <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出</a>
+</script>
+
 <script type="text/html" id="table_control">
+    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    {% if request.session.user.is_admin %}
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    {% endif %}
 </script>
 
 {% comment %} Form {% endcomment %}
@@ -54,28 +93,11 @@
     <div class="layui-col-md10">
         <form class="layui-form" action="" style="margin-top:20px" lay-filter="addForm">
             <div class="layui-form-item">
-                <label class="layui-form-label required">账号</label>
+                <label class="layui-form-label required">ID<span style="color: red">*</span> </label>
                 <div class="layui-input-block required">
-                    <input type="text" name="username"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入账号" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label required">密码</label>
-                <div class="layui-input-block required">
-                    <input type="password" name="password"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入密码" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label required">用户名</label>
-                <div class="layui-input-block required">
-                    <input type="text" name="name"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入名称"
-                           class="layui-input">
+                    <input type="text" name="account_id"
+                           required lay-verify="account_id"
+                           autocomplete="off" placeholder="请输入ID" class="layui-input">
                 </div>
             </div>
 
@@ -83,37 +105,74 @@
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
                     </button>
-                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
+<div class="layui-upload" id="uploadDialog" style="display: none">
+    <div class="layui-upload-drag" id="batchUpload">
+        <i class="layui-icon"></i>
+        <p>点击上传，或将文件拖拽到此处</p>
+        <div class="layui-hide" id="uploadDemoView">
+            <hr>
+            <span id="p_upload_preview" style="max-width: 196px"></span>
+        </div>
+    </div>
+    <br/>
+    <br/>
+    <br/>
+    <button class="layui-btn  layui-btn-submit " lay-submit="" id="btnBatchUpload">确认上传</button>
+</div>
+
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
+            <input type="hidden" name="id">
             <div class="layui-form-item">
-                <label class="layui-form-label required">账号</label>
-                <div class="layui-input-block required">=
-                    <input type="text" name="username" disabled="disabled" class="layui-input">
+                <label class="layui-form-label required">ID</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="account_id" disabled="disabled" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label required">密码</label>
+                <label class="layui-form-label required">国家</label>
                 <div class="layui-input-block required">
-                    <input type="password" name="password"
+                    <input type="text" name="country"
                            required lay-verify="required"
-                           autocomplete="off" placeholder="请输入密码" class="layui-input">
+                           autocomplete="off" placeholder="请输入国家" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label required">用户名</label>
+                <label class="layui-form-label required">年龄</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="name"
+                    <input type="number" name="age"
+                           required
+                           autocomplete="off" placeholder="请输入年龄" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">工作</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="work"
                            required lay-verify="required"
-                           autocomplete="off" placeholder="请输入名称"
+                           autocomplete="off" placeholder="请输入工作"
                            class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">收入</label>
+                <div class="layui-input-inline" style="width: 100px;">
+                    <input type="number" name="money" placeholder="￥" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                        <textarea name="mark"
+                                  placeholder="备注信息"
+                                  class="layui-textarea"></textarea>
                 </div>
             </div>
 
@@ -130,31 +189,54 @@
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
-    layui.use(['layer', 'form', 'table', 'laytpl'], function () {
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
         const layer = layui.layer,
-            form = layui.form,
-            table = layui.table
+            form = layui.form;
+        const table = layui.table;
+        const laydate = layui.laydate;
         const laytpl = layui.laytpl;
+        const upload = layui.upload
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
+
+        lay('.test-item').each(function () {
+            const date = new Date()
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+            laydate.render({
+                elem: this,
+                type: 'date',
+                min: '2023-1-1',
+                max: max
+                , trigger: 'click'
+            });
+        });
+        let op_col_width = 120
+        {% if request.session.user.is_admin %}
+            op_col_width = 180
+        {% endif %}
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/user_list',
+            url: '/api/account_id/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
             cols: [[
-                {field: 'id', title: '序号', width: 80, align: 'center'},
-                {field: 'username', title: '用户名', align: 'center'},
-                {field: 'name', title: '名称', align: 'center'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: '编号', width: 80, align: 'center'},
+                {field: 'account_id', title: 'ID', align: 'center'},
+                {field: 'country', title: '国家', align: 'center'},
+                {field: 'age', title: '年龄', align: 'center'},
+                {field: 'work', title: '工作', align: 'center'},
+                {field: 'money', title: '收入', align: 'center'},
+                {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 115}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]]
         });
 
@@ -162,14 +244,24 @@
         table.on('toolbar(list)', function (obj) {
             const data = obj.data; //获得当前行数据
             const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
-            if (layEvent === 'add') {
+            if (layEvent === 'upload') {
                 layer.open({
                     type: 1,
-                    area: [$(window).width() * 0.8 + 'px', $(window).height() * 0.92 + 'px'],
-                    title: ['添加用户', 'text-align:center;'],
+                    area: ['400px', '300px'],
+                    title: ['ID上传', 'text-align:center;'],
                     content: $("#addForm")
                 });
                 initAddForm()
+            } else if (layEvent === 'batch_upload') {
+                layer.open({
+                    type: 1,
+                    area: ['400px', '300px'],
+                    title: ['ID上传', 'text-align:center;'],
+                    content: $("#uploadDialog")
+                });
+                initBatchUpload()
+            } else if (layEvent === 'batch_export') {
+                handleExport()
             }
         });
 
@@ -180,12 +272,18 @@
                 layer.open({
                     type: 1,
                     title: "修改数据",
-                    area: ['800px', '600px'],
+                    area: ['600px', '600px'],
                     content: $("#editForm")
                 });
                 initEditForm(obj);
             } else if (layEvent === 'del') {
                 handleDel(obj);
+            } else if (layEvent === 'copy') {
+                const text = obj.data.account_id
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text);
+                    layer.msg("复制成功，内容为：" + text, {icon: 6});
+                }
             }
         });
 
@@ -207,9 +305,9 @@
         function initAddForm() {
             form.on('submit(addSubmit)', function (massage) {
                 console.log(massage)
-                layer.load(1);
+                layer.load();
                 $.ajax({
-                    url: '/api/user_add',
+                    url: '/api/account_id/upload',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -223,6 +321,8 @@
                                 table.reload("list");
                                 layer.closeAll();//关闭所有的弹出层
                             }, 1000);
+                        } else {
+                            layer.msg(res.msg, {icon: 5})
                         }
                     },
                     error: function () {
@@ -231,6 +331,60 @@
                 });
                 return false
             })
+
+        }
+
+        function initBatchUpload() {
+            const batchUpload = upload.render({
+                elem: '#batchUpload',
+                url: '/api/account_id/bat_upload',
+                accept: 'file',
+                field: 'file',
+                headers: headers,
+                exts: 'txt',
+                auto: false,
+                data: {
+                    'filename': 'test.txt'
+                },
+                size: 30,
+                bindAction: '#btnBatchUpload',
+                before: function (obj) {
+                    layer.load()
+                    console.log("upload before");
+                },
+                choose: function (obj) {
+                    console.log("upload choose", obj);
+                    let files = obj.pushFile();
+                    console.log("upload choose files = ", files)
+                    obj.preview(function (index, file, result) {
+                        $('#uploadDemoView').removeClass('layui-hide');
+                        $('#p_upload_preview')[0].innerHTML = `文件：${file.name}`
+                        batchUpload.config.data.filename = file.name
+                    });
+                },
+                done: function (res, index, upload) {
+                    console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
+                    if (res.code < 0) {
+                        layer.closeAll('loading');
+                        layer.msg(res.msg, {icon: 5})
+                        return
+                    }
+                    layer.closeAll();//关闭所有的弹出层
+                    table.reload('list', {
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        }
+                    });
+                    $('#uploadDemoView').addClass('layui-hide');
+                    layer.msg("上传成功", {icon: 6});
+
+                },
+                error: function (index, upload) {
+                    console.log(`upload error index = ${index} upload = ${upload}`)
+                    layer.msg("上传失败，请重试", {icon: 5})
+                    layer.closeAll('loading');
+                }
+            });
         }
 
 
@@ -239,16 +393,20 @@
             $("#p_username").innerHTML = data.username;
 
             form.val("editForm", {
-                username: data.username,
-                password: data.password,
-                name: data.name,
+                id: data.id,
+                account_id: data.account_id,
+                country: data.country,
+                age: data.age,
+                work: data.work,
+                money: data.money,
+                mark: data.mark,
             });
 
             form.on('submit(editSubmit)', function (massage) {
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/user_edit',
+                    url: '/api/account_id/update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -279,16 +437,22 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/user_del",
-                    data: {id: obj.data.id, username: obj.data.username},
+                    url: "/api/account_id/del",
+                    data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
                     dataType: "JSON",
                     success: function (msg) {
                         if (msg.code === 0) {
                             layer.msg(msg.msg);
-                            table.reload('list'); //数据刷新
-                            layer.close(index); //关闭弹层
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
                             return;
                         }
                         layer.msg(msg.msg, {icon: 5});
@@ -302,6 +466,61 @@
                 });
             });
         }
+
+        function handleExport() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('get', "/api/account_id/export", true); // 也可以使用POST方式，根据接口
+            xhr.responseType = "blob"; // 返回类型blob
+            // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
+            xhr.onload = function () {
+                // 请求完成
+                if (this.status === 200) {
+                    // 返回200
+                    const blob = this.response;
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob); // 转换为base64，可以直接放入a表情href
+                    reader.onload = function (e) {
+                        // 转换完成，创建一个a标签用于下载
+                        const a = document.createElement('a');
+                        // a.download = 'data.xlsx'; // 命名下载文件
+                        a.href = e.target.result;
+                        $("body").append(a); // 修复firefox中无法触发click
+                        a.click();
+                        $(a).remove();
+                    }
+                }
+            };
+            xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
+            xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
+                alert('')
+            }
+            // 发送ajax请求
+            xhr.send(options)
+        }
+
+        (function initUserList() {
+            $.ajax({
+                url: '/api/user_simple_list',
+                success: function (res) {
+                    if (res.code >= 0) {
+                        let data = res.data;
+                        let selectElements = $("select[name='op_user_select']");
+                        for (let j = 0; j < selectElements.length; j++) {
+                            for (let i = 0; i < data.length; i++) {
+                                let item = data[i];
+                                selectElements.eq(j).append(
+                                    `<option value="${item.id}">${item.name ?? item.username}</option>`
+                                );
+                            }
+                        }
+                        form.render('select');
+                    } else {
+                        console.log("策略列表，错误：", res.msg)
+                    }
+                }
+            });
+        })();
+
         //滚动条
         jQuery(".page-main").scrollbar();
 
