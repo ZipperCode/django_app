@@ -68,7 +68,8 @@ def account_id_update(request: HttpRequest):
         return RestResponse.failure("must use post")
 
     body = utils.request_body(request)
-    a_id = body.get("a_id", "")
+    key_id = body.get('id', 0)
+    account_id = body.get("account_id", "")
     country = body.get("country", "")
     age = body.get("age", 0)
     work = body.get("work", "")
@@ -80,10 +81,10 @@ def account_id_update(request: HttpRequest):
     if not User.objects.filter(username=user.username).exists():
         return RestResponse.failure("修改失败，操作用户不存在")
 
-    if utils.str_is_null(a_id):
+    if utils.str_is_null(account_id):
         return RestResponse.failure("修改失败，a_id不能为空")
 
-    query = AccountId.objects.filter(account_id=a_id)
+    query = AccountId.objects.filter(account_id=account_id)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
@@ -102,12 +103,12 @@ def account_id_del(request: HttpRequest):
         return RestResponse.failure("must use post")
 
     body = utils.request_body(request)
-    a_id = body.get('a_id', "")
-    logging.info("account_id_del#a_id = %s", a_id)
-    if utils.str_is_null(a_id):
+    account_id = body.get('account_id', "")
+    logging.info("account_id_del#a_id = %s", account_id)
+    if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
 
-    AccountId.objects.filter(account_id=a_id).delete()
+    AccountId.objects.filter(account_id=account_id).delete()
     return RestResponse.failure("删除成功")
 
 
@@ -117,7 +118,7 @@ def account_id_upload(request: HttpRequest):
         return RestResponse.failure("must use post")
 
     body = utils.request_body(request)
-    a_id = body.get('a_id', "")
+    a_id = body.get('account_id', "")
     logging.info("account_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")

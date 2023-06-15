@@ -1,5 +1,7 @@
 from django.db import models
 
+from util import utils
+
 
 class AccountId(models.Model):
     id = models.AutoField(primary_key=True)
@@ -13,6 +15,14 @@ class AccountId(models.Model):
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
+
+    @property
+    def op_user_name(self):
+        op_u = self.op_user
+        op_name = op_u.username
+        if not utils.str_is_null(op_u.name):
+            op_name = op_u.name
+        return op_name
 
 
 class AccountQr(models.Model):
@@ -29,4 +39,3 @@ class AccountQr(models.Model):
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
-

@@ -54,12 +54,6 @@
                 </div>
             </form>
 
-            <script type="text/html" id="toolbar">
-                <a class="layui-btn layui-btn-sm" lay-event="add">上传</a>
-                <a class="layui-btn layui-btn-sm" lay-event="batch_add">批量上传</a>
-                <a class="layui-btn layui-btn-sm" lay-event="batch_add">批量上传</a>
-            </script>
-
             <table id="list" lay-filter="list"></table>
 
         </div>
@@ -76,6 +70,13 @@
 
 
 {% comment %} component {% endcomment %}
+
+<script type="text/html" id="toolbar">
+    <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
+    <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
+    <a class="layui-btn layui-btn-sm" lay-event="batch_export">批量导出</a>
+</script>
+
 <script type="text/html" id="table_control">
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
     <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
@@ -102,6 +103,15 @@
             </div>
         </form>
     </div>
+</div>
+
+<div class="layui-upload" id="uploadDialog" style="display: none">
+    <button type="button" class="layui-btn" id="btn_batch_upload">
+        <i class="layui-icon">&#xe67c;</i>
+        选择文件
+    </button>
+    <p id="p_upload_preview"></p>
+    <button class="layui-btn  layui-btn-submit " lay-submit="" id="btnBatchUpload">确认上传</button>
 </div>
 
 <div class="layui-row" id="editForm" style="display:none;">
@@ -167,12 +177,13 @@
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
-    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate'], function () {
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
         const layer = layui.layer,
             form = layui.form,
             table = layui.table
         const laydate = layui.laydate;
         const laytpl = layui.laytpl;
+        const upload = layui.upload
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
             "Accept": "application/json; charset=utf-8",
@@ -217,14 +228,22 @@
         table.on('toolbar(list)', function (obj) {
             const data = obj.data; //获得当前行数据
             const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
-            if (layEvent === 'add') {
+            if (layEvent === 'upload') {
                 layer.open({
                     type: 1,
-                    area: [$(window).width() * 0.8 + 'px', $(window).height() * 0.92 + 'px'],
-                    title: ['添加用户', 'text-align:center;'],
+                    area: ['400px', '300px'],
+                    title: ['ID上传', 'text-align:center;'],
                     content: $("#addForm")
                 });
                 initAddForm()
+            } else if (layEvent === 'batch_upload') {
+                layer.open({
+                    type: 1,
+                    area: ['400px', '300px'],
+                    title: ['ID上传', 'text-align:center;'],
+                    content: $("#uploadDialog")
+                });
+                initBatchUpload()
             }
         });
 
@@ -264,7 +283,7 @@
                 console.log(massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/user_add',
+                    url: '/api/account_id/upload',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -278,6 +297,8 @@
                                 table.reload("list");
                                 layer.closeAll();//关闭所有的弹出层
                             }, 1000);
+                        } else {
+                            layer.msg(res.msg, {icon: 5})
                         }
                     },
                     error: function () {
@@ -286,6 +307,58 @@
                 });
                 return false
             })
+
+        }
+
+        function initBatchUpload() {
+            const batchUpload = upload.render({
+                elem: '#btn_batch_upload',
+                url: '/api/account_id/bat_upload',
+                accept: 'file',
+                field: 'file',
+                headers: headers,
+                exts: 'txt',
+                auto: false,
+                bindAction: '#btnBatchUpload',
+                before: function (obj) {
+                    layer.load()
+                    console.log("upload before");
+                },
+                choose: function (obj) {
+                    console.log("upload choose", obj);
+                    let files = obj.pushFile();
+                    console.log("upload choose files = ", files)
+                    obj.preview(function (index, file, result) {
+                        let dom = `<span style="margin-left: 20px; margin-right: 20px">要上传文件名: ${file.name}
+<button type="button" id="btn_upload_del_${index}" class="layui-btn layui-btn-sm layui-btn-normal"><i class="layui-icon"></i> 删除</button>`
+
+                        $("#p_upload_preview").append(dom)
+                        $(`btn_upload_del_${index}`).on('click', function () {
+                            delete files[index]
+                            $("#p_upload_preview").children().remove()
+                        });
+                    });
+
+                },
+                done: function (res, index, upload) {
+                    console.log(`upload done res = ${re} index = ${index} upload = ${upload}`);
+                    if (res.code <= 0) {
+                        layer.closeAll('loading');
+                        layer.msg(res.msg, {icon: 5})
+                        return
+                    }
+                    layer.msg("上传成功", {icon: 6});
+                    setTimeout(function () {
+                        table.reload("list");
+                        layer.closeAll();//关闭所有的弹出层
+                    }, 1000);
+                },
+                error: function (index, upload) {
+                    console.log(`upload error index = ${index} upload = ${upload}`)
+                    layer.msg("上传失败，请重试", {icon: 5})
+                    layer.closeAll('loading');
+                }
+            });
         }
 
 
@@ -307,7 +380,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/user_edit',
+                    url: '/api/account_id/update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -338,8 +411,8 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/user_del",
-                    data: {id: obj.data.id, username: obj.data.username},
+                    url: "/api/account_id/del",
+                    data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
                     dataType: "JSON",
