@@ -77,7 +77,7 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -111,10 +111,26 @@
     </div>
 </div>
 
+{% comment %} 单个图片上传 {% endcomment %}
 <div class="layui-upload" id="uploadDialog" style="display: none">
     <div class="layui-upload-drag" id="batchUpload">
         <i class="layui-icon"></i>
         <p>点击上传，或将文件拖拽到此处</p>
+        <div class="layui-hide" id="uploadDemoView">
+            <hr>
+            {% comment %} 图片预览 {% endcomment %}
+        </div>
+    </div>
+    <br/>
+    <br/>
+    <br/>
+    <button class="layui-btn  layui-btn-submit " lay-submit="" id="btnBatchUpload">确认上传</button>
+</div>
+{% comment %} 批量zip包上传 {% endcomment %}
+<div class="layui-upload" id="batchUploadDialog" style="display: none">
+    <div class="layui-upload-drag" id="batchUpload">
+        <i class="layui-icon"></i>
+        <p>点击上传，或将文件拖拽到此处 (zip)</p>
         <div class="layui-hide" id="uploadDemoView">
             <hr>
             <span id="p_upload_preview" style="max-width: 196px"></span>
@@ -131,9 +147,9 @@
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
             <input type="hidden" name="id">
             <div class="layui-form-item">
-                <label class="layui-form-label required">ID</label>
+                <label class="layui-form-label required">URL</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="account_id" disabled="disabled" class="layui-input">
+                    <input type="text" name="qr_content" disabled="disabled" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -221,7 +237,7 @@
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_id/list',
+            url: '/api/account_qr/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,

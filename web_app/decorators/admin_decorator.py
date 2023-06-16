@@ -4,6 +4,7 @@ import logging
 from django.http import HttpRequest
 
 from util.restful import RestResponse
+from web_app.model.users import User
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -24,19 +25,39 @@ def log_func(func):
     return wrapper
 
 
-def op_admin():
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kw):
-            request = args[0]
-            if isinstance(request, HttpRequest):
-                logging.debug(f"admin 权限拦截器, 处理函数 {func.__name__}")
-                user = request.session.get('user')
-                if user is None or not user.is_admin:
-                    return RestResponse.failure("非管理员无法操作")
+def op_admin(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kw):
+        request = args[0]
+        if isinstance(request, HttpRequest):
+            logging.debug(f"admin 权限拦截器, 处理函数 {func.__name__}")
+            user = request.session.get('user')
+            if user is None or not user.is_admin:
+                return RestResponse.failure("非管理员无法操作")
 
-            return func(*args, **kw)
+        return func(*args, **kw)
 
-        return wrapper
+    return wrapper
 
-    return decorator
+
+def api_op_user(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kw):
+        request = args[0]
+        if isinstance(request, HttpRequest):
+            logging.debug(f"用户操作 拦截器, 处理函数 {func.__name__}")
+            user = request.session.get('user')
+            if user is None or not user.get('username'):
+                return RestResponse.failure("未登录，无法操作")
+
+            username = user.get('username')
+            logging.info("用户操作 拦截器 # username = %s", username)
+            query = User.objects.filter(username=username)
+            if not query.exists():
+                return RestResponse.failure("用户不存在，无法操作")
+
+            request.session['user_id'] = query.first().id
+
+        return func(*args, **kw)
+
+    return wrapper

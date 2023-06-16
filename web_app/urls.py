@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt
+from django.views.static import serve
 
 from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful
@@ -53,4 +54,6 @@ urlpatterns = [
     path('api/account_id/bat_upload', account_restful.account_id_batch_upload),
     path('api/account_id/export', account_restful.account_id_export),
 
+    # 访问上传的文件
+    path(r'media/(?P<path>.*)', serve, {'document_root': settings.MEDIA_ROOT}),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

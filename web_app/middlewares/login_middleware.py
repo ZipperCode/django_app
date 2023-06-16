@@ -26,6 +26,13 @@ class LoginMiddleware(MiddlewareMixin):
             'is_admin': True
         }
         request.session['user'] = user
+
+        u = request.session.get('user')
+        if u is not None:
+            if u.get('id') is not None and u.get('username') is not None:
+                request.session['user_id'] = u.get("id")
+                request.session['username'] = u.get('username')
+
         return None
 
     def process_response(self, request, response: HttpResponse):

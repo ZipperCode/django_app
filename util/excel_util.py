@@ -42,6 +42,25 @@ def create_excel(in_data_list: List[ExcelBean], out_dir):
     return filename
 
 
+def create_excel2(in_data_list: List[ExcelBean], out_dir):
+    try:
+        book = Workbook()
+        sheet: Optional[Worksheet] = book.active
+        sheet.append(['ID', '城市', '年龄', '工作', '收入', '备注', '操作人', '上传时间'])
+        r = sheet.row_dimensions[1]
+        r.font = Font(bold=True)
+        now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+        filename = os.path.join(out_dir, now + "_id.xlsx")
+        for d in in_data_list:
+            row = [d.id, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+            sheet.append(row)
+        book.save(filename)
+    except BaseException:
+        logging.info("create_excel fail")
+        return None
+    return filename
+
+
 if __name__ == '__main__':
     data_list = [
         ExcelBean(
