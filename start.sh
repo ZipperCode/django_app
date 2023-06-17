@@ -29,9 +29,8 @@ python3 manage.py migrate
 echo "exec makemigrations web_app"
 python3 manage.py makemigrations web_app
 echo "exec migrate web_app"
-python3 manage.py migrate web_app
+# python3 manage.py migrate web_app
+python3 manage.py migrate --fake web_app
 echo "exec migrate end"
-uwsgi --ini /var/www/html/web_app/uwsgi.ini&&
-tail -f /dev/null
-
+uwsgi --ini /var/www/html/django_app/uwsgi.ini && tail -f /dev/null
 exec "$@"
