@@ -21,9 +21,6 @@ logging.basicConfig(
 UNKNOWN_KEY = "unknown_info"
 UNKNOWN_REMARK = "未知数据"
 
-if not User.objects.filter(username='admin').exists():
-    User.objects.create(username='admin', password=md5("admin".encode()).digest().hex(), is_admin=True, name="Admin")
-
 
 async def hello(request: HttpRequest):
     # return HttpResponse(json.dumps({
@@ -46,6 +43,15 @@ def index_view(request: HttpRequest):
 
 @log_func
 def login_view(request: HttpRequest):
+    try:
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create(
+                username='admin',
+                password=md5("admin".encode()).digest().hex(), is_admin=True,
+                name="Admin"
+            )
+    except BaseException:
+        pass
     return render(request, 'login.html')
 
 
