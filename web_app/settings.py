@@ -92,10 +92,10 @@ if IS_DOCKER:
         'default':
             {
                 'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-                'NAME': 'line',  # 数据库名称
+                'NAME': 'contact',  # 数据库名称
                 'HOST': "db",
                 'PORT': 3306,  # 端口
-                'USER': 'line',  # 数据库用户名
+                'USER': 'telegram',  # 数据库用户名
                 'PASSWORD': '949389',  # 数据库密码
                 'POOL_SIZE': 30
             }
