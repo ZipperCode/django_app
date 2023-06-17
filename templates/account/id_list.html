@@ -8,6 +8,13 @@
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <style>
+        .box_parent {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
 <div class="page-main scrollbar-inner">
@@ -31,6 +38,15 @@
                     </div>
 
                 </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入备注" name="mark" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+
                 <div class="layui-inline">
                     <label class="layui-form-label">范围日期</label>
                     <div class="layui-input-inline">
@@ -111,19 +127,23 @@
 </div>
 
 <div class="layui-upload" id="uploadDialog" style="display: none">
-    <div class="layui-upload-drag" id="batchUpload">
-        <i class="layui-icon"></i>
-        <p>点击上传，或将文件拖拽到此处</p>
-        <div class="layui-hide" id="uploadDemoView">
-            <hr>
-            <span id="p_upload_preview" style="max-width: 196px"></span>
+    <div class="box_parent">
+        <div class="layui-upload-drag" id="batchUpload">
+            <i class="layui-icon"></i>
+            <p>点击上传，或将文件拖拽到此处 (txt)</p>
+            <div class="layui-hide" id="uploadDemoView">
+                <hr>
+                <span id="p_upload_preview" style="max-width: 196px"></span>
+            </div>
         </div>
     </div>
+
     <br/>
     <br/>
     <br/>
-    <button class="layui-btn  layui-btn-submit " lay-submit="" id="btnBatchUpload">确认上传</button>
+    <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" id="btnBatchUpload">确认上传</button>
 </div>
+
 
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
@@ -139,7 +159,7 @@
                 <label class="layui-form-label required">国家</label>
                 <div class="layui-input-block required">
                     <input type="text" name="country"
-                           required lay-verify="required"
+                           required
                            autocomplete="off" placeholder="请输入国家" class="layui-input">
                 </div>
             </div>
@@ -147,17 +167,13 @@
                 <label class="layui-form-label required">年龄</label>
                 <div class="layui-input-block required">
                     <input type="number" name="age"
-                           required
                            autocomplete="off" placeholder="请输入年龄" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label required">工作</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="work"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入工作"
-                           class="layui-input">
+                    <input type="text" name="work" autocomplete="off" placeholder="请输入工作" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -169,9 +185,7 @@
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">备注</label>
                 <div class="layui-input-block">
-                        <textarea name="mark"
-                                  placeholder="备注信息"
-                                  class="layui-textarea"></textarea>
+                    <textarea name="mark" placeholder="备注信息" class="layui-textarea"></textarea>
                 </div>
             </div>
 
@@ -229,19 +243,20 @@
                 {type: 'checkbox', fixed: 'left'},
                 {field: 'id', title: '编号', width: 80, align: 'center'},
                 {field: 'account_id', title: 'ID', align: 'center'},
-                {field: 'country', title: '国家', align: 'center'},
-                {field: 'age', title: '年龄', align: 'center'},
-                {field: 'work', title: '工作', align: 'center'},
-                {field: 'money', title: '收入', align: 'center'},
+                {field: 'country', title: '国家', align: 'center', sort: true},
+                {field: 'age', title: '年龄', align: 'center', sort: true},
+                {field: 'work', title: '工作', align: 'center', sort: true},
+                {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'mark', title: '备注', align: 'center'},
                 {% if request.session.user.is_admin %}
-                    {field: 'op_user__username', title: '操作人', align: 'center'},
+                    {field: 'op_user__username', title: '操作人', align: 'center', sort: true},
                 {% endif %}
 
-                {field: 'create_time', title: '创建时间', align: 'center'},
-                {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
+                {field: 'create_time', title: '创建时间', align: 'center', sort: true},
+                {field: 'update_time', title: '更新时间', width: 160, align: 'center', sort: true},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
-            ]]
+            ]],
+            defaultToolbar: ['filter', 'exports']
         });
 
         /*表格头工具监听*/
@@ -357,6 +372,7 @@
                     console.log("upload before");
                 },
                 choose: function (obj) {
+                    batchUpload.config.elem.next()[0].value = '';
                     console.log("upload choose", obj);
                     let files = obj.pushFile();
                     console.log("upload choose files = ", files)
@@ -480,26 +496,25 @@
                 // 请求完成
                 if (this.status === 200) {
                     // 返回200
-                    const blob = this.response;
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob); // 转换为base64，可以直接放入a表情href
-                    reader.onload = function (e) {
-                        // 转换完成，创建一个a标签用于下载
-                        const a = document.createElement('a');
-                        // a.download = 'data.xlsx'; // 命名下载文件
-                        a.href = e.target.result;
-                        $("body").append(a); // 修复firefox中无法触发click
-                        a.click();
-                        $(a).remove();
-                    }
+                    const blob = new Blob([this.response], {
+                        type: "application/vnd.ms-excel"
+                    });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    $("body").append(a); // 修复firefox中无法触发click
+                    a.click();
+                    $(a).remove();
+                } else if (this.status === 404 || this.status === 500) {
+                    console.log("404 response = ", this.response)
+                    layer.msg("导出失败，" + this.status, {icon: 5})
                 }
             };
             xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
             xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
-                alert('')
+                layer.msg("导出失败，请求超时", {icon: 5})
             }
             // 发送ajax请求
-            xhr.send(options)
+            xhr.send()
         }
 
         (function initUserList() {

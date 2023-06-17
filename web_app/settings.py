@@ -81,38 +81,37 @@ WSGI_APPLICATION = 'web_app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR /'db.sqlite3'
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR /'db.sqlite3'
+#     }
+# }
+if IS_DOCKER:
+    DATABASES = {
+        'default':
+            {
+                'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+                'NAME': 'line',  # 数据库名称
+                'HOST': "db",
+                'PORT': 3306,  # 端口
+                'USER': 'line',  # 数据库用户名
+                'PASSWORD': '949389',  # 数据库密码
+                'POOL_SIZE': 30
+            }
     }
-
-}
-# if IS_DOCKER:
-#     DATABASES = {
-#         'default':
-#             {
-#                 'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#                 'NAME': 'contact',  # 数据库名称
-#                 'HOST': "db",
-#                 'PORT': 3306,  # 端口
-#                 'USER': 'telegram',  # 数据库用户名
-#                 'PASSWORD': '949389',  # 数据库密码
-#                 'POOL_SIZE': 30
-#             }
-#     }
-# else:
-#     DATABASES = {
-#         'default':
-#             {
-#                 'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-#                 'NAME': 'contact',  # 数据库名称
-#                 'HOST': '127.0.0.1',  # 数据库地址，本机 ip 地址 127.0.0.1
-#                 'PORT': 3306,  # 端口
-#                 'USER': 'root',  # 数据库用户名
-#                 'PASSWORD': '949389',  # 数据库密码
-#             }
-#     }
+else:
+    DATABASES = {
+        'default':
+            {
+                'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+                'NAME': 'line',  # 数据库名称
+                'HOST': '127.0.0.1',  # 数据库地址，本机 ip 地址 127.0.0.1
+                'PORT': 3306,  # 端口
+                'USER': 'root',  # 数据库用户名
+                'PASSWORD': '949389',  # 数据库密码
+            }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -155,7 +154,7 @@ STATICFILES_DIRS = (
 # 静态文件收集目录
 STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'data', 'media').replace('\\', '/')  # 设置静态文件路径为主目录下的media文件夹
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')  # 设置静态文件路径为主目录下的media文件夹
 MEDIA_URL = '/media/'
 
 # Default primary key field type

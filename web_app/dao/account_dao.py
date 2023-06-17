@@ -1,9 +1,7 @@
 import logging
 
-from django.db.models import Q
-
 from util import utils
-from util.time_utils import convert_time, convert_date
+from util.time_utils import convert_date
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.accounts import AccountId, AccountQr
 from web_app.model.users import User
@@ -17,6 +15,7 @@ logging.basicConfig(
 def search_account_id_page(body, start_row, end_row, user: User):
     a_id = body.get('account_id')
     country = body.get("country")
+    mark = body.get("mark")
     date_start = body.get('date_start')
     date_end = body.get('date_end')
     op_user_id = body.get("op_user_select")
@@ -35,7 +34,10 @@ def search_account_id_page(body, start_row, end_row, user: User):
     query = AccountId.objects.filter(op_user_id=user.id)
 
     if not utils.str_is_null(country):
-        query = query.filter(country=country)
+        query = query.filter(country__contains=country)
+
+    if not utils.str_is_null(mark):
+        query = query.filter(mark__contains=mark)
 
     if not utils.str_is_null(date_start):
         start = convert_date(date_start)
@@ -58,6 +60,7 @@ def search_account_id_page(body, start_row, end_row, user: User):
 @log_func
 def search_account_qr_page(body, start_row, end_row, user_id):
     country = body.get("country")
+    mark = body.get("mark")
     date_start = body.get('date_start')
     date_end = body.get('date_end')
     op_user_id = body.get("op_user_select")
@@ -69,8 +72,9 @@ def search_account_qr_page(body, start_row, end_row, user_id):
     query = AccountQr.objects.filter(op_user_id=user_id)
 
     if not utils.str_is_null(country):
-        query = query.filter(country=country)
-
+        query = query.filter(country__contains=country)
+    if not utils.str_is_null(mark):
+        query = query.filter(mark__contains=country)
     if not utils.str_is_null(date_start):
         start = convert_date(date_start)
         if start is not None:

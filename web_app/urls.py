@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
 from web_app import views, settings
-from web_app.restfuls import user_restful, account_restful
+from web_app.restfuls import user_restful, account_restful, account_qr_restful
 
 urlpatterns = [
     path('.', views.login_view),
@@ -42,10 +42,11 @@ urlpatterns = [
 
     path('api/login', user_restful.login),
     path('api/modify_pwd', user_restful.modify_password),
+    path('api/admin/modify_pwd', user_restful.modify_password_admin),
     path('api/user_list', user_restful.user_list),
     path('api/user_simple_list', user_restful.user_simple_list),
     path('api/user_add', user_restful.user_add),
-    path('api/user_update', user_restful.user_add),
+    path('api/user_update', user_restful.user_update),
     path('api/account_id/list', account_restful.account_id_list),
     path('api/account_id/add', account_restful.account_id_add),
     path('api/account_id/update', account_restful.account_id_update),
@@ -54,6 +55,14 @@ urlpatterns = [
     path('api/account_id/bat_upload', account_restful.account_id_batch_upload),
     path('api/account_id/export', account_restful.account_id_export),
 
-    # 访问上传的文件
-    path(r'media/(?P<path>.*)', serve, {'document_root': settings.MEDIA_ROOT}),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('api/account_qr/list', account_qr_restful.account_id_list),
+    path('api/account_qr/upload', account_qr_restful.account_qr_upload),
+    path('api/account_qr/bat_upload', account_qr_restful.account_qr_batch_upload),
+    path('api/account_qr/update', account_qr_restful.account_qr_update),
+    path('api/account_qr/del', account_qr_restful.account_qr_del),
+    path('api/account_qr/export_select', account_qr_restful.account_qr_export_with_id),
+    path('api/account_qr/export', account_qr_restful.account_qr_export),
+
+
+    re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
+] + static(settings.MEDIA_URL, serve, document_root=settings.MEDIA_ROOT)

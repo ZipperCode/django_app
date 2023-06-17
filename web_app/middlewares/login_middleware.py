@@ -48,7 +48,8 @@ class LoginMiddleware(MiddlewareMixin):
         # if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
         #     if not request.session.get('user', None):
         #         return views.login_view(request)
-
+        if p.find('/media/') != -1:
+            return None
         return view_func(request)
 
     def process_exception(self, request, exception):

@@ -10,7 +10,7 @@ while ! nc -z db 3306 ; do
     echo "Waiting for the MySQL Server"
     sleep 3
 done
-
+echo "start sql success "
 dir="$(pwd)/data"
 if [ ! -d "$dir" ];then
   mkdir "$dir"
@@ -20,6 +20,7 @@ else
   chmod 777 -R "$dir"
   echo "$dir 文件夹已经存在"
 fi
+echo "create data dir success"
 
 python3 manage.py collectstatic --noinput
 echo "exec migrate start======================================================================================"

@@ -10,8 +10,8 @@
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="static/layui/layui.js" charset="utf-8"></script>
-    <script src="static/jquery/jquery-3.4.1.js" charset="utf-8"></script>
+    <script src="/static/layui/layui.js" charset="utf-8"></script>
+    <script src="/static/jquery/jquery-3.4.1.js" charset="utf-8"></script>
 
     <style>
         html, body, table {
@@ -53,7 +53,7 @@
                     <form class="layui-form layui-form-pane" action="/api/login" method="post">
                         {% csrf_token %}
                         <div class="layui-form-item">
-                            <label class="layui-form-label">输入框</label>
+                            <label class="layui-form-label">账号</label>
                             <div class="layui-input-block">
                                 <input type="text" name="username" lay-verify="title" autocomplete="off"
                                        placeholder="请输入用户名" class="layui-input">
@@ -76,7 +76,7 @@
     </div>
 </div>
 
-<script type="text/javascript" src="static/admin/js/login.js"></script>
+<script type="text/javascript" src="/static/admin/js/login.js"></script>
 
 </body>
 </html>

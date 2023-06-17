@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>管理员列表</title>
+    <title>用户列表</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
@@ -13,20 +13,20 @@
 <div class="page-main scrollbar-inner">
     <div class="page-container">
         <div class="page-fluid">
-            <form class="layui-form layui-unselect table-form" action="">
+            <form class="layui-form layui-unselect table-form" action="" lay-filter="search">
                 <div class="layui-inline">
-                    <input type="text" id="username" placeholder="请输入用户名" autocomplete="off" lay-verify="username"
-                           class="layui-input"/>
+                    <label class="layui-form-label">客服账号</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="username" placeholder="请输入客服账号查询" autocomplete="off"
+                               lay-verify="username"
+                               class="layui-input"/>
+                    </div>
                 </div>
                 <div class="layui-inline">
-                    <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="search" data-type="reload">搜索
                     </button>
                 </div>
             </form>
-
-            <script type="text/html" id="toolbar">
-                <a class="layui-btn layui-btn-sm" lay-event="add">添加用户</a>
-            </script>
 
             <table id="list" lay-filter="list"></table>
 
@@ -44,13 +44,19 @@
 <script type="text/javascript" src="/static/admin/js/admin.js"></script>
 
 {% comment %} component {% endcomment %}
-<script type="text/html" id="table_control">
-    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-    <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
-    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-</script>
+{% if request.session.user.is_admin %}
+    <script type="text/html" id="toolbar">
+        <a class="layui-btn layui-btn-sm" lay-event="add">添加账号</a>
+    </script>
+    <script type="text/html" id="table_control">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
 
-{% comment %} Form {% endcomment %}
+{% endif %}
+
+{% comment %} 添加账号 {% endcomment %}
 <div class="layui-row" id="addForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form" action="" style="margin-top:20px" lay-filter="addForm">
@@ -74,7 +80,6 @@
                 <label class="layui-form-label required">用户名</label>
                 <div class="layui-input-block required">
                     <input type="text" name="name"
-                           required lay-verify="required"
                            autocomplete="off" placeholder="请输入名称"
                            class="layui-input">
                 </div>
@@ -90,7 +95,7 @@
         </form>
     </div>
 </div>
-
+{% comment %} 修改账号信息 {% endcomment %}
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
@@ -119,21 +124,12 @@
         </form>
     </div>
 </div>
-
-
+{% comment %} 修改账号密码 {% endcomment %}
 <div class="layui-form layui-form-pane" lay-filter="modifyPwdSubmit" id="modifyPwdForm" style="display: none">
     <div class="layui-col-md12">
         <div class="layui-form-item layui-hide">
+            <input type="hidden" name="id" autocomplete="off" class="layui-input">
             <input type="hidden" name="username" autocomplete="off" class="layui-input">
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label">原密码</label>
-            <div class="layui-input-inline">
-                <input type="password" name="password" placeholder="请输入原密码" autocomplete="off"
-                       lay-verify="password"
-                       class="layui-input">
-            </div>
         </div>
 
         <div class="layui-form-item">
@@ -152,7 +148,7 @@
             </div>
         </div>
         <div class="layui-form-item">
-            <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" lay-filter="modifyPwdSubmit">
+            <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" lay-filter="modifyPwdForm">
                 确认修改
             </button>
         </div>
@@ -161,14 +157,12 @@
 
 </div>
 
+
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
     layui.use(['layer', 'form', 'table', 'laytpl'], function () {
-        const layer = layui.layer,
-            form = layui.form,
-            table = layui.table
-        const laytpl = layui.laytpl;
+        const layer = layui.layer, form = layui.form, table = layui.table
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
             "Accept": "application/json; charset=utf-8",
@@ -180,22 +174,34 @@
             elem: '#list',
             url: '/api/user_list',
             page: true,
-            toolbar: '#toolbar',
+            {% if request.session.user.is_admin %}
+                toolbar: '#toolbar',
+            {% endif %}
             cellMinWidth: 80,
             cols: [[
                 {field: 'id', title: '序号', width: 80, align: 'center'},
-                {field: 'username', title: '用户名', align: 'center'},
+                {field: 'username', title: '客服账号', align: 'center'},
                 {field: 'name', title: '名称', align: 'center'},
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', align: 'center', width: 200}
-            ]]
+                {% if request.session.user.is_admin %}
+                    {
+                        field: 'action',
+                        title: '操作',
+                        fixed: 'right',
+                        toolbar: '#table_control',
+                        align: 'center',
+                        width: 200
+                    }
+                {% endif %}
+
+            ]],
+            defaultToolbar: ['filter', 'exports']
         });
 
         /*表格头工具监听*/
         table.on('toolbar(list)', function (obj) {
-            const data = obj.data; //获得当前行数据
-            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            const layEvent = obj.event;
             if (layEvent === 'add') {
                 layer.open({
                     type: 1,
@@ -233,6 +239,7 @@
 
         function initSearchForm() {
             form.on('submit(search)', function (data) {
+                console.log("submit search", data.field)
                 table.reload('list', {
                     page: {
                         curr: 0 //重新从第 1 页开始
@@ -289,7 +296,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/user_edit',
+                    url: '/api/user_update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -317,36 +324,30 @@
 
         function initModifyPwdForm(obj) {
             const data = obj.data;
-
+            console.log("modifyPwd data = %s", JSON.stringify(data));
             form.val("modifyPwdForm", {
+                id: data.id,
                 username: data.username
             });
 
             //自定义验证规则
             form.verify({
-                password: function (value, item) {   //密码验证
-                    console.log("密码验证");
-                    if (!/^.+$/.test(value)) {
-                        $(item).focus();
-                        return '原密码不能为空';
-                    }
-                },
                 password_new: function (value, item) {   //密码验证
                     if (!/^.+$/.test(value)) {
                         $(item).focus();
                         return '新密码不能为空';
                     }
-                    // if (!/(.+){6,12}$/.test(value)) {
-                    // $(item).focus();
-                    //return '密码必须6到12位';
-                    // }
+                    if (!/(.+){6,12}$/.test(value)) {
+                        $(item).focus();
+                        return '密码必须6到12位';
+                    }
                 },
                 password_new2: function (value, item) {   //密码验证
                     if (!/^.+$/.test(value)) {
                         $(item).focus();
                         return '确认密码不能为空';
                     }
-                    /* if (!/(.+){6,12}$/.test(value)) {
+                    if (!/(.+){6,12}$/.test(value)) {
                         $(item).focus();
                         return '密码必须6到12位';
                     }
@@ -354,19 +355,47 @@
                         $(item).focus();
                         return '两次输入密码不一致';
                     }
-                    */
                 },
             });
 
             form.on('submit(modifyPwdForm)', function (massage) {
-                modifyPassword(layer, data.field, res => {
-                    if (res.code === 0) {
-                        layer.msg("修改成功", {icon: 1});
-                        return
+                console.log("data = ", massage.field)
+                const load_index = layer.load(0);
+                const uid = data.id;
+                console.log("修改密码 id = ", data.id)
+                $.ajax({
+                    url: '/api/admin/modify_pwd',
+                    type: 'post',
+                    headers: headers,
+                    data: {
+                        'id': uid,
+                        'password_new': massage.field.password_new,
+                        'password_new2': massage.field.password_new2,
+                    },
+                    success: function (res) {
+                        if (res.code === 0) {
+                            layer.msg("修改成功", {icon: 1});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
+                            return
+                        }
+                        console.log(res);
+                        layer.msg(res.msg, {icon: 2});
+                    },
+                    error() {
+                        layer.msg("网络错误，请重试", {icon: 2});
+                    },
+                    complete() {
+                        layer.close(load_index)
                     }
-                    console.log(res);
-                    layer.msg(res.msg, {icon: 2});
-                });
+                })
+
                 return false
             });
         }

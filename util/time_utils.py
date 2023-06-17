@@ -5,6 +5,8 @@ from typing import Optional
 import pytz
 from pytz import UTC
 
+from util import utils
+
 TIME_ZONE_ASIA_SHANG_HAI = timezone(
     timedelta(hours=8),
     name='Asia/Shanghai',
@@ -50,7 +52,7 @@ def convert_date(t_str: str) -> Optional[datetime]:
 
 
 def convert_time(t_str: str, fmt: str = DATE_TIME_FORMAT) -> Optional[datetime]:
-    if t_str is None or len(str) == 0:
+    if utils.str_is_null(t_str):
         return None
     try:
         return datetime.strptime(t_str, fmt)
@@ -65,8 +67,10 @@ def get_utc_time() -> datetime:
     return datetime.now(tz=utc_tz)
 
 
-def fmt_datetime(t: datetime):
-    return t.strftime(DATE_TIME_FORMAT)
+def fmt_datetime(t: datetime, fmt: Optional[str] = DATE_TIME_FORMAT):
+    if fmt is None:
+        return t.strftime(DATE_TIME_FORMAT)
+    return t.strftime(fmt)
 
 
 def get_ymd_tuple(cur_time: datetime):

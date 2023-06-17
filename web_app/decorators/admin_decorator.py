@@ -3,6 +3,7 @@ import logging
 
 from django.http import HttpRequest
 
+from util import utils
 from util.restful import RestResponse
 from web_app.model.users import User
 
@@ -20,6 +21,11 @@ def log_func(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
         logging.info(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> {func.__name__} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        if args is not None and len(args) > 0:
+            request = args[0]
+            if isinstance(request, HttpRequest):
+                body = utils.request_body(request)
+                logging.info("body = %s", body)
         return func(*args, **kw)
 
     return wrapper
@@ -32,7 +38,7 @@ def op_admin(func):
         if isinstance(request, HttpRequest):
             logging.debug(f"admin 权限拦截器, 处理函数 {func.__name__}")
             user = request.session.get('user')
-            if user is None or not user.is_admin:
+            if user is None or not user.get('is_admin'):
                 return RestResponse.failure("非管理员无法操作")
 
         return func(*args, **kw)

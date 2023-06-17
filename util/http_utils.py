@@ -107,3 +107,16 @@ def ret_add_res(query, cls):
         result['msg'] = "添加数据失败"
 
     return JsonResponse(result)
+
+
+def check_user_id(user_id) -> bool:
+    if user_id is None:
+        return False
+
+    if utils.str_is_null(user_id):
+        return False
+
+    if not str(user_id).isdigit():
+        return False
+
+    return int(user_id) > 0

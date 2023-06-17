@@ -1,19 +1,18 @@
 import logging
 import os
 import uuid
-from pathlib import Path
-from typing import Optional, List
+from typing import List
 
-from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
+from django.http import HttpRequest, HttpResponse, FileResponse
+from django.utils.encoding import escape_uri_path
 from django.views.decorators.csrf import csrf_exempt
 
-from util import utils, time_utils, excel_util
+from util import utils, time_utils, excel_util, http_utils
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
 from web_app.dao import account_dao, user_dao
-from web_app.decorators.admin_decorator import log_func
+from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.accounts import AccountId
 from web_app.model.users import User
 from web_app.settings import BASE_DIR
@@ -37,9 +36,12 @@ def account_id_list(request: HttpRequest):
     return RestResponse.success_list(count=count, data=res)
 
 
+@log_func
+@api_op_user
 def account_id_add(request: HttpRequest):
-    if request.method != "POST":
-        return RestResponse.failure("must use post")
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("添加失败，未获取到登录用户信息")
 
     body = utils.request_body(request)
     account_id = body.get("account_id", "")
@@ -48,10 +50,6 @@ def account_id_add(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
-
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.failure("添加失败，操作用户不存在")
 
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
@@ -62,18 +60,22 @@ def account_id_add(request: HttpRequest):
     AccountId.objects.create(
         account_id=account_id, country=country, age=age,
         work=work, money=money, mark=mark,
-        op_user_id=user.id
+        op_user_id=user_id,
+        create_time=time_utils.get_now_bj_time(),
+        update_time=time_utils.get_now_bj_time()
     )
 
     return RestResponse.success("添加成功")
 
 
+@log_func
+@api_op_user
 def account_id_update(request: HttpRequest):
-    if request.method != "POST":
-        return RestResponse.failure("must use post")
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("修改失败，未获取到登录用户信息")
 
     body = utils.request_body(request)
-    key_id = body.get('id', 0)
     account_id = body.get("account_id", "")
     country = body.get("country", "")
     age = body.get("age", 0)
@@ -84,10 +86,6 @@ def account_id_update(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("修改失败，a_id不能为空")
 
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.failure("修改失败，操作用户不存在")
-
     query = AccountId.objects.filter(account_id=account_id)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
@@ -95,18 +93,23 @@ def account_id_update(request: HttpRequest):
     query.update(
         country=country, age=age,
         work=work, money=money, mark=mark,
-        op_user_id=user.id
+        op_user_id=int(user_id),
+        update_time=time_utils.get_now_bj_time()
     )
 
     return RestResponse.success("更新成功")
 
 
 @log_func
+@api_op_user
+@op_admin
 def account_id_del(request: HttpRequest):
-    if request.method != "POST":
-        return RestResponse.failure("must use post")
-
     body = utils.request_body(request)
+    logging.info("删除ID账号#body = %s", body)
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("删除失败，未获取到登录用户信息")
+    a_id = body.get('id', "")
     account_id = body.get('account_id', "")
     logging.info("account_id_del#a_id = %s", account_id)
     if utils.str_is_null(account_id):
@@ -117,6 +120,7 @@ def account_id_del(request: HttpRequest):
 
 
 @log_func
+@api_op_user
 def account_id_upload(request: HttpRequest):
     if request.method != "POST":
         return RestResponse.failure("must use post")
@@ -127,19 +131,24 @@ def account_id_upload(request: HttpRequest):
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
 
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.failure("上传失败，操作用户不存在")
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("上传，未获取到登录用户信息")
 
     query = AccountId.objects.filter(account_id=a_id)
     if query.exists():
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
 
-    AccountId.objects.create(account_id=a_id, op_user_id=user.id)
+    AccountId.objects.create(
+        account_id=a_id, op_user_id=int(user_id),
+        create_time=time_utils.get_now_bj_time(),
+        update_time=time_utils.get_now_bj_time()
+    )
     return RestResponse.success("上传成功")
 
 
 @log_func
+@api_op_user
 def account_id_batch_upload(request: HttpRequest):
     if request.method != "POST":
         return RestResponse.failure("must use post")
@@ -149,9 +158,9 @@ def account_id_batch_upload(request: HttpRequest):
     if not f:
         return RestResponse.failure("上传失败，数据传输异常")
 
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.failure("上传失败，操作用户不存在")
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("上传，未获取到登录用户信息")
 
     logging.info("batch_upload = %s", f)
     logging.info("account_id_batch_upload#name = %s", filename)
@@ -188,7 +197,11 @@ def account_id_batch_upload(request: HttpRequest):
     logging.info("account_id_batch_upload#data_list 2 = %s", len(data_list))
     db_data_list = []
     for data in data_list:
-        db_data_list.append(AccountId(account_id=data, op_user_id=user.id))
+        db_data_list.append(AccountId(
+            account_id=data, op_user_id=int(user_id),
+            create_time=time_utils.get_now_bj_time(),
+            update_time=time_utils.get_now_bj_time()
+        ))
     AccountId.objects.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={
         'exists_ids': exists_list,
@@ -198,10 +211,11 @@ def account_id_batch_upload(request: HttpRequest):
 
 @csrf_exempt
 @log_func
+@api_op_user
 def account_id_export(request):
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return HttpResponse("未登录或无权限操作")
+    user_id = request.session.get('user_id')
+    if not http_utils.check_user_id(user_id):
+        return RestResponse.failure("导出，未获取到登录用户信息")
 
     query_list = list(AccountId.objects.all())
     logging.info("export id # 数据大小 = %s", len(query_list))
@@ -225,11 +239,11 @@ def account_id_export(request):
     file_path = excel_util.create_excel(excel_list, temp_path)
     logging.info("export_id#生成临时Excel文件成功，文件 = %s", file_path)
     if not file_path:
-        return HttpResponse("表格生成失败")
+        return HttpResponse(status=404, content="下载失败，创建excel失败")
 
     file = open(file_path, 'rb')
     file_name = os.path.basename(file_path)
-    response = StreamingHttpResponse(file)
+    response = FileResponse(file)
     response['Content-Type'] = 'application/octet-stream'
-    response['Content-Disposition'] = 'attachment;filename="' + str(file_name) + '"'
+    response['Content-Disposition'] = 'attachment;filename="' + escape_uri_path(file_name) + '"'
     return response
