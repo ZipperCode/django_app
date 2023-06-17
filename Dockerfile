@@ -12,7 +12,7 @@ ENV PYTHON_VERSION 3.9.1
 ENV IN_DOCKER 1
 
 # CMD [ "python3" , "--version"]
-RUN apt-get clean && apt-get update
+RUN apt-get update
 # 安装netcat
 RUN apt install -y netcat-traditional
 RUN apt install -y gcc && apt install -y python3-dev
