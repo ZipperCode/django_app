@@ -14,7 +14,7 @@ ENV IN_DOCKER 1
 # CMD [ "python3" , "--version"]
 RUN apt-get clean && apt-get update
 # 安装netcat
-RUN apt install -y netcat
+RUN apt install -y netcat-traditional
 RUN apt install -y gcc && apt install -y python3-dev
 
 # 设置 python 环境变量
