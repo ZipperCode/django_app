@@ -19,13 +19,13 @@ logging.basicConfig(
 
 class LoginMiddleware(MiddlewareMixin):
     def process_request(self, request: HttpRequest):
-        # logging.info("login拦截器，request => path = %s", str(request.path))
-        user = {
-            'username': 'admin',
-            'name': 'admin',
-            'is_admin': True
-        }
-        request.session['user'] = user
+        logging.info("拦截器，request => path = %s", str(request.path))
+        # user = {
+        #     'username': 'admin',
+        #     'name': 'admin',
+        #     'is_admin': True
+        # }
+        # request.session['user'] = user
 
         u = request.session.get('user')
         if u is not None:
@@ -44,18 +44,19 @@ class LoginMiddleware(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
         p = str(request.path)
         logging.info("login拦截器，view => path = %s", p)
-        # 非登录接口，且需要跳转到授权接口
-        # if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
-        #     if not request.session.get('user', None):
-        #         return views.login_view(request)
         if p.find('/media/') != -1:
             return None
+        # 非登录接口，且需要跳转到授权接口
+        if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
+            logging.info("拦截器，当前路径需要判断用户 user = %s", request.session.get('user'))
+            if not request.session.get('user', None):
+                return views.login_view(request)
+
         return view_func(request)
 
     def process_exception(self, request, exception):
         logging.info("拦截器, exception => ")
         return RestResponse.failure("发生错误, " + str(exception))
-
 
     def process_template_response(self, request):
         logging.info("login拦截器, template => 404")

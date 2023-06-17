@@ -47,7 +47,7 @@ def login_view(request: HttpRequest):
         if not User.objects.filter(username='admin').exists():
             User.objects.create(
                 username='admin',
-                password=md5("admin".encode()).digest().hex(), is_admin=True,
+                password=md5("admin".encode()).digest().hex().lower(), is_admin=True,
                 name="Admin"
             )
     except BaseException:

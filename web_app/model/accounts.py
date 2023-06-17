@@ -28,7 +28,7 @@ class AccountId(models.Model):
 
 class AccountQr(models.Model):
     id = models.AutoField(primary_key=True)
-    qr_content = models.TextField("二维码内容", max_length=1000, unique=True)
+    qr_content = models.TextField("二维码内容")
     # 图片上传后保存到一个目录中，后续就根据路径去拿图片
     qr_path = models.FileField("二维码图片路径", null=True, max_length=255, upload_to="upload/%Y_%m_%d/")
     country = models.CharField("国家", max_length=100, null=True)

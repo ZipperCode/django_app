@@ -73,8 +73,13 @@ def login(request: HttpRequest):
         return RestResponse.failure("登录失败，账号或密码错误")
     else:
         user = query.first()
-    user.password = ''
-    return RestResponse.success(data=user)
+    request.session['user'] = {
+        'id': user.id,
+        'username': user.username,
+        'name': user.name,
+        'is_admin': user.is_admin
+    }
+    return RestResponse.success("登录成功")
 
 
 @log_func
