@@ -26,7 +26,7 @@ def get_qr_code(path: str):
             logging.info("未找到二维码")
             return None
     except Exception as e:
-        logging.info("解析二维码失败，path = %s, %s", path, traceback.format_exc(e))
+        logging.info("解析二维码失败，path = %s, %s", path, str(e))
         return None
 
 
