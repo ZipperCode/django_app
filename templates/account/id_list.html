@@ -54,10 +54,12 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">范围日期</label>
                     <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss" name="date_start">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_start">
                     </div>
                     <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss" name="date_end">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_end">
                     </div>
                 </div>
                 {% if request.session.user.is_admin %}
@@ -70,14 +72,14 @@
                         </div>
                     </div>{% endcomment %}
                     <div class="layui-inline">
-                    <label class="layui-form-label">上传人</label>
-                    <div class="layui-input-inline">
-                        <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
-                               lay-verify="op_username"
-                               class="layui-input"/>
-                    </div>
+                        <label class="layui-form-label">上传人</label>
+                        <div class="layui-input-inline">
+                            <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
+                                   lay-verify="op_username"
+                                   class="layui-input"/>
+                        </div>
 
-                </div>
+                    </div>
                 {% endif %}
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
@@ -318,10 +320,16 @@
                 handleDel(obj);
             } else if (layEvent === 'copy') {
                 const text = obj.data.account_id
-                if (navigator.clipboard) {
+                {% comment %}if (navigator.clipboard) {
                     navigator.clipboard.writeText(text);
-                    layer.msg("复制成功，内容为：" + text, {icon: 6});
-                }
+                }{% endcomment %}
+                const copyipt = document.createElement("input");
+                copyipt.setAttribute("value", text);
+                document.body.appendChild(copyipt);
+                copyipt.select();
+                document.execCommand("copy");
+                document.body.removeChild(copyipt);
+                layer.msg("复制成功，内容为：" + text, {icon: 6});
             }
         });
 

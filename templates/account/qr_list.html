@@ -61,7 +61,7 @@
                     </div>
                 </div>
                 {% if request.session.user.is_admin %}
-                   {% comment %} <div class="layui-inline">
+                    {% comment %} <div class="layui-inline">
                         <label class="layui-form-label">上传人</label>
                         <div class="layui-input-inline">
                             <select name="op_user_select" lay-search="">
@@ -70,11 +70,12 @@
                         </div>
                     </div>{% endcomment %}
                     <div class="layui-inline">
-                    <label class="layui-form-label">上传人</label>
-                    <div class="layui-input-inline">
-                        <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
-                               lay-verify="op_username"
-                               class="layui-input"/>
+                        <label class="layui-form-label">上传人</label>
+                        <div class="layui-input-inline">
+                            <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
+                                   lay-verify="op_username"
+                                   class="layui-input"/>
+                        </div>
                     </div>
                 {% endif %}
 
@@ -354,10 +355,18 @@
                 handleDel(obj);
             } else if (layEvent === 'copy') {
                 const text = obj.data.qr_content
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text);
-                    layer.msg("复制成功，内容为：" + text, {icon: 6});
-                }
+                {% comment %}if (navigator.clipboard) {
+                     navigator.clipboard.writeText(text);
+                 } else {
+
+                 }{% endcomment %}
+                const copyipt = document.createElement("input");
+                copyipt.setAttribute("value", text);
+                document.body.appendChild(copyipt);
+                copyipt.select();
+                document.execCommand("copy");
+                document.body.removeChild(copyipt);
+                layer.msg("复制成功，内容为：" + text, {icon: 6});
             } else if (layEvent === 'preview') {
                 previewImg(obj);
             } else {
