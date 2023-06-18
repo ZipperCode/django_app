@@ -138,6 +138,7 @@ def account_qr_upload(request: HttpRequest):
     logging.info("account_id_batch_upload#new_file_name = %s", ext)
     temp_path = os.path.join(TEMP_DIR, new_file_name)
     path = handle_uploaded_file(temp_path, f)
+    logging.info("上传图片，临时文件为 = %s", temp_path)
     if not path or not os.path.exists(temp_path):
         return RestResponse.failure("上传失败，保存临时文件失败")
 
