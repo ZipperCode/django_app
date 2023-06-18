@@ -1,5 +1,6 @@
 import logging
 import os.path
+import traceback
 
 import zxing
 
@@ -11,6 +12,7 @@ logging.basicConfig(
 
 def get_qr_code(path: str):
     if not os.path.exists(path):
+        logging.info("解析二维码，路径不存在")
         return None
     reader = zxing.BarCodeReader()
     try:
@@ -23,8 +25,8 @@ def get_qr_code(path: str):
         else:
             logging.info("未找到二维码")
             return None
-    except Exception:
-        logging.info("解析二维码失败，path = %s", path)
+    except Exception as e:
+        logging.info("解析二维码失败，path = %s, %s", path, traceback.format_exc(e))
         return None
 
 
