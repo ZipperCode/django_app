@@ -241,19 +241,19 @@
             cellMinWidth: 80,
             cols: [[
                 {type: 'checkbox', fixed: 'left'},
-                {field: 'id', title: '编号', width: 80, align: 'center'},
+                {field: 'id', title: '编号', width: 70, align: 'center'},
                 {field: 'account_id', title: 'ID', align: 'center'},
                 {field: 'country', title: '国家', align: 'center', sort: true},
                 {field: 'age', title: '年龄', align: 'center', sort: true},
                 {field: 'work', title: '工作', align: 'center', sort: true},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-                {field: 'mark', title: '备注', align: 'center'},
+
                 {% if request.session.user.is_admin %}
                     {field: 'op_user__username', title: '操作人', align: 'center', sort: true},
                 {% endif %}
-
-                {field: 'create_time', title: '创建时间', align: 'center', sort: true},
-                {field: 'update_time', title: '更新时间', width: 160, align: 'center', sort: true},
+                {field: 'mark', title: '备注', align: 'center'},
+                {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'update_time', title: '更新时间',  align: 'center', sort: true},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]],
             defaultToolbar: ['filter', 'exports']
@@ -266,7 +266,7 @@
             if (layEvent === 'upload') {
                 layer.open({
                     type: 1,
-                    area: ['400px', '300px'],
+                    area: ['400px', '350px'],
                     title: ['ID上传', 'text-align:center;'],
                     content: $("#addForm")
                 });

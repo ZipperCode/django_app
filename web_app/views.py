@@ -52,6 +52,10 @@ def login_view(request: HttpRequest):
             )
     except BaseException:
         pass
+
+    if request.session.get('user') is not None:
+        return render(request, 'index.html')
+
     return render(request, 'login.html')
 
 

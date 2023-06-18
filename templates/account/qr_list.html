@@ -163,8 +163,9 @@
     </div>
     <br/>
     <br/>
-    <br/>
     <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" id="btnBatchUpload">确认上传</button>
+    <br/>
+    <p style="align-content: center">若压缩包图片比较多，则需要多等待一会儿</p>
 </div>
 
 <div class="layui-row" id="editForm" style="display:none;">
@@ -270,19 +271,20 @@
             cellMinWidth: 80,
             cols: [[
                 {type: 'checkbox', fixed: 'left'},
-                {field: 'id', title: '编号', width: 80, align: 'center'},
-                {field: 'qr_content', title: 'ID', align: 'center'},
-                {field: 'qr_path', title: 'ID', align: 'center', templet: '#qr_image', event: 'preview'},
-                {field: 'country', title: '国家', align: 'center', sort: true},
-                {field: 'age', title: '年龄', align: 'center', sort: true},
+                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 240},
+                {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
+                {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 120},
+                {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
                 {field: 'work', title: '工作', align: 'center'},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-                {field: 'mark', title: '备注', align: 'center'},
+
                 {% if request.session.user.is_admin %}
-                    {field: 'op_user__username', title: '操作人', align: 'center', sort: true},
+                    {field: 'op_user__username', title: '操作人', align: 'center', sort: true, minWidth: 120},
                 {% endif %}
-                {field: 'create_time', title: '上传时间', align: 'center', sort: true},
-                {field: 'update_time', title: '更新时间', width: 160, align: 'center', sort: true},
+                {field: 'mark', title: '备注', align: 'center'},
+                {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]],
             defaultToolbar: ['filter', {
@@ -651,7 +653,7 @@
                     layer.msg("导出失败，" + this.status, {icon: 5})
                 }
             };
-            xhr.timeout = 1000 * 60 * 60 ; //将超时时间设置为1天
+            xhr.timeout = 1000 * 60 * 60; //将超时时间设置为1天
             xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
                 layer.msg("导出失败，请求超时", {icon: 5})
             }

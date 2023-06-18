@@ -22,7 +22,7 @@ from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful, account_qr_restful
 
 urlpatterns = [
-    path('.', views.login_view),
+    path('', views.login_view),
     path('view/auth/index', views.index_view),
     path('view/auth/console.html', views.console_view),
     path('view/auth/user/modify_pwd', views.modify_pwd),
@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/user_simple_list', user_restful.user_simple_list),
     path('api/user_add', user_restful.user_add),
     path('api/user_update', user_restful.user_update),
+    path('api/user_del', user_restful.user_del),
     path('api/account_id/list', account_restful.account_id_list),
     path('api/account_id/add', account_restful.account_id_add),
     path('api/account_id/update', account_restful.account_id_update),

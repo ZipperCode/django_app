@@ -231,6 +231,10 @@ def user_del(request: HttpRequest):
     query = User.objects.filter(q)
     if not query.exists():
         return RestResponse.failure("删除失败，记录不存在")
+
+    if query.filter(is_admin=True).exists():
+        return RestResponse.failure("删除失败，无法删除管理员")
+
     deleted, del_count = query.delete()
     return RestResponse.success(data={
         'deleted': deleted,

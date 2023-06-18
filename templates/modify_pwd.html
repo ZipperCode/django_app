@@ -112,7 +112,7 @@
                     $(item).focus();
                     return '密码必须6到12位';
                 }
-                if ($("#password_new").val() !== $(item).val()) {
+                if ($("input[name='password_new']").val() !== $(item).val()) {
                     $(item).focus();
                     return '两次输入密码不一致';
                 }

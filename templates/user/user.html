@@ -8,6 +8,7 @@
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+
 </head>
 <body>
 <div class="page-main scrollbar-inner">
@@ -42,6 +43,7 @@
 <script type="text/javascript" src="/static/admin/js/user_form.js"></script>
 <script type="text/javascript" src="/static/admin/js/utils.js"></script>
 <script type="text/javascript" src="/static/admin/js/admin.js"></script>
+<script type="text/javascript" src="/static/jquery/jquery-md5.js"></script>
 
 {% comment %} component {% endcomment %}
 {% if request.session.user.is_admin %}
@@ -51,7 +53,9 @@
     <script type="text/html" id="table_control">
         <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
         <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
+        {% verbatim %} {{# if(!d.is_admin) { }}{% endverbatim %}
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+        {% verbatim %} {{# } }}{% endverbatim %}
     </script>
 
 {% endif %}
@@ -255,13 +259,21 @@
 
         function initAddForm() {
             form.on('submit(addSubmit)', function (massage) {
+                let username = massage.field.username;
+                let password = $.md5(massage.field.password);
+                let name = massage.field.name
+
                 console.log(massage)
                 layer.load(1);
                 $.ajax({
                     url: '/api/user_add',
                     type: 'POST',
                     headers: headers,
-                    data: massage.field,
+                    data: {
+                        'username': username,
+                        'password': password,
+                        'name': name
+                    },
                     success: function (res) {
                         if (res.code >= 0) {
                             console.log("添加成功")
@@ -327,8 +339,10 @@
             console.log("modifyPwd data = %s", JSON.stringify(data));
             form.val("modifyPwdForm", {
                 id: data.id,
-                username: data.username
+                username: data.username,
             });
+            $("input[name='password_new']").val("")
+            $("input[name='password_new2']").val("")
 
             //自定义验证规则
             form.verify({
@@ -351,7 +365,7 @@
                         $(item).focus();
                         return '密码必须6到12位';
                     }
-                    if ($("#password_new").val() !== $(item).val()) {
+                    if ($("input[name='password_new']").val() !== $(item).val()) {
                         $(item).focus();
                         return '两次输入密码不一致';
                     }
@@ -362,6 +376,10 @@
                 console.log("data = ", massage.field)
                 const load_index = layer.load(0);
                 const uid = data.id;
+
+                let password_new = $.md5(massage.field.password_new);
+                let password_new2 = $.md5(massage.field.password_new2);
+
                 console.log("修改密码 id = ", data.id)
                 $.ajax({
                     url: '/api/admin/modify_pwd',
@@ -369,8 +387,8 @@
                     headers: headers,
                     data: {
                         'id': uid,
-                        'password_new': massage.field.password_new,
-                        'password_new2': massage.field.password_new2,
+                        'password_new': password_new,
+                        'password_new2': password_new2,
                     },
                     success: function (res) {
                         if (res.code === 0) {
