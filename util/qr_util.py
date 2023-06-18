@@ -1,5 +1,7 @@
 import logging
 import os.path
+import pathlib
+import subprocess
 import traceback
 
 import zxing
@@ -14,6 +16,25 @@ def get_qr_code(path: str):
     if not os.path.exists(path):
         logging.info("解析二维码，路径不存在")
         return None
+
+    cmd = [
+        'java',
+        '-cp',
+        '/usr/local/lib/python3.11/site-packages/zxing/java/*',
+        'com.google.zxing.client.j2se.CommandLineRunner',
+        pathlib.Path(path).absolute().as_uri()
+    ]
+    try:
+        try:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=False)
+        except OSError as e:
+            logging.info("track = %s", traceback.format_exc())
+        else:
+            stdout, stderr = p.communicate()
+            logging.info(stdout)
+            logging.info(stderr)
+    except BaseException as e:
+        logging.info("track = %s", traceback.format_exc())
     reader = zxing.BarCodeReader()
     try:
         logging.info("解析二维码，path = %s", path)
