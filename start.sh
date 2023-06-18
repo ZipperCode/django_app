@@ -22,6 +22,8 @@ else
 fi
 echo "create data dir success"
 
+java -version
+
 python3 manage.py collectstatic --noinput
 echo "exec migrate start======================================================================================"
 python3 manage.py makemigrations&&

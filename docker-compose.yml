@@ -36,7 +36,7 @@ services:
     volumes:
       - db_vol:/var/lib/mysql:rw # 挂载数据库数据, 可读可写
       - ./compose/mysql/conf/my.cnf:/etc/mysql/my.cnf # 挂载配置文件
-      #- ./compose/mysql/init:/docker-entrypoint-initdb.d/ # 挂载数据初始化sql脚本
+      - ./compose/mysql/init:/docker-entrypoint-initdb.d/ # 挂载数据初始化sql脚本
     ports:
       - "3306:3306" # 与配置文件保持一致 外部端口
     restart: always

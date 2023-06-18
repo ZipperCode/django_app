@@ -11,11 +11,21 @@ ENV LANG C.UTF-8
 ENV PYTHON_VERSION 3.9.1
 ENV IN_DOCKER 1
 
+ADD jdk-11.0.1_linux-x64_bin.tar.gz /usr/local/java
+
+# RUN tar -czvf /usr/local/jdk-11.0.1_linux-x64_bin.tar.gz /usr/local/java
+
+ENV JAVA_HOME /usr/local/java/jdk-11.0_1
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+ENV PATH $PATH:$JAVA_HOME/bin
+RUN ln -s /usr/local/java/jdk-11.0.1/bin/java /usr/bin/java
+
 # CMD [ "python3" , "--version"]
 RUN apt-get update
 # 安装netcat
 RUN apt install -y netcat-traditional
 RUN apt install -y gcc && apt install -y python3-dev
+RUN apt-get install -y vim
 
 # 设置 python 环境变量
 ENV PYTHONDONTWRITEBYTECODE 1
