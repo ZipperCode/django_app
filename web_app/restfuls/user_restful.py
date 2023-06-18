@@ -147,7 +147,7 @@ def user_list(request: HttpRequest):
     user_query = User.objects
 
     if not utils.str_is_null(username):
-        user_query = user_query.filter(username=username)
+        user_query = user_query.filter(username__contains=username  )
 
     query = user_query.values(
         'id', 'username', 'name', 'is_admin', 'create_time', 'update_time'

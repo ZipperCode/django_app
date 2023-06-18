@@ -31,7 +31,7 @@ def create_excel(in_data_list: List[ExcelBean], out_dir):
     try:
         book = Workbook()
         sheet: Optional[Worksheet] = book.active
-        sheet.append(['ID', '城市', '年龄', '工作', '收入', '备注', '操作人', '上传时间'])
+        sheet.append(['ID', '城市', '年龄', '工作', '收入', '备注', '上传人', '上传时间'])
         r = sheet.row_dimensions[1]
         r.font = Font(bold=True)
         now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
@@ -54,7 +54,7 @@ excel2_header_options = [
     {'title': '工作', 'col_width': 10, },
     {'title': '收入', 'col_width': 10, },
     {'title': '备注', 'col_width': 30, },
-    {'title': '操作人', 'col_width': 10, },
+    {'title': '上传人', 'col_width': 10, },
     {'title': '上传时间', 'col_width': 10, },
 ]
 

@@ -32,11 +32,15 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">国家</label>
                     <div class="layui-input-inline">
-                        <input type="text" placeholder="请输入国家" name="country" autocomplete="off"
-                               lay-verify="country"
-                               class="layui-input"/>
+                        <select name="country">
+                            <option value="">请选择</option>
+                            <option value="日本">日本</option>
+                            <option value="意大利">意大利</option>
+                            <option value="英国">英国</option>
+                            <option value="美国">美国</option>
+                            <option value="法国">法国</option>
+                        </select>
                     </div>
-
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">备注</label>
@@ -50,21 +54,30 @@
                 <div class="layui-inline">
                     <label class="layui-form-label">范围日期</label>
                     <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_start">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss" name="date_start">
                     </div>
                     <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd" name="date_end">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss" name="date_end">
                     </div>
                 </div>
                 {% if request.session.user.is_admin %}
-                    <div class="layui-inline">
+                    {% comment %}<div class="layui-inline">
                         <label class="layui-form-label">上传人</label>
                         <div class="layui-input-inline">
                             <select name="op_user_select" lay-search="">
                                 <option value="">直接选择或搜索选择</option>
                             </select>
                         </div>
+                    </div>{% endcomment %}
+                    <div class="layui-inline">
+                    <label class="layui-form-label">上传人</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
+                               lay-verify="op_username"
+                               class="layui-input"/>
                     </div>
+
+                </div>
                 {% endif %}
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
@@ -156,12 +169,18 @@
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label required">国家</label>
-                <div class="layui-input-block required">
-                    <input type="text" name="country"
-                           required
-                           autocomplete="off" placeholder="请输入国家" class="layui-input">
+                <label class="layui-form-label">国家</label>
+                <div class="layui-input-inline">
+                    <select name="country">
+                        <option value="">请选择</option>
+                        <option value="日本">日本</option>
+                        <option value="意大利">意大利</option>
+                        <option value="英国">英国</option>
+                        <option value="美国">美国</option>
+                        <option value="法国">法国</option>
+                    </select>
                 </div>
+
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label required">年龄</label>
@@ -217,11 +236,11 @@
 
         lay('.test-item').each(function () {
             const date = new Date()
-            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
             laydate.render({
                 elem: this,
-                type: 'date',
-                min: '2023-1-1',
+                type: 'datetime',
+                min: '2023-1-1 00:00:00',
                 max: max
                 , trigger: 'click'
             });
@@ -249,11 +268,11 @@
                 {field: 'money', title: '收入', align: 'center', sort: true},
 
                 {% if request.session.user.is_admin %}
-                    {field: 'op_user__username', title: '操作人', align: 'center', sort: true},
+                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
                 {% endif %}
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
-                {field: 'update_time', title: '更新时间',  align: 'center', sort: true},
+                {field: 'update_time', title: '更新时间', align: 'center', sort: true},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]],
             defaultToolbar: ['filter', 'exports']
@@ -528,7 +547,7 @@
                             for (let i = 0; i < data.length; i++) {
                                 let item = data[i];
                                 selectElements.eq(j).append(
-                                    `<option value="${item.id}">${item.name ?? item.username}</option>`
+                                    `<option value="${item.id}">${item.username}</option>`
                                 );
                             }
                         }
