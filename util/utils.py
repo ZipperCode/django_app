@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import os
+import traceback
 import zipfile
 from datetime import datetime
 from typing import Iterable
@@ -195,7 +196,7 @@ def handle_uploaded_file(path, f):
     try:
         parent_path = os.path.dirname(path)
         if not os.path.exists(parent_path):
-            os.makedirs(parent_path)
+            os.makedirs(parent_path, 755)
 
         if os.path.exists(path):
             os.remove(path)
@@ -205,6 +206,7 @@ def handle_uploaded_file(path, f):
                 destination.write(chunk)
             return path
     except Exception:
+        logging.info("trace = %s", traceback.format_exc())
         return None
 
 

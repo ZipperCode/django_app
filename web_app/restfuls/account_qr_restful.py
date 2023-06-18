@@ -138,12 +138,12 @@ def account_qr_upload(request: HttpRequest):
     logging.info("account_id_batch_upload#new_file_name = %s", ext)
     temp_path = os.path.join(TEMP_DIR, new_file_name)
     path = handle_uploaded_file(temp_path, f)
-    if not path:
+    if not path or not os.path.exists(temp_path):
         return RestResponse.failure("上传失败，保存临时文件失败")
 
     # 识别图片
     parsed = qr_util.get_qr_code(temp_path)
-    os.remove(temp_path)
+    # os.remove(temp_path)
     logging.info("account_qr_upload#parsed = %s", parsed)
     if not parsed:
         return RestResponse.failure("上传失败，无法解析二维码")
