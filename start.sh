@@ -11,6 +11,8 @@ while ! nc -z db 3306 ; do
     sleep 3
 done
 echo "start sql success "
+chmod 777 /tmp
+
 dir="$(pwd)/data"
 if [ ! -d "$dir" ];then
   mkdir "$dir"
@@ -20,6 +22,17 @@ else
   chmod 777 -R "$dir"
   echo "$dir 文件夹已经存在"
 fi
+
+media_dir="$(pwd)/media"
+if [ ! -d "$media_dir" ];then
+  mkdir "$media_dir"
+  chmod 777 -R "$media_dir"
+  echo "$media_dir 文件夹创建成功"
+else
+  chmod 777 -R "$media_dir"
+  echo "$media_dir 文件夹已经存在"
+fi
+
 echo "create data dir success"
 
 java -version
