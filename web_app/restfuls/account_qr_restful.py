@@ -4,12 +4,10 @@ import os
 import shutil
 import uuid
 import zipfile
-from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import transaction, DatabaseError
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse, FileResponse
+from django.http import HttpRequest, HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 
 from util import utils, qr_util, time_utils, excel_util
@@ -19,7 +17,6 @@ from util.utils import handle_uploaded_file
 from web_app.dao import account_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
-from web_app.forms.upload_form import UploadFileForm
 from web_app.model.accounts import AccountId, AccountQr
 from web_app.model.users import User
 from web_app.settings import BASE_DIR, MEDIA_ROOT
@@ -218,13 +215,22 @@ def account_qr_batch_upload(request: HttpRequest):
     c_qr_image = {}
     t_fm = time_utils.fmt_datetime(time_utils.get_now_bj_time(), "%Y_%m_%d")
     t_dir = f"upload/{t_fm}/"
+    executor = ThreadPoolExecutor(max_workers=30)
+
+    thread_task = []
     for img in img_file_name_list:
         i_path = os.path.join(zip_dir, img)
         if not os.path.exists(i_path):
             logging.info("遍历zip解压后的图片，不存在当前文件 path = %s", i_path)
             continue
-        parsed = qr_util.get_qr_code(i_path)
-        logging.info("解析zip解压后的图片, path = %s，parsed = %s", i_path, parsed)
+
+        task = executor.submit(qr_util.get_qr_code, i_path)
+        thread_task.append((i_path, task))
+        logging.info("解析zip解压后的图片, path = %s", i_path)
+
+    for i_path, t in thread_task:
+        parsed = t.result()
+        logging.info("线程任务完成，parsed = %s", parsed)
         if not parsed:
             continue
         db_path = t_dir + str(uuid.uuid4()) + str(os.path.splitext(name)[-1])

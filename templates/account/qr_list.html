@@ -422,6 +422,7 @@
         }
 
         function initUpload() {
+            let layerId = 0
             const batchUpload = upload.render({
                 elem: '#upload',
                 url: '/api/account_qr/upload',
@@ -436,7 +437,7 @@
                 size: 4096,
                 bindAction: '#btnUpload',
                 before: function (obj) {
-                    layer.load()
+                    layerId = layer.load()
                     console.log("upload before");
                 },
                 choose: function (obj) {
@@ -452,11 +453,12 @@
                 done: function (res, index, upload) {
                     console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
                     if (res.code < 0) {
-                        layer.closeAll('loading');
+                        layer.close(layerId);
                         layer.msg(res.msg, {icon: 5})
                         return
                     }
-                    layer.closeAll();//关闭所有的弹出层
+                    layer.close(layerId);
+                    // layer.closeAll();//关闭所有的弹出层
                     table.reload('list', {
                         page: {
                             curr: 1 //重新从第 1 页开始
@@ -468,7 +470,8 @@
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
                     layer.msg("上传失败，请重试", {icon: 5})
-                    layer.closeAll('loading');
+                    // layer.closeAll('loading');
+                    layer.close(layerId);
                 }
             });
 
@@ -486,6 +489,7 @@
         }
 
         function initBatchUpload() {
+            let layerId = 0;
             const batchUpload = upload.render({
                 elem: '#batchUpload',
                 url: '/api/account_qr/bat_upload',
@@ -497,7 +501,7 @@
                 size: 50 * 1024,
                 bindAction: '#btnBatchUpload',
                 before: function (obj) {
-                    layer.load()
+                    layerId = layer.load()
                     console.log("upload before");
                 },
                 choose: function (obj) {
@@ -514,11 +518,13 @@
                 done: function (res, index, upload) {
                     console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
                     if (res.code < 0) {
-                        layer.closeAll('loading');
+                        layer.close(layerId);
+                        // layer.closeAll('loading');
                         layer.msg(res.msg, {icon: 5})
                         return
                     }
-                    layer.closeAll();//关闭所有的弹出层
+                    layer.close(layerId);
+                    // layer.closeAll();//关闭所有的弹出层
                     table.reload('list', {
                         page: {
                             curr: 1 //重新从第 1 页开始
@@ -529,7 +535,8 @@
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
                     layer.msg("上传失败，请重试", {icon: 5})
-                    layer.closeAll('loading');
+                    // layer.closeAll('loading');
+                    layer.close(layerId);
                 }
             });
 

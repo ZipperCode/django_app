@@ -76,21 +76,26 @@ def account_id_update(request: HttpRequest):
         return RestResponse.failure("修改失败，未获取到登录用户信息")
 
     body = utils.request_body(request)
+    a_id = body.get('id')
     account_id = body.get("account_id", "")
+    if utils.str_is_null(a_id) or not utils.is_int(a_id):
+        return RestResponse.failure("修改失败，主键为空或异常")
+
+    if utils.str_is_null(account_id):
+        return RestResponse.failure("修改失败，a_id不能为空")
+
     country = body.get("country", "")
     age = body.get("age", 0)
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
 
-    if utils.str_is_null(account_id):
-        return RestResponse.failure("修改失败，a_id不能为空")
-
-    query = AccountId.objects.filter(account_id=account_id)
+    query = AccountId.objects.filter(id=int(a_id))
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
     query.update(
+        account_id=account_id,
         country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=int(user_id),

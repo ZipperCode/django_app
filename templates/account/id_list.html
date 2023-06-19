@@ -167,7 +167,7 @@
             <div class="layui-form-item">
                 <label class="layui-form-label required">ID</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="account_id" disabled="disabled" class="layui-input">
+                    <input type="text" name="account_id" lay-verify="account_id" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -349,9 +349,13 @@
         initSearchForm();
 
         function initAddForm() {
+            form.val("addForm", {
+                account_id: "",
+            });
+
             form.on('submit(addSubmit)', function (massage) {
                 console.log(massage)
-                layer.load();
+                const load_index = layer.load();
                 $.ajax({
                     url: '/api/account_id/upload',
                     type: 'POST',
@@ -369,11 +373,13 @@
                             }, 1000);
                         } else {
                             layer.msg(res.msg, {icon: 5})
+                            layer.close(load_index)
                         }
                     },
                     error: function () {
                         layer.msg("请求失败", {icon: 5})
-                    },
+                        layer.close(load_index)
+                    }
                 });
                 return false
             })
@@ -381,6 +387,7 @@
         }
 
         function initBatchUpload() {
+            let layerId = 0
             const batchUpload = upload.render({
                 elem: '#batchUpload',
                 url: '/api/account_id/bat_upload',
@@ -395,7 +402,7 @@
                 size: 30,
                 bindAction: '#btnBatchUpload',
                 before: function (obj) {
-                    layer.load()
+                    layerId = layer.load()
                     console.log("upload before");
                 },
                 choose: function (obj) {
@@ -412,11 +419,13 @@
                 done: function (res, index, upload) {
                     console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
                     if (res.code < 0) {
-                        layer.closeAll('loading');
+                        // layer.closeAll('loading');
+                        layer.close(layerId)
                         layer.msg(res.msg, {icon: 5})
                         return
                     }
-                    layer.closeAll();//关闭所有的弹出层
+                    // layer.closeAll();//关闭所有的弹出层
+                    layer.close(layerId)
                     table.reload('list', {
                         page: {
                             curr: 1 //重新从第 1 页开始
@@ -429,7 +438,8 @@
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
                     layer.msg("上传失败，请重试", {icon: 5})
-                    layer.closeAll('loading');
+                    // layer.closeAll('loading');
+                    layer.close(layerId)
                 }
             });
         }
@@ -449,6 +459,14 @@
                 mark: data.mark,
             });
 
+            form.verify({
+                account_id: function (value, item) {
+                    if (!/^.+$/.test(value)) {
+                        $(item).focus();
+                        return 'ID不能为空';
+                    }
+                }
+            });
             form.on('submit(editSubmit)', function (massage) {
                 console.log("updatw = massage", massage)
                 layer.load(1);
@@ -456,10 +474,7 @@
                     url: '/api/account_id/update',
                     type: 'POST',
                     headers: headers,
-                    data: {
-                        id: data.id,
-                        ...massage.field
-                    },
+                    data: massage.field,
                     success: function (res) {
                         if (res.code >= 0) {
                             console.log("修改成功")
