@@ -352,7 +352,7 @@ function changePage(item , hover) {
 
 //打开页面
 var pageCount = 0;
-function pageOpen(item) {
+    function pageOpen(item) {
     var id = item.data('id');
     var title = item.data('title') || item.find('span').text();
     var url = item.data('url') || item.attr('href') || false;
@@ -389,6 +389,7 @@ function pageOpen(item) {
         pageItem.addClass('on');
         changePage(pageItem);
     }
+    console.log("refresh = %s", refresh);
     if (refresh) {
         pageBody.attr({'src': url})
     }
