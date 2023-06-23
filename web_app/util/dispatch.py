@@ -1,22 +1,27 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 from util import time_utils
 from web_app.model.users import USER_ROLE_BUSINESS, User
 
 
-def get_user_ids() -> Tuple[list, int]:
+def get_business_user_ids() -> Tuple[list, int]:
     u_ids = list(map(lambda x: x.get('id'), list(User.objects.filter(role=USER_ROLE_BUSINESS).values('id'))))
     len_ids = len(u_ids)
     return u_ids, len_ids
 
 
-def get_account_list(objects) -> Tuple[list, int]:
+def get_account_list(objects, is_all: bool = False) -> Tuple[list, int]:
     cur_start_t, cur_end_t = time_utils.get_cur_day_time_range()
+    filter_filed = {
+        'is_bind': False
+    }
+    if not is_all:
+        filter_filed['create_time__gte'] = cur_start_t
+        filter_filed['create_time__lt'] = cur_end_t
+
     query_list = list(
-        objects.filter(
-            used=False, create_time__gte=cur_start_t, create_time__lt=cur_end_t
-        ).all()
+        objects.filter(**filter_filed).all()
     )
     return list(map(lambda x: int(x.id), query_list)), len(query_list)
 
@@ -48,3 +53,10 @@ def dispatcher_user(ids_: List[int], u_ids: List[int], div_num: int, mod_num: in
             _id = ids_[a_index]
             a_index += 1
             func(u_id, _id)
+
+
+def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, int], func):
+    logging.info("dispatcher2#分发处理， ids = %s", ids)
+    logging.info("dispatcher2#分发处理， u_ids = %s", u_ids)
+    logging.info("dispatcher2#分发处理， user_num_map = %s", user_num_map)
+

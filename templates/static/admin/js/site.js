@@ -367,6 +367,7 @@ function pageOpen(item) {
     }
     var pageBody = $("#page-body" + id);  //页面
     var pageItem = $("#page-item" + id);  //菜单
+    let refresh = false
     if(pageBody.length == 0 && pageItem.length == 0){  //如果不存在 就增加
         pageBody = $('<iframe>');
         pageBody.attr({'src' : url , 'id' : 'page-body' + id});
@@ -378,6 +379,8 @@ function pageOpen(item) {
         $(".admin-body").append(pageBody);
         pageItem = addPageItem(id , title , is_default);
         NProgress.configure({parent : '.admin-body'}).start();
+    } else {
+        refresh = true;
     }
     if(pageBody.hasClass('on') == false){   //没有被选中
         $(".admin-body").find('.on').removeClass('on');
@@ -386,7 +389,9 @@ function pageOpen(item) {
         pageItem.addClass('on');
         changePage(pageItem);
     }
-
+    if (refresh) {
+        pageBody.attr({'src': url})
+    }
 }
 
 

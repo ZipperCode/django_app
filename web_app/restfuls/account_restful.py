@@ -1,8 +1,11 @@
 import logging
 import os
+import traceback
 import uuid
 from typing import List
 
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 from django.views.decorators.csrf import csrf_exempt
@@ -13,9 +16,10 @@ from util.restful import RestResponse
 from util.utils import handle_uploaded_file
 from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
-from web_app.model.accounts import AccountId
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
+from web_app.model.accounts import AccountId, LineUserAccountIdRecord
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, UserAccountRecord
 from web_app.settings import BASE_DIR
+from web_app.util import rest_list_util
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -37,6 +41,78 @@ def account_id_list(request: HttpRequest):
 
 
 @log_func
+def account_id_business_list(request: HttpRequest):
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
+        return RestResponse.success_list(count=0, data=[])
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+
+    # 查询记录
+    start_t, end_t = time_utils.get_cur_day_time_range()
+    q = Q(user_id=user.id, create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+
+    record_ids = list(
+        map(
+            lambda x: x.get('account_id'),
+            list(
+                LineUserAccountIdRecord.objects.filter(q).distinct()
+                .order_by('user_id', 'account_id').values('account_id')
+            )
+        )
+    )
+
+    if len(record_ids) == 0:
+        logging.info("当前用户没有可分配的数据，返回空数据")
+        return RestResponse.success_list(count=0, data=[])
+
+    logging.info("当前用户所分配的ids = %s", record_ids)
+
+    query = line_account_dao.filter_field(AccountId.objects, body)
+    query = query.filter(id__in=record_ids)
+    res = list(
+        query.values(
+            'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used',
+            'op_user__username', 'create_time'
+        )[start_row: end_row]
+    )
+    res, count = list(res), query.count()
+    return RestResponse.success_list(count=count, data=res)
+
+
+@log_func
+def dispatch_record_list(request: HttpRequest):
+    """
+    分配给用户的数据
+    """
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
+        return RestResponse.success_list(count=0, data=[])
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    logging.info("ID分配记录搜索 用户 = %s, body = %s", user.username, body)
+    # 记录列表
+    query = LineUserAccountIdRecord.objects.filter(user__isnull=False, account__isnull=False)
+    account_id = body.get('account_id')
+    # 输入的account_id进行查询，非数据库主键
+    if not utils.str_is_null(account_id):
+        query = query.filter(account__account_id__contains=account_id)
+    query = rest_list_util.search_record_common(query, body)
+    record_list = query.all()[start_row: end_row]
+    result_list = []
+    for record in record_list:
+        result_list.append({
+            'id': record.id,
+            'username': record.username,
+            'account_id': record.account_id_val,
+            'used': record.used,
+            'create_time': record.create_time
+        })
+
+    return RestResponse.success_list(count=query.count(), data=result_list)
+
+
+@log_func
 @api_op_user
 def account_id_add(request: HttpRequest):
     user_id = request.session.get('user_id')
@@ -54,7 +130,7 @@ def account_id_add(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
 
-    if AccountId.objects.filter(account_id=account_id).exists():
+    if AccountId.objects.filter(account_id=account_id, op_user__isnull=False).exists():
         return RestResponse.failure("添加失败，该id已经存在")
 
     AccountId.objects.create(
@@ -91,7 +167,7 @@ def account_id_update(request: HttpRequest):
     mark = body.get('mark', "")
     used = body.get('used')
 
-    query = AccountId.objects.filter(id=int(a_id))
+    query = AccountId.objects.filter(id=int(a_id), op_user__isnull=False)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
@@ -105,15 +181,28 @@ def account_id_update(request: HttpRequest):
         "update_time": time_utils.get_now_bj_time()
     }
 
-    if is_admin and not utils.str_is_null(used):
-        logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
-        upd_field['used'] = utils.is_bool_val(used)
-    elif is_business_user:
-        logging.info("业务员编辑, 直接修改为已使用")
-        upd_field['used'] = True
+    with transaction.atomic():
+        if is_admin and not utils.str_is_null(used):
+            logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+            _status = utils.is_bool_val(used)
+            upd_field['used'] = _status
+            if not _status:
+                logging.info("管理员编辑为未使用")
+                # 1:1关系，直接找对应数据就行了
+                LineUserAccountIdRecord.objects.filter(account_id=a_id).delete()
+            else:
+                # 修改is_bind=True，分发的时候就过滤这个了
+                upd_field['is_bind'] = True
+        elif is_business_user:
+            logging.info("业务员编辑, 直接修改为已使用")
+            upd_field['used'] = True
+            # 同时更新Record
+            _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account_id=a_id)
+            if _q.exists():
+                _q.update(used=True)
 
-    logging.info("要跟新的字段 = %s", upd_field)
-    query.update(**upd_field)
+        logging.info("要跟新的字段 = %s", upd_field)
+        query.update(**upd_field)
 
     return RestResponse.success("更新成功")
 
@@ -275,3 +364,17 @@ def account_id_export(request):
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = 'attachment;filename="' + escape_uri_path(file_name) + '"'
     return response
+
+
+@log_func
+def handle_dispatcher(request: HttpRequest):
+    body = utils.request_body(request)
+    is_all = utils.is_bool_val(body.get("isAll"))
+    try:
+        code, msg = line_account_dao.dispatcher_account_id(is_all)
+        if code <= 0:
+            return RestResponse.failure(str(msg))
+        return RestResponse.success(msg)
+    except BaseException as e:
+        logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
+        return RestResponse.failure("分发错误，请联系管理员")

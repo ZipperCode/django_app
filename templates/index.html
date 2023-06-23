@@ -92,15 +92,34 @@
                         <dd>
                             <a data-url="/view/auth/account_id/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>LinesID管理</span>
+                                <span>LinesID</span>
                             </a>
                         </dd>
+                        {% if request.session.user.role == 0 %}
+                            <dd>
+                                <a data-url="/view/auth/aid_record/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>LinesID分配数据</span>
+                                </a>
+                            </dd>
+                        {% endif %}
+
+
                         <dd>
                             <a data-url="/view/auth/account_qr/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>Lines二维码管理</span>
+                                <span>Lines二维码</span>
                             </a>
                         </dd>
+                        {% if request.session.user.role == 0 %}
+                            <dd>
+                                <a data-url="/view/auth/qr_record/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>Lines二维码分配数据</span>
+                                </a>
+                            </dd>
+                        {% endif %}
+
                     </dl>
                 </li>
 
@@ -112,17 +131,35 @@
                     </a>
                     <dl>
                         <dd>
-                            <a data-url="/view/auth/account_id/list">
+                            <a data-url="/view/auth/whatsapp/account_id/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>WhatsAppID管理</span>
+                                <span>WA ID管理</span>
                             </a>
                         </dd>
+                        {% if request.session.user.role == 0 %}
+                            <dd>
+                                <a data-url="/view/auth/whatsapp/aid_record/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>WA ID分配数据</span>
+                                </a>
+                            </dd>
+                        {% endif %}
                         <dd>
-                            <a data-url="/view/auth/account_qr/list">
+                            <a data-url="/view/auth/whatsapp/account_qr/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>WhatsApp二维码管理</span>
+                                <span>WA 二维码管理</span>
                             </a>
                         </dd>
+
+
+                        {% if request.session.user.role == 0 %}
+                            <dd>
+                                <a data-url="/view/auth/whatsapp/qr_record/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>WA 二维码分配数据</span>
+                                </a>
+                            </dd>
+                        {% endif %}
                     </dl>
                 </li>
                 <li>

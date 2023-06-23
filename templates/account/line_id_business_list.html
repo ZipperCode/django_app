@@ -174,7 +174,7 @@
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_id/list',
+            url: '/api/account_id/business_list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
@@ -190,7 +190,6 @@
                 {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
-                {field: 'update_time', title: '更新时间', align: 'center', sort: true},
                 {% if request.session.user.role != 1 %}
                     {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
                 {% endif %}
@@ -295,7 +294,6 @@
         }
 
         function usedTemplate(res) {
-            console.log("used = " + res.used)
             if (res.used) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
             } else {

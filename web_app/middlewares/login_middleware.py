@@ -20,12 +20,12 @@ logging.basicConfig(
 class LoginMiddleware(MiddlewareMixin):
     def process_request(self, request: HttpRequest):
         logging.info("拦截器，request => path = %s", str(request.path))
-        user = {
-            'username': 'admin',
-            'name': 'admin',
-            'role': 2
-        }
-        request.session['user'] = user
+        # user = {
+        #     'username': 'admin',
+        #     'name': 'admin',
+        #     'role': 0
+        # }
+        # request.session['user'] = user
 
         u = request.session.get('user')
         if u is not None:

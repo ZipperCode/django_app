@@ -4,7 +4,7 @@ from util import utils
 from web_app.model.users import User
 
 
-class AccountId(models.Model):
+class WaAccountId(models.Model):
     id = models.AutoField(primary_key=True)
     account_id = models.CharField("ID", max_length=255, null=False, unique=True)
     country = models.CharField("国家", max_length=100, null=True)
@@ -28,7 +28,7 @@ class AccountId(models.Model):
         return op_name
 
 
-class AccountQr(models.Model):
+class WaAccountQr(models.Model):
     id = models.AutoField(primary_key=True)
     qr_content = models.TextField("二维码内容")
     # 图片上传后保存到一个目录中，后续就根据路径去拿图片
@@ -58,10 +58,10 @@ class AccountQr(models.Model):
         return op_name
 
 
-class LineUserAccountIdRecord(models.Model):
+class WaUserAccountIdRecord(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
-    account = models.ForeignKey(to="AccountId", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
+    account = models.ForeignKey(to="WaAccountId", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
     used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
@@ -75,10 +75,10 @@ class LineUserAccountIdRecord(models.Model):
         return self.account.account_id
 
 
-class LineUserAccountQrRecord(models.Model):
+class WaUserAccountQrRecord(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
-    account = models.ForeignKey(to="AccountQr", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
+    account = models.ForeignKey(to="WaAccountQr", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
     used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)

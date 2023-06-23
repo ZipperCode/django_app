@@ -40,7 +40,14 @@
                         </select>
                     </div>
                 </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">二维码内容</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="二维码内容" name="qr_content" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
 
+                </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">备注</label>
                     <div class="layui-input-inline">
@@ -115,6 +122,8 @@
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
     <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -313,11 +322,12 @@
                 {field: 'id', title: '编号', width: 70, align: 'center'},
                 {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 240},
                 {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
-                {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 120},
+                {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},
                 {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
                 {field: 'work', title: '工作', align: 'center'},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
+                {field: 'is_bind', title: '绑定状态', align: 'center', sort: true, templet: bindTemplate, minWidth: 110},
                 {% if request.session.user.role == 0 %}
                     {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
                 {% endif %}
@@ -356,6 +366,10 @@
                     return
                 }
                 exportByIds(ids)
+            } else if (layEvent === 'dispatch') {
+                handleDispatch();
+            } else if (layEvent === 'dispatch_all') {
+                handleDispatch(true);
             }
         });
 
@@ -718,6 +732,43 @@
             xhr.send();
         }
 
+        function handleDispatch(isAll = false) {
+            layer.confirm('确定分发数据到用户吗？', function (index) {
+                layer.close(index);
+                const index2 = layer.load(0);
+                $.ajax({
+                    url: "/api/account_qr/dispatcher",
+                    type: "post",
+                    data: {
+                        'isAll': isAll
+                    },
+                    headers: headers,
+                    dataType: "JSON",
+                    success: function (msg) {
+                        if (msg.code === 0) {
+                            layer.msg(msg.msg, {icon: 2});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });
+                            }, 1000);
+                            return;
+                        }
+                        layer.msg(msg.msg, {icon: 5});
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5})
+                    },
+                    complete() {
+                        layer.close(index2);
+                    }
+                });
+            });
+        }
+
         function previewImg(obj) {
             const img = new Image();
             let src = `/media/${obj.data.qr_path}`;
@@ -743,11 +794,18 @@
         }
 
         function usedTemplate(res) {
-            console.log("used = " + res.used)
             if (res.used) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
             } else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
+            }
+        }
+
+        function bindTemplate(res) {
+            if (res.is_bind) {
+                return `<span class="layui-badge layui-bg-blue">已绑定</span>`
+            } else {
+                return `<span class="layui-badge layui-bg-gray">未绑定</span>`
             }
         }
 

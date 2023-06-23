@@ -221,7 +221,7 @@ def user_update(request: HttpRequest):
 
     name = body.get('name', '')
     role = body.get('role')
-    if role is None or utils.is_int(role):
+    if role is None or not utils.is_int(role):
         return RestResponse.failure("更新失败，角色信息不能为空")
     rows = query.update(name=name, update_time=time_utils.get_now_bj_time(), role=role)
     return RestResponse.success(data={

@@ -31,9 +31,15 @@ urlpatterns = [
     path('view/auth/user_add_view', views.user_add_view),
     path('view/auth/user_edit_view', views.user_edit_view),
     path('view/auth/account_id/list', views.account_id_list_view),
-
     path('view/auth/account_qr/list', views.account_qr_list_view),
-
+    # line 分配记录
+    path('view/auth/aid_record/list', views.lines_aid_record_list_view),
+    path('view/auth/qr_record/list', views.lines_qr_record_list_view),
+    # Whatsapp
+    path('view/auth/whatsapp/account_id/list', views.whatsapp_account_id_list_view),
+    path('view/auth/whatsapp/account_qr/list', views.whatsapp_account_qr_list_view),
+    path('view/auth/whatsapp/aid_record/list', views.whatsapp_aid_record_list_view),
+    path('view/auth/whatsapp/qr_record/list', views.whatsapp_qr_record_list_view),
 
     path('view/login', views.login_view),
     path('logout', views.logout),
@@ -49,20 +55,28 @@ urlpatterns = [
     path('api/user_update', user_restful.user_update),
     path('api/user_del', user_restful.user_del),
     path('api/account_id/list', account_restful.account_id_list),
+    path('api/account_id/business_list', account_restful.account_id_business_list),
     path('api/account_id/add', account_restful.account_id_add),
     path('api/account_id/update', account_restful.account_id_update),
     path('api/account_id/del', account_restful.account_id_del),
     path('api/account_id/upload', account_restful.account_id_upload),
     path('api/account_id/bat_upload', account_restful.account_id_batch_upload),
     path('api/account_id/export', account_restful.account_id_export),
+    path('api/account_id/dispatcher', account_restful.handle_dispatcher),
 
-    path('api/account_qr/list', account_qr_restful.account_id_list),
+    path('api/account_qr/list', account_qr_restful.account_qr_list),
+    path('api/account_qr/business_list', account_qr_restful.business_list),
     path('api/account_qr/upload', account_qr_restful.account_qr_upload),
     path('api/account_qr/bat_upload', account_qr_restful.account_qr_batch_upload),
     path('api/account_qr/update', account_qr_restful.account_qr_update),
     path('api/account_qr/del', account_qr_restful.account_qr_del),
     path('api/account_qr/export_select', account_qr_restful.account_qr_export_with_id),
     path('api/account_qr/export', account_qr_restful.account_qr_export),
+    path('api/account_qr/dispatcher', account_qr_restful.handle_dispatcher),
+
+    # 分配记录
+    path('api/lines/aid_record/list', account_restful.dispatch_record_list),
+    path('api/lines/qr_record/list', account_qr_restful.dispatch_record_list),
 
 
 

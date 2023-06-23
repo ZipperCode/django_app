@@ -1,12 +1,15 @@
-import datetime
+import logging
 import logging
 import os
 import shutil
+import traceback
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 
@@ -14,12 +17,13 @@ from util import utils, qr_util, time_utils, excel_util
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
-from web_app.dao import line_account_dao
+from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
-from web_app.model.accounts import AccountId, AccountQr
+from web_app.model.accounts import AccountQr, LineUserAccountQrRecord
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
 from web_app.settings import BASE_DIR, MEDIA_ROOT
+from web_app.util import rest_list_util
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -31,15 +35,84 @@ TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
 
 @log_func
 @api_op_user
-def account_id_list(request: HttpRequest):
-    user_id = request.session.get('user_id')
-    if not id or utils.str_is_null(user_id):
+def account_qr_list(request: HttpRequest):
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
         return RestResponse.failure("获取信息失败，用户未登录")
 
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = line_account_dao.search_account_qr_page(body, start_row, end_row, int(user_id))
+    res, count = line_account_dao.search_account_qr_page(body, start_row, end_row, user)
     return RestResponse.success_list(count=count, data=res)
+
+
+@log_func
+def business_list(request: HttpRequest):
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
+        return RestResponse.success_list(count=0, data=[])
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+
+    # 查询记录
+    start_t, end_t = time_utils.get_cur_day_time_range()
+    q = Q(user_id=user.id, create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+
+    record_ids = list(
+        map(
+            lambda x: x.get('account_id'),
+            list(
+                LineUserAccountQrRecord.objects.filter(q).distinct()
+                .order_by('user_id', 'account_id').values('account_id')
+            )
+        )
+    )
+
+    if len(record_ids) == 0:
+        logging.info("当前用户没有可分配的数据，返回空数据")
+        return RestResponse.success_list(count=0, data=[])
+
+    logging.info("当前用户所分配的ids = %s", record_ids)
+
+    query = line_account_dao.filter_field(AccountQr.objects, body)
+    query = query.filter(id__in=record_ids)
+    res = list(
+        query.values(
+            'id', 'qr_content', 'qr_path', 'country', 'age', 'work', 'money', 'mark', 'used',
+            'op_user__username', 'create_time', 'update_time'
+        )[start_row: end_row]
+    )
+    res, count = list(res), query.count()
+    return RestResponse.success_list(count=count, data=res)
+
+
+@log_func
+def dispatch_record_list(request: HttpRequest):
+    """
+    分配给用户的数据
+    """
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
+        return RestResponse.success_list(count=0, data=[])
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    logging.info("二维码分配记录搜索 用户 = %s, body = %s", user.username, body)
+    # 记录列表
+    query = LineUserAccountQrRecord.objects.filter(user__isnull=False, account__isnull=False)
+    query = rest_list_util.search_record_common(query, body)
+    record_list = list(query.all()[start_row: end_row])
+
+    result_list = []
+    for record in record_list:
+        result_list.append({
+            'id': record.id,
+            'username': record.username,
+            'account_qr': record.account_qr,
+            'used': record.used,
+            'create_time': record.create_time
+        })
+
+    return RestResponse.success_list(count=query.count(), data=result_list)
 
 
 def account_qr_add(request: HttpRequest):
@@ -100,14 +173,25 @@ def account_qr_update(request: HttpRequest):
         "work": work, "money": money, "mark": mark,
         "update_time": time_utils.get_now_bj_time()
     }
-    if is_admin and not utils.str_is_null(used):
-        logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
-        upd_field['used'] = utils.is_bool_val(used)
-    elif is_business_user:
-        logging.info("业务员编辑, 直接修改为已使用")
-        upd_field['used'] = True
+    with transaction.atomic():
+        if is_admin and not utils.str_is_null(used):
+            logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+            _status = utils.is_bool_val(used)
+            upd_field['used'] = _status
+            if not _status:
+                logging.info("管理员编辑为不使用")
+                LineUserAccountQrRecord.objects.filter(account_id=db_id).delete()
+            else:
+                # 修改is_bind=True，分发的时候就过滤这个了
+                upd_field['is_bind'] = True
+        elif is_business_user:
+            logging.info("业务员编辑, 直接修改为已使用")
+            upd_field['used'] = True
+            _q = LineUserAccountQrRecord.objects.filter(user_id=user_id, account_id=db_id)
+            if _q.exists():
+                _q.update(used=True)
 
-    query.update(**upd_field)
+        query.update(**upd_field)
 
     return RestResponse.success("更新成功")
 
@@ -159,7 +243,7 @@ def account_qr_upload(request: HttpRequest):
     if not parsed:
         return RestResponse.failure("上传失败，无法解析二维码")
 
-    query = AccountQr.objects.filter(qr_content=str(parsed).strip())
+    query = AccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
     if query.exists():
         return RestResponse.failure("上传失败，二维码已经存在")
 
@@ -382,3 +466,17 @@ def handle_export(query_list):
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = 'attachment;filename="' + escape_uri_path(file_name) + '"'
     return response
+
+
+@log_func
+def handle_dispatcher(request: HttpRequest):
+    body = utils.request_body(request)
+    is_all = utils.is_bool_val(body.get("isAll"))
+    try:
+        code, msg = line_account_dao.dispatcher_account_qr(is_all)
+        if code <= 0:
+            return RestResponse.failure(str(msg))
+        return RestResponse.success(msg)
+    except BaseException as e:
+        logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
+        return RestResponse.failure("分发错误，请联系管理员")

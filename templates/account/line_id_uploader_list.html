@@ -88,6 +88,7 @@
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
     <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出（当日）</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分发当日新增数据</a>
 </script>
 <script type="text/html" id="table_control">
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
@@ -225,7 +226,15 @@
                 {field: 'age', title: '年龄', align: 'center', sort: true},
                 {field: 'work', title: '工作', align: 'center', sort: true},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
+                {
+                    field: 'is_bind',
+                    title: '绑定状态',
+                    align: 'center',
+                    sort: true,
+                    templet: bindTemplate,
+                    minWidth: 110
+                },
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 70}
@@ -253,6 +262,8 @@
                     content: $("#uploadDialog")
                 });
                 initBatchUpload()
+            } else if (layEvent === 'dispatch') {
+                handleDispatch();
             }
         });
 
@@ -442,12 +453,48 @@
             });
         }
 
+        function handleDispatch() {
+            layer.confirm('确定分发数据到用户吗？', function (index) {
+                layer.close(index);
+                const index2 = layer.load(0);
+                $.ajax({
+                    url: "/api/account_id/dispatcher",
+                    type: "post",
+                    headers: headers,
+                    dataType: "JSON",
+                    success: function (msg) {
+                        if (msg.code === 0) {
+                            layer.msg(msg.msg, {icon: 2});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                            }, 1000);
+                            return;
+                        }
+                        layer.msg(msg.msg, {icon: 5});
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5})
+                    },
+                    complete() {
+                        layer.close(index2);
+                    }
+                });
+            });
+        }
+
         function usedTemplate(res) {
-            console.log("used = " + res.used)
             if (res.used) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
             } else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
+            }
+        }
+
+        function bindTemplate(res) {
+            if (res.is_bind) {
+                return `<span class="layui-badge layui-bg-blue">已绑定</span>`
+            } else {
+                return `<span class="layui-badge layui-bg-gray">未绑定</span>`
             }
         }
 
