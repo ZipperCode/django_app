@@ -40,7 +40,14 @@
                         </select>
                     </div>
                 </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">二维码内容</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="二维码内容" name="qr_content" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
 
+                </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">备注</label>
                     <div class="layui-input-inline">
@@ -114,8 +121,9 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出（当日）</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出</a>
     <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -297,11 +305,15 @@
                 , trigger: 'click'
             });
         });
+        let op_col_width = 120
+        {% if request.session.user.role == 0 %}
+            op_col_width = 180
+        {% endif %}
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_qr/list',
+            url: '/api/wa/account_qr/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
@@ -329,9 +341,15 @@
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 130}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]],
-            defaultToolbar: ['filter',]
+            defaultToolbar: ['filter',
+                {
+                    title: '导出' //标题
+                    , layEvent: 'custom_export' //事件名，用于 toolbar 事件中使用
+                    , icon: 'layui-icon-export' //图标类名
+                },
+            ]
         });
 
         /*表格头工具监听*/
@@ -357,6 +375,8 @@
                 exportByIds(ids)
             } else if (layEvent === 'dispatch') {
                 handleDispatch();
+            } else if (layEvent === 'dispatch_all') {
+                handleDispatch(true);
             }
         });
 
@@ -414,7 +434,7 @@
                 console.log(massage)
                 layer.load();
                 $.ajax({
-                    url: '/api/account_id/upload',
+                    url: '/api/wa/account_id/upload',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -445,7 +465,7 @@
             let layerId = 0
             const batchUpload = upload.render({
                 elem: '#upload',
-                url: '/api/account_qr/upload',
+                url: '/api/wa/account_qr/upload',
                 accept: 'images',
                 field: 'image',
                 headers: headers,
@@ -512,7 +532,7 @@
             let layerId = 0;
             const batchUpload = upload.render({
                 elem: '#batchUpload',
-                url: '/api/account_qr/bat_upload',
+                url: '/api/wa/account_qr/bat_upload',
                 accept: 'file',
                 field: 'file',
                 headers: headers,
@@ -573,34 +593,6 @@
             });
         }
 
-        function handleDispatch() {
-            layer.confirm('确定分发数据到用户吗？', function (index) {
-                layer.close(index);
-                const index2 = layer.load(0);
-                $.ajax({
-                    url: "/api/account_qr/dispatcher",
-                    type: "post",
-                    headers: headers,
-                    dataType: "JSON",
-                    success: function (msg) {
-                        if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 6});
-                            setTimeout(function () {
-                                layer.close(index2);
-                            }, 1000);
-                            return;
-                        }
-                        layer.msg(msg.msg, {icon: 5});
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                    complete() {
-                        layer.close(index2);
-                    }
-                });
-            });
-        }
 
         function initEditForm(obj) {
             const data = obj.data;
@@ -621,7 +613,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/account_qr/update',
+                    url: '/api/wa/account_qr/update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -655,7 +647,7 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/account_qr/del",
+                    url: "/api/wa/account_qr/del",
                     data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
@@ -688,7 +680,7 @@
         function exportByIds(ids) {
             console.log("exportByIds#ids = ", ids);
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
+            xhr.open('get', "/api/wa/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {
@@ -720,7 +712,7 @@
 
             console.log("handleExport")
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export", true);
+            xhr.open('get', "/api/wa/account_qr/export", true);
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {
@@ -746,6 +738,43 @@
             }
             // 发送ajax请求
             xhr.send();
+        }
+
+        function handleDispatch(isAll = false) {
+            layer.confirm('确定分发数据到用户吗？', function (index) {
+                layer.close(index);
+                const index2 = layer.load(0);
+                $.ajax({
+                    url: "/api/wa/account_qr/dispatcher",
+                    type: "post",
+                    data: {
+                        'isAll': isAll
+                    },
+                    headers: headers,
+                    dataType: "JSON",
+                    success: function (msg) {
+                        if (msg.code === 0) {
+                            layer.msg(msg.msg, {icon: 6});
+                            setTimeout(function () {
+                                layer.close(index2);
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });
+                            }, 1000);
+                            return;
+                        }
+                        layer.msg(msg.msg, {icon: 5});
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5})
+                    },
+                    complete() {
+                        layer.close(index2);
+                    }
+                });
+            });
         }
 
         function previewImg(obj) {
@@ -781,7 +810,6 @@
         }
 
         function bindTemplate(res) {
-
             if (res.is_bind) {
                 return `<span class="layui-badge layui-bg-blue">已绑定</span>`
             } else {

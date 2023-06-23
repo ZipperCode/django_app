@@ -8,17 +8,11 @@
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
     <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
-
     <style>
         .box_parent {
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        .layui-table-cell {
-            height: 50px;
-            line-height: 50px;
         }
     </style>
 </head>
@@ -27,6 +21,14 @@
     <div class="page-container">
         <div class="page-fluid">
             <form class="layui-form layui-unselect table-form" action="">
+                <div class="layui-inline">
+                    <label class="layui-form-label">ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入ID" autocomplete="off" name="account_id"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">国家</label>
                     <div class="layui-input-inline">
@@ -40,7 +42,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="layui-inline">
                     <label class="layui-form-label">备注</label>
                     <div class="layui-input-inline">
@@ -49,19 +50,9 @@
                     </div>
 
                 </div>
-                <div class="layui-inline">
-                    <label class="layui-form-label">范围日期</label>
-                    <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_start">
-                    </div>
-                    <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_end">
-                    </div>
-                </div>
+
                 {% if request.session.user.role == 0 %}
-                    {% comment %} <div class="layui-inline">
+                    {% comment %}<div class="layui-inline">
                         <label class="layui-form-label">上传人</label>
                         <div class="layui-input-inline">
                             <select name="op_user_select" lay-search="">
@@ -70,12 +61,24 @@
                         </div>
                     </div>{% endcomment %}
                     <div class="layui-inline">
+                        <label class="layui-form-label">范围日期</label>
+                        <div class="layui-input-inline">
+                            <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                                   name="date_start">
+                        </div>
+                        <div class="layui-input-inline">
+                            <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                                   name="date_end">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
                         <label class="layui-form-label">上传人</label>
                         <div class="layui-input-inline">
                             <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
                                    lay-verify="op_username"
                                    class="layui-input"/>
                         </div>
+
                     </div>
                 {% endif %}
                 <div class="layui-inline">
@@ -114,8 +117,9 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出（当日）</a>
-    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分发当日新增数据</a>
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -124,13 +128,6 @@
     {% if request.session.user.role == 0 %}
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     {% endif %}
-</script>
-
-<script type="text/html" id="qr_image">
-    <div>
-        <img src="/media/{% verbatim %}{{ d.qr_path }}{% endverbatim %}"
-             style="width: 50px; height: 50px;" class="table_img">
-    </div>
 </script>
 
 {% comment %} Form {% endcomment %}
@@ -145,6 +142,7 @@
                            autocomplete="off" placeholder="请输入ID" class="layui-input">
                 </div>
             </div>
+
             <div class="layui-form-item" style="margin-top:40px">
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
@@ -155,15 +153,14 @@
     </div>
 </div>
 
-{% comment %} 单个图片上传 {% endcomment %}
 <div class="layui-upload" id="uploadDialog" style="display: none">
     <div class="box_parent">
-        <div class="layui-upload-drag" id="upload" style="width: 300px">
+        <div class="layui-upload-drag" id="batchUpload">
             <i class="layui-icon"></i>
-            <p>点击上传，或将文件拖拽到此处</p>
-            <div class="layui-hide" id="uploadView">
+            <p>点击上传，或将文件拖拽到此处 (txt)</p>
+            <div class="layui-hide" id="uploadDemoView">
                 <hr>
-                <img src="" alt="上传成功后渲染" style="max-width: 100px; max-height: 100px">
+                <span id="p_upload_preview" style="max-width: 196px"></span>
             </div>
         </div>
     </div>
@@ -171,35 +168,18 @@
     <br/>
     <br/>
     <br/>
-    <button class="layui-btn  layui-btn-submit layui-btn-fluid " lay-submit="" id="btnUpload">确认上传</button>
-</div>
-{% comment %} 批量zip包上传 {% endcomment %}
-<div class="layui-upload" id="batchUploadDialog" style="display: none;">
-    <div class="box_parent">
-        <div class="layui-upload-drag" id="batchUpload">
-            <i class="layui-icon"></i>
-            <p>点击上传，或将文件拖拽到此处 (zip)</p>
-            <div class="layui-hide" id="batchUploadView">
-                <hr>
-                <span id="p_upload_preview" style="max-width: 196px"></span>
-            </div>
-        </div>
-    </div>
-    <br/>
-    <br/>
     <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" id="btnBatchUpload">确认上传</button>
-    <br/>
-    <p style="align-content: center">若压缩包图片比较多，则需要多等待一会儿</p>
 </div>
+
 
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
             <input type="hidden" name="id">
             <div class="layui-form-item">
-                <label class="layui-form-label required">URL</label>
+                <label class="layui-form-label required">ID</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="qr_content" disabled="disabled" class="layui-input">
+                    <input type="text" name="account_id" lay-verify="account_id" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -220,17 +200,13 @@
                 <label class="layui-form-label required">年龄</label>
                 <div class="layui-input-block required">
                     <input type="number" name="age"
-                           required
                            autocomplete="off" placeholder="请输入年龄" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label required">工作</label>
                 <div class="layui-input-block required">
-                    <input type="text" name="work"
-                           required lay-verify="required"
-                           autocomplete="off" placeholder="请输入工作"
-                           class="layui-input">
+                    <input type="text" name="work" autocomplete="off" placeholder="请输入工作" class="layui-input">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -251,9 +227,7 @@
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">备注</label>
                 <div class="layui-input-block">
-                        <textarea name="mark"
-                                  placeholder="备注信息"
-                                  class="layui-textarea"></textarea>
+                    <textarea name="mark" placeholder="备注信息" class="layui-textarea"></textarea>
                 </div>
             </div>
 
@@ -270,9 +244,6 @@
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
-    layui.config({
-        base: '/static/layui/ext/'
-    })
     layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
         const layer = layui.layer,
             form = layui.form;
@@ -288,31 +259,35 @@
 
         lay('.test-item').each(function () {
             const date = new Date()
-            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
             laydate.render({
                 elem: this,
                 type: 'datetime',
-                min: '2023-1-1',
+                min: '2023-1-1 00:00:00',
                 max: max
                 , trigger: 'click'
             });
         });
+        let op_col_width = 120
+        {% if request.session.user.role == 0 %}
+            op_col_width = 180
+        {% endif %}
+
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_qr/list',
+            url: '/api/wa/account_id/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
             cols: [[
                 {type: 'checkbox', fixed: 'left'},
                 {field: 'id', title: '编号', width: 70, align: 'center'},
-                {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 240},
-                {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
-                {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},
-                {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
-                {field: 'work', title: '工作', align: 'center'},
+                {field: 'account_id', title: 'ID', align: 'center'},
+                {field: 'country', title: '国家', align: 'center', sort: true},
+                {field: 'age', title: '年龄', align: 'center', sort: true},
+                {field: 'work', title: '工作', align: 'center', sort: true},
                 {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
                 {
@@ -323,15 +298,17 @@
                     templet: bindTemplate,
                     minWidth: 110
                 },
+
                 {% if request.session.user.role == 0 %}
-                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
+                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
                 {% endif %}
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
-                {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 130}
+                {field: 'update_time', title: '更新时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
+
             ]],
-            defaultToolbar: ['filter',]
+            defaultToolbar: ['filter', 'exports']
         });
 
         /*表格头工具监听*/
@@ -339,24 +316,27 @@
             const data = obj.data; //获得当前行数据
             const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
             if (layEvent === 'upload') {
-                initUpload();
+                layer.open({
+                    type: 1,
+                    area: ['400px', '350px'],
+                    title: ['ID上传', 'text-align:center;'],
+                    content: $("#addForm")
+                });
+                initAddForm()
             } else if (layEvent === 'batch_upload') {
+                layer.open({
+                    type: 1,
+                    area: ['400px', '300px'],
+                    title: ['ID上传', 'text-align:center;'],
+                    content: $("#uploadDialog")
+                });
                 initBatchUpload()
             } else if (layEvent === 'batch_export') {
                 handleExport()
-            } else if (layEvent === 'custom_export') {
-                console.log("自定义导出");
-                let checkStatus = table.checkStatus('list')
-                let checkData = checkStatus.data
-                console.log("checkData = ", typeof checkData)
-                const ids = checkData.map((item) => item.id)
-                if (ids.length === 0) {
-                    layer.msg("导出失败，请选择要导出的行", {icon: 5})
-                    return
-                }
-                exportByIds(ids)
             } else if (layEvent === 'dispatch') {
                 handleDispatch();
+            } else if (layEvent === 'dispatch_all') {
+                handleDispatch(true);
             }
         });
 
@@ -374,12 +354,10 @@
             } else if (layEvent === 'del') {
                 handleDel(obj);
             } else if (layEvent === 'copy') {
-                const text = obj.data.qr_content
+                const text = obj.data.account_id
                 {% comment %}if (navigator.clipboard) {
-                     navigator.clipboard.writeText(text);
-                 } else {
-
-                 }{% endcomment %}
+                    navigator.clipboard.writeText(text);
+                }{% endcomment %}
                 const copyipt = document.createElement("input");
                 copyipt.setAttribute("value", text);
                 document.body.appendChild(copyipt);
@@ -387,10 +365,6 @@
                 document.execCommand("copy");
                 document.body.removeChild(copyipt);
                 layer.msg("复制成功，内容为：" + text, {icon: 6});
-            } else if (layEvent === 'preview') {
-                previewImg(obj);
-            } else {
-                console.log(layEvent)
             }
         });
 
@@ -410,11 +384,15 @@
         initSearchForm();
 
         function initAddForm() {
+            form.val("addForm", {
+                account_id: "",
+            });
+
             form.on('submit(addSubmit)', function (massage) {
                 console.log(massage)
-                layer.load();
+                const load_index = layer.load();
                 $.ajax({
-                    url: '/api/account_id/upload',
+                    url: '/api/wa/account_id/upload',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -430,95 +408,33 @@
                             }, 1000);
                         } else {
                             layer.msg(res.msg, {icon: 5})
+                            layer.close(load_index)
                         }
                     },
                     error: function () {
                         layer.msg("请求失败", {icon: 5})
-                    },
+                        layer.close(load_index)
+                    }
                 });
                 return false
             })
 
         }
 
-        function initUpload() {
+        function initBatchUpload() {
             let layerId = 0
             const batchUpload = upload.render({
-                elem: '#upload',
-                url: '/api/account_qr/upload',
-                accept: 'images',
-                field: 'image',
+                elem: '#batchUpload',
+                url: '/api/wa/account_id/bat_upload',
+                accept: 'file',
+                field: 'file',
                 headers: headers,
-                exts: 'jpg|png|bmp|jpeg',
+                exts: 'txt',
                 auto: false,
                 data: {
                     'filename': 'test.txt'
                 },
-                size: 4096,
-                bindAction: '#btnUpload',
-                before: function (obj) {
-                    layerId = layer.load()
-                    console.log("upload before");
-                },
-                choose: function (obj) {
-                    batchUpload.config.elem.next()[0].value = '';
-                    console.log("upload choose", obj);
-                    let files = obj.pushFile();
-                    console.log("upload choose files = ", files)
-                    obj.preview(function (index, file, result) {
-                        $('#uploadView').removeClass('layui-hide').find('img').attr('src', result)
-                        batchUpload.config.data.filename = file.name
-                    });
-                },
-                done: function (res, index, upload) {
-                    console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
-                    if (res.code < 0) {
-                        layer.close(layerId);
-                        layer.msg(res.msg, {icon: 5})
-                        return
-                    }
-                    layer.close(layerId);
-                    // layer.closeAll();//关闭所有的弹出层
-                    table.reload('list', {
-                        page: {
-                            curr: 1 //重新从第 1 页开始
-                        }
-                    });
-                    $('#uploadView').addClass('layui-hide');
-                    layer.msg("上传成功", {icon: 6});
-                },
-                error: function (index, upload) {
-                    console.log(`upload error index = ${index} upload = ${upload}`)
-                    layer.msg("上传失败，请重试", {icon: 5})
-                    // layer.closeAll('loading');
-                    layer.close(layerId);
-                }
-            });
-
-            layer.open({
-                type: 1,
-                area: ['400px', '400px'],
-                title: ['二维码上传', 'text-align:center;'],
-                content: $("#uploadDialog"),
-                end: function () {
-                    console.log("close upload")
-                    $('#uploadView').addClass('layui-hide')
-                    batchUpload.config.elem.next()[0].value = '';
-                }
-            });
-        }
-
-        function initBatchUpload() {
-            let layerId = 0;
-            const batchUpload = upload.render({
-                elem: '#batchUpload',
-                url: '/api/account_qr/bat_upload',
-                accept: 'file',
-                field: 'file',
-                headers: headers,
-                exts: 'zip',
-                auto: false,
-                size: 50 * 1024,
+                size: 30,
                 bindAction: '#btnBatchUpload',
                 before: function (obj) {
                     layerId = layer.load()
@@ -530,7 +446,7 @@
                     let files = obj.pushFile();
                     console.log("upload choose files = ", files)
                     obj.preview(function (index, file, result) {
-                        $('#batchUploadView').removeClass('layui-hide');
+                        $('#uploadDemoView').removeClass('layui-hide');
                         $('#p_upload_preview')[0].innerHTML = `文件：${file.name}`
                         batchUpload.config.data.filename = file.name
                     });
@@ -538,18 +454,19 @@
                 done: function (res, index, upload) {
                     console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
                     if (res.code < 0) {
-                        layer.close(layerId);
                         // layer.closeAll('loading');
+                        layer.close(layerId)
                         layer.msg(res.msg, {icon: 5})
                         return
                     }
-                    layer.close(layerId);
                     // layer.closeAll();//关闭所有的弹出层
+                    layer.close(layerId)
                     table.reload('list', {
                         page: {
                             curr: 1 //重新从第 1 页开始
                         }
                     });
+                    $('#uploadDemoView').addClass('layui-hide');
                     layer.msg("上传成功", {icon: 6});
                     handleDispatch();
                 },
@@ -557,58 +474,18 @@
                     console.log(`upload error index = ${index} upload = ${upload}`)
                     layer.msg("上传失败，请重试", {icon: 5})
                     // layer.closeAll('loading');
-                    layer.close(layerId);
-                }
-            });
-
-            layer.open({
-                type: 1,
-                area: ['400px', '350px'],
-                title: ['Zip压缩包上传', 'text-align:center;'],
-                content: $("#batchUploadDialog"),
-                end: function () {
-                    $('#batchUploadView').addClass('layui-hide');
-                    batchUpload.config.elem.next()[0].value = '';
+                    layer.close(layerId)
                 }
             });
         }
 
-        function handleDispatch() {
-            layer.confirm('确定分发数据到用户吗？', function (index) {
-                layer.close(index);
-                const index2 = layer.load(0);
-                $.ajax({
-                    url: "/api/account_qr/dispatcher",
-                    type: "post",
-                    headers: headers,
-                    dataType: "JSON",
-                    success: function (msg) {
-                        if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 6});
-                            setTimeout(function () {
-                                layer.close(index2);
-                            }, 1000);
-                            return;
-                        }
-                        layer.msg(msg.msg, {icon: 5});
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                    complete() {
-                        layer.close(index2);
-                    }
-                });
-            });
-        }
 
         function initEditForm(obj) {
             const data = obj.data;
-            $("#p_username").innerHTML = data.username;
-
+            console.log("data = ", data);
             form.val("editForm", {
                 id: data.id,
-                qr_content: data.qr_content,
+                account_id: data.account_id,
                 country: data.country,
                 age: data.age,
                 work: data.work,
@@ -617,17 +494,22 @@
                 mark: data.mark,
             });
 
+            form.verify({
+                account_id: function (value, item) {
+                    if (!/^.+$/.test(value)) {
+                        $(item).focus();
+                        return 'ID不能为空';
+                    }
+                }
+            });
             form.on('submit(editSubmit)', function (massage) {
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/account_qr/update',
+                    url: '/api/wa/account_id/update',
                     type: 'POST',
                     headers: headers,
-                    data: {
-                        id: data.id,
-                        ...massage.field
-                    },
+                    data: massage.field,
                     success: function (res) {
                         if (res.code >= 0) {
                             console.log("修改成功")
@@ -639,11 +521,8 @@
                                 table.reload("list", massage.field);//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg(res.code, {icon: 5});
+                            layer.msg("修改失败", {icon: 5});
                         }
-                    }, error: function (err) {
-                        console.log("修改失败：", JSON.stringify(err));
-                        layer.msg("修改失败: 请求失败", {icon: 5});
                     }
                 });
                 return false
@@ -655,14 +534,14 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/account_qr/del",
+                    url: "/api/wa/account_id/del",
                     data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
                     dataType: "JSON",
                     success: function (msg) {
                         if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 6});
+                            layer.msg(msg.msg);
                             setTimeout(function () {
                                 layer.closeAll();//关闭所有的弹出层2
                                 table.reload("list", {
@@ -685,45 +564,12 @@
             });
         }
 
-        function exportByIds(ids) {
-            console.log("exportByIds#ids = ", ids);
-            const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
-            xhr.responseType = "blob"; // 返回类型blob
-            // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
-            xhr.onload = function (e) {
-                // 请求完成
-                if (this.status === 200) {
-                    // 返回200
-                    const blob = new Blob([this.response], {
-                        type: "application/vnd.ms-excel"
-                    });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    $("body").append(a); // 修复firefox中无法触发click
-                    a.click();
-                    $(a).remove();
-                } else if (this.status === 404 || this.status === 500) {
-                    console.log("404 response = ", this.response)
-                    layer.msg("导出失败，" + this.status, {icon: 5})
-                }
-            };
-            xhr.timeout = 1000 * 60 * 60; //将超时时间设置为1天
-            xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
-                layer.msg("导出失败，请求超时", {icon: 5})
-            }
-            // 发送ajax请求
-            xhr.send();
-        }
-
         function handleExport() {
-
-            console.log("handleExport")
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export", true);
+            xhr.open('get', "/api/wa/account_id/export", true); // 也可以使用POST方式，根据接口
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
-            xhr.onload = function (e) {
+            xhr.onload = function () {
                 // 请求完成
                 if (this.status === 200) {
                     // 返回200
@@ -740,35 +586,49 @@
                     layer.msg("导出失败，" + this.status, {icon: 5})
                 }
             };
-            xhr.timeout = 1000 * 60 * 60; //将超时时间设置为1天
+            xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
             xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
                 layer.msg("导出失败，请求超时", {icon: 5})
             }
             // 发送ajax请求
-            xhr.send();
+            xhr.send()
         }
 
-        function previewImg(obj) {
-            const img = new Image();
-            let src = `/media/${obj.data.qr_path}`;
-            img.src = src;
-            console.log("src = ", src)
-            const height = img.height + 50; //获取图片高度
-            const width = img.width; //获取图片宽度
-            const imgHtml = "<img src='" + src + "' width='100%' height='100%'/>";
-            //弹出层
-            layer.open({
-                type: 1,
-                shade: 0.8,
-                offset: 'auto',
-                area: ['500px', '500px'],
-                shadeClose: true,
-                scrollbar: false,
-                title: "图片预览", //不显示标题
-                content: imgHtml, //捕获的元素，注意：最好该指定的元素要存放在body最外层，否则可能被其它的相对元素所影响
-                cancel: function () {
-                    //layer.msg('捕获就是从页面已经存在的元素上，包裹layer的结构', { time: 5000, icon: 6 });
-                }
+        function handleDispatch(isAll = false) {
+            layer.confirm('确定分发数据到用户吗？', function (index) {
+                layer.close(index);
+                const index2 = layer.load(0);
+                $.ajax({
+                    url: "/api/wa/account_id/dispatcher",
+                    type: "post",
+                    data: {
+                        'isAll': isAll,
+                    },
+                    headers: headers,
+                    dataType: "JSON",
+                    success: function (msg) {
+                        console.log("msg = ", msg);
+                        if (msg.code === 0) {
+                            layer.msg(msg.msg, {icon: 6});
+                            setTimeout(function () {
+                                layer.close(index2);
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });
+                            }, 1000);
+                            return;
+                        }
+                        layer.msg(msg.msg, {icon: 5});
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5})
+                    },
+                    complete() {
+                        layer.close(index2);
+                    }
+                });
             });
         }
 
@@ -781,7 +641,6 @@
         }
 
         function bindTemplate(res) {
-
             if (res.is_bind) {
                 return `<span class="layui-badge layui-bg-blue">已绑定</span>`
             } else {
@@ -816,8 +675,7 @@
         jQuery(".page-main").scrollbar();
 
 
-    })
-    ;
+    });
 </script>
 </body>
 </html>

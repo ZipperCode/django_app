@@ -564,6 +564,7 @@
                         }
                     });
                     layer.msg("上传成功", {icon: 6});
+                    handleDispatch();
                 },
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
@@ -746,9 +747,9 @@
                     dataType: "JSON",
                     success: function (msg) {
                         if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 2});
+                            layer.msg(msg.msg, {icon: 6});
                             setTimeout(function () {
-                                layer.closeAll();//关闭所有的弹出层2
+                                layer.close(index2);
                                 table.reload("list", {
                                     page: {
                                         curr: 1

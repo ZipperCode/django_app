@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>上传人管理列表</title>
+    <title>业务员id列表</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
@@ -84,55 +84,12 @@
 
 {% comment %} component {% endcomment %}
 
-<script type="text/html" id="toolbar">
-    <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
-    <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出（当日）</a>
-    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分发当日新增数据</a>
-</script>
 <script type="text/html" id="table_control">
+    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
 </script>
+
 {% comment %} Form {% endcomment %}
-<div class="layui-row" id="addForm" style="display:none;">
-    <div class="layui-col-md10">
-        <form class="layui-form" action="" style="margin-top:20px" lay-filter="addForm">
-            <div class="layui-form-item">
-                <label class="layui-form-label required">ID<span style="color: red">*</span> </label>
-                <div class="layui-input-block required">
-                    <input type="text" name="account_id"
-                           required lay-verify="account_id"
-                           autocomplete="off" placeholder="请输入ID" class="layui-input">
-                </div>
-            </div>
-
-            <div class="layui-form-item" style="margin-top:40px">
-                <div class="layui-input-block">
-                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="layui-upload" id="uploadDialog" style="display: none">
-    <div class="box_parent">
-        <div class="layui-upload-drag" id="batchUpload">
-            <i class="layui-icon"></i>
-            <p>点击上传，或将文件拖拽到此处 (txt)</p>
-            <div class="layui-hide" id="uploadDemoView">
-                <hr>
-                <span id="p_upload_preview" style="max-width: 196px"></span>
-            </div>
-        </div>
-    </div>
-
-    <br/>
-    <br/>
-    <br/>
-    <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" id="btnBatchUpload">确认上传</button>
-</div>
 
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
@@ -201,7 +158,8 @@
         const layer = layui.layer,
             form = layui.form;
         const table = layui.table;
-
+        const laydate = layui.laydate;
+        const laytpl = layui.laytpl;
         const upload = layui.upload
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
@@ -209,12 +167,14 @@
             "X-CSRFToken": csrftoken
         };
 
+        let op_col_width = 120
+
 
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_id/list',
+            url: '/api/wa/account_id/business_list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
@@ -226,18 +186,14 @@
                 {field: 'age', title: '年龄', align: 'center', sort: true},
                 {field: 'work', title: '工作', align: 'center', sort: true},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
-                {
-                    field: 'is_bind',
-                    title: '绑定状态',
-                    align: 'center',
-                    sort: true,
-                    templet: bindTemplate,
-                    minWidth: 110
-                },
+                {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 70}
+                {% if request.session.user.role != 1 %}
+                    {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
+                {% endif %}
+
             ]],
             defaultToolbar: ['filter']
         });
@@ -246,25 +202,6 @@
         table.on('toolbar(list)', function (obj) {
             const data = obj.data; //获得当前行数据
             const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
-            if (layEvent === 'upload') {
-                layer.open({
-                    type: 1,
-                    area: ['400px', '350px'],
-                    title: ['ID上传', 'text-align:center;'],
-                    content: $("#addForm")
-                });
-                initAddForm()
-            } else if (layEvent === 'batch_upload') {
-                layer.open({
-                    type: 1,
-                    area: ['400px', '300px'],
-                    title: ['ID上传', 'text-align:center;'],
-                    content: $("#uploadDialog")
-                });
-                initBatchUpload()
-            } else if (layEvent === 'dispatch') {
-                handleDispatch();
-            }
         });
 
         /*表格行工具监听*/
@@ -308,105 +245,8 @@
 
         initSearchForm();
 
-        function initAddForm() {
-            form.val("addForm", {
-                account_id: "",
-            });
-
-            form.on('submit(addSubmit)', function (massage) {
-                console.log(massage)
-                const load_index = layer.load();
-                $.ajax({
-                    url: '/api/account_id/upload',
-                    type: 'POST',
-                    headers: headers,
-                    data: massage.field,
-                    success: function (res) {
-                        if (res.code >= 0) {
-                            console.log("添加成功")
-                            layer.closeAll('loading');
-                            layer.load(2);
-                            layer.msg("添加成功", {icon: 6});
-                            setTimeout(function () {
-                                table.reload("list");
-                                layer.closeAll();//关闭所有的弹出层
-                            }, 1000);
-                        } else {
-                            layer.msg(res.msg, {icon: 5})
-                            layer.close(load_index)
-                        }
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                        layer.close(load_index)
-                    }
-                });
-                return false
-            })
-
-        }
-
-        function initBatchUpload() {
-            let layerId = 0
-            const batchUpload = upload.render({
-                elem: '#batchUpload',
-                url: '/api/account_id/bat_upload',
-                accept: 'file',
-                field: 'file',
-                headers: headers,
-                exts: 'txt',
-                auto: false,
-                data: {
-                    'filename': 'test.txt'
-                },
-                size: 30,
-                bindAction: '#btnBatchUpload',
-                before: function (obj) {
-                    layerId = layer.load()
-                    console.log("upload before");
-                },
-                choose: function (obj) {
-                    batchUpload.config.elem.next()[0].value = '';
-                    console.log("upload choose", obj);
-                    let files = obj.pushFile();
-                    console.log("upload choose files = ", files)
-                    obj.preview(function (index, file, result) {
-                        $('#uploadDemoView').removeClass('layui-hide');
-                        $('#p_upload_preview')[0].innerHTML = `文件：${file.name}`
-                        batchUpload.config.data.filename = file.name
-                    });
-                },
-                done: function (res, index, upload) {
-                    console.log(`upload done res = ${JSON.stringify(res)} index = ${index} upload = ${upload}`);
-                    if (res.code < 0) {
-                        // layer.closeAll('loading');
-                        layer.close(layerId)
-                        layer.msg(res.msg, {icon: 5})
-                        return
-                    }
-                    // layer.closeAll();//关闭所有的弹出层
-                    layer.close(layerId)
-                    table.reload('list', {
-                        page: {
-                            curr: 1 //重新从第 1 页开始
-                        }
-                    });
-                    $('#uploadDemoView').addClass('layui-hide');
-                    layer.msg("上传成功", {icon: 6});
-                    handleDispatch();
-                },
-                error: function (index, upload) {
-                    console.log(`upload error index = ${index} upload = ${upload}`)
-                    layer.msg("上传失败，请重试", {icon: 5})
-                    // layer.closeAll('loading');
-                    layer.close(layerId)
-                }
-            });
-        }
-
         function initEditForm(obj) {
             const data = obj.data;
-            $("#p_username").innerHTML = data.username;
 
             form.val("editForm", {
                 id: data.id,
@@ -430,7 +270,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/account_id/update',
+                    url: '/api/wa/account_id/update',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -453,48 +293,11 @@
             });
         }
 
-        function handleDispatch() {
-            layer.confirm('确定分发数据到用户吗？', function (index) {
-                layer.close(index);
-                const index2 = layer.load(0);
-                $.ajax({
-                    url: "/api/account_id/dispatcher",
-                    type: "post",
-                    headers: headers,
-                    dataType: "JSON",
-                    success: function (msg) {
-                        if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 6});
-                            setTimeout(function () {
-                                layer.close(index2);
-                            }, 1000);
-                            return;
-                        }
-                        layer.msg(msg.msg, {icon: 5});
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                    complete() {
-                        layer.close(index2);
-                    }
-                });
-            });
-        }
-
         function usedTemplate(res) {
             if (res.used) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
             } else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
-            }
-        }
-
-        function bindTemplate(res) {
-            if (res.is_bind) {
-                return `<span class="layui-badge layui-bg-blue">已绑定</span>`
-            } else {
-                return `<span class="layui-badge layui-bg-gray">未绑定</span>`
             }
         }
 

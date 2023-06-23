@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
 from web_app import views, settings
-from web_app.restfuls import user_restful, account_restful, account_qr_restful
+from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_restful, wa_qr_restful
 
 urlpatterns = [
     path('', views.login_view),
@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/user_add', user_restful.user_add),
     path('api/user_update', user_restful.user_update),
     path('api/user_del', user_restful.user_del),
+
     path('api/account_id/list', account_restful.account_id_list),
     path('api/account_id/business_list', account_restful.account_id_business_list),
     path('api/account_id/add', account_restful.account_id_add),
@@ -78,8 +79,28 @@ urlpatterns = [
     path('api/lines/aid_record/list', account_restful.dispatch_record_list),
     path('api/lines/qr_record/list', account_qr_restful.dispatch_record_list),
 
-
-
+    # whatsApp ID
+    path('api/wa/account_id/list', wa_id_restful.account_id_list),
+    path('api/wa/account_id/business_list', wa_id_restful.account_id_business_list),
+    path('api/wa/account_id/add', wa_id_restful.account_id_add),
+    path('api/wa/account_id/update', wa_id_restful.account_id_update),
+    path('api/wa/account_id/del', wa_id_restful.account_id_del),
+    path('api/wa/account_id/upload', wa_id_restful.account_id_upload),
+    path('api/wa/account_id/bat_upload', wa_id_restful.account_id_batch_upload),
+    path('api/wa/account_id/export', wa_id_restful.account_id_export),
+    path('api/wa/account_id/dispatcher', wa_id_restful.handle_dispatcher),
+    path('api/wa/aid_record/list', wa_id_restful.dispatch_record_list),
+    # WhatsApp Qr
+    path('api/wa/account_qr/list', wa_qr_restful.account_qr_list),
+    path('api/wa/account_qr/business_list', wa_qr_restful.business_list),
+    path('api/wa/account_qr/upload', wa_qr_restful.account_qr_upload),
+    path('api/wa/account_qr/bat_upload', wa_qr_restful.account_qr_batch_upload),
+    path('api/wa/account_qr/update', wa_qr_restful.account_qr_update),
+    path('api/wa/account_qr/del', wa_qr_restful.account_qr_del),
+    path('api/wa/account_qr/export_select', wa_qr_restful.account_qr_export_with_id),
+    path('api/wa/account_qr/export', wa_qr_restful.account_qr_export),
+    path('api/wa/account_qr/dispatcher', wa_qr_restful.handle_dispatcher),
+    path('api/wa/qr_record/list', wa_qr_restful.dispatch_record_list),
 
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
 ] + static(settings.MEDIA_URL, serve, document_root=settings.MEDIA_ROOT)

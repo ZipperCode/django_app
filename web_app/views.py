@@ -213,11 +213,11 @@ def whatsapp_account_id_list_view(request: HttpRequest):
         })
 
     if user.get('role') == USER_ROLE_ADMIN:
-        return render(request, 'account/whatsapp_id_list.html')
+        return render(request, 'account/wa_id_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
-        return render(request, 'account/whatsapp_id_uploader_list.html')
+        return render(request, 'account/wa_id_uploader_list.html')
     elif user.get('role') == USER_ROLE_BUSINESS:
-        return render(request, 'account/whatsapp_id_business_list.html')
+        return render(request, 'account/wa_id_business_list.html')
     return render(request, 'login.html', {
         "msg": "请先登录"
     })
@@ -232,11 +232,11 @@ def whatsapp_account_qr_list_view(request: HttpRequest):
         })
 
     if user.get('role') == USER_ROLE_ADMIN:
-        return render(request, 'account/whatsapp_qr_list.html')
+        return render(request, 'account/wa_qr_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
-        return render(request, 'account/whatsapp_qr_uploader_list.html')
+        return render(request, 'account/wa_qr_uploader_list.html')
     elif user.get('role') == USER_ROLE_BUSINESS:
-        return render(request, 'account/whatsapp_qr_business_list.html')
+        return render(request, 'account/wa_qr_business_list.html')
     return render(request, 'login.html', {
         "msg": "请先登录"
     })
@@ -244,9 +244,9 @@ def whatsapp_account_qr_list_view(request: HttpRequest):
 
 @log_func
 def whatsapp_aid_record_list_view(request):
-    return render(request, 'account/whatsapp_id_record_list.html')
+    return render(request, 'account/wa_id_record_list.html')
 
 
 @log_func
 def whatsapp_qr_record_list_view(request):
-    return render(request, 'account/whatsapp_qr_record_list.html')
+    return render(request, 'account/wa_qr_record_list.html')

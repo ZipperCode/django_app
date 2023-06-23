@@ -14,10 +14,10 @@ from util import utils, time_utils, excel_util, http_utils
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
-from web_app.dao import line_account_dao, user_dao
+from web_app.dao import wa_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
-from web_app.model.accounts import AccountId, LineUserAccountIdRecord
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, UserAccountRecord
+from web_app.model.wa_accounts import WaUserIdRecord, WaAccountId
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util
 
@@ -36,7 +36,7 @@ def account_id_list(request: HttpRequest):
         return RestResponse.success_list(count=0, data=[])
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = line_account_dao.search_account_id_page(body, start_row, end_row, user)
+    res, count = wa_dao.search_account_id_page(body, start_row, end_row, user)
     return RestResponse.success_list(count=count, data=res)
 
 
@@ -56,7 +56,7 @@ def account_id_business_list(request: HttpRequest):
         map(
             lambda x: x.get('account_id'),
             list(
-                LineUserAccountIdRecord.objects.filter(q).distinct()
+                WaUserIdRecord.objects.filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -68,7 +68,7 @@ def account_id_business_list(request: HttpRequest):
 
     logging.info("当前用户所分配的ids = %s", record_ids)
 
-    query = rest_list_util.search_account_common_field(AccountId.objects, body)
+    query = rest_list_util.search_account_common_field(WaAccountId.objects, body)
     query = query.filter(id__in=record_ids)
     res = list(
         query.values(
@@ -92,7 +92,7 @@ def dispatch_record_list(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("ID分配记录搜索 用户 = %s, body = %s", user.username, body)
     # 记录列表
-    query = LineUserAccountIdRecord.objects.filter(user__isnull=False, account__isnull=False)
+    query = WaUserIdRecord.objects.filter(user__isnull=False, account__isnull=False)
     account_id = body.get('account_id')
     # 输入的account_id进行查询，非数据库主键
     if not utils.str_is_null(account_id):
@@ -130,10 +130,10 @@ def account_id_add(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
 
-    if AccountId.objects.filter(account_id=account_id, op_user__isnull=False).exists():
+    if WaAccountId.objects.filter(account_id=account_id, op_user__isnull=False).exists():
         return RestResponse.failure("添加失败，该id已经存在")
 
-    AccountId.objects.create(
+    WaAccountId.objects.create(
         account_id=account_id, country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=user_id,
@@ -167,7 +167,7 @@ def account_id_update(request: HttpRequest):
     mark = body.get('mark', "")
     used = body.get('used')
 
-    query = AccountId.objects.filter(id=int(a_id), op_user__isnull=False)
+    query = WaAccountId.objects.filter(id=int(a_id), op_user__isnull=False)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
@@ -189,9 +189,10 @@ def account_id_update(request: HttpRequest):
             if not _status:
                 logging.info("管理员编辑为未使用")
                 # 1:1关系，直接找对应数据就行了
-                _q = LineUserAccountIdRecord.objects.filter(account_id=a_id)
+                _q = WaUserIdRecord.objects.filter(account_id=a_id)
                 if _q.exists():
                     _q.update(used=False)
+
             else:
                 # 修改is_bind=True，分发的时候就过滤这个了
                 upd_field['is_bind'] = True
@@ -199,7 +200,7 @@ def account_id_update(request: HttpRequest):
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
             # 同时更新Record
-            _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account_id=a_id)
+            _q = WaUserIdRecord.objects.filter(user_id=user_id, account_id=a_id)
             if _q.exists():
                 _q.update(used=True)
 
@@ -224,7 +225,7 @@ def account_id_del(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
 
-    AccountId.objects.filter(account_id=account_id).delete()
+    WaAccountId.objects.filter(account_id=account_id).delete()
     return RestResponse.success("删除成功")
 
 
@@ -244,11 +245,11 @@ def account_id_upload(request: HttpRequest):
     if not http_utils.check_user_id(user_id):
         return RestResponse.failure("上传，未获取到登录用户信息")
 
-    query = AccountId.objects.filter(account_id=a_id)
+    query = WaAccountId.objects.filter(account_id=a_id)
     if query.exists():
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
 
-    AccountId.objects.create(
+    WaAccountId.objects.create(
         account_id=a_id, op_user_id=int(user_id),
         create_time=time_utils.get_now_bj_time(),
         update_time=time_utils.get_now_bj_time()
@@ -293,7 +294,7 @@ def account_id_batch_upload(request: HttpRequest):
     data_list = list(set(data_list))
     logging.info("account_id_batch_upload#data_list 1 = %s", data_list)
 
-    exists_query = AccountId.objects.filter(account_id__in=data_list)
+    exists_query = WaAccountId.objects.filter(account_id__in=data_list)
 
     exists_list = []
     for query in exists_query:
@@ -306,12 +307,12 @@ def account_id_batch_upload(request: HttpRequest):
     logging.info("account_id_batch_upload#data_list 2 = %s", len(data_list))
     db_data_list = []
     for data in data_list:
-        db_data_list.append(AccountId(
+        db_data_list.append(WaAccountId(
             account_id=data, op_user_id=int(user_id),
             create_time=time_utils.get_now_bj_time(),
             update_time=time_utils.get_now_bj_time()
         ))
-    AccountId.objects.bulk_create(db_data_list)
+    WaAccountId.objects.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={
         'exists_ids': exists_list,
         'success_ids': data_list
@@ -329,13 +330,13 @@ def account_id_export(request):
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         logging.info("管理员导出全部数据")
         # 管理员导出全部数据
-        query_list = list(AccountId.objects.all())
+        query_list = list(WaAccountId.objects.all())
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
         # 非管理员导出当天数据
         query_list = list(
-            AccountId.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+            WaAccountId.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
         )
     logging.info("export id # 数据大小 = %s", len(query_list))
     excel_list: List[ExcelBean] = list()
@@ -373,7 +374,7 @@ def handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
     try:
-        code, msg = line_account_dao.dispatcher_account_id(is_all)
+        code, msg = wa_dao.dispatcher_account_id(is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)

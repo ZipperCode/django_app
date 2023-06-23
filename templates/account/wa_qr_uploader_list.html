@@ -301,7 +301,7 @@
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_qr/list',
+            url: '/api/wa/account_qr/list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
@@ -414,7 +414,7 @@
                 console.log(massage)
                 layer.load();
                 $.ajax({
-                    url: '/api/account_id/upload',
+                    url: '/api/wa/account_id/upload',
                     type: 'POST',
                     headers: headers,
                     data: massage.field,
@@ -445,7 +445,7 @@
             let layerId = 0
             const batchUpload = upload.render({
                 elem: '#upload',
-                url: '/api/account_qr/upload',
+                url: '/api/wa/account_qr/upload',
                 accept: 'images',
                 field: 'image',
                 headers: headers,
@@ -512,7 +512,7 @@
             let layerId = 0;
             const batchUpload = upload.render({
                 elem: '#batchUpload',
-                url: '/api/account_qr/bat_upload',
+                url: '/api/wa/account_qr/bat_upload',
                 accept: 'file',
                 field: 'file',
                 headers: headers,
@@ -578,7 +578,7 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/account_qr/dispatcher",
+                    url: "/api/wa/account_qr/dispatcher",
                     type: "post",
                     headers: headers,
                     dataType: "JSON",
@@ -621,7 +621,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/account_qr/update',
+                    url: '/api/wa/account_qr/update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -655,7 +655,7 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/account_qr/del",
+                    url: "/api/wa/account_qr/del",
                     data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
@@ -688,7 +688,7 @@
         function exportByIds(ids) {
             console.log("exportByIds#ids = ", ids);
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
+            xhr.open('get', "/api/wa/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {
@@ -720,7 +720,7 @@
 
             console.log("handleExport")
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export", true);
+            xhr.open('get', "/api/wa/account_qr/export", true);
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {

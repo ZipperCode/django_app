@@ -1,8 +1,10 @@
 import logging
 from typing import Tuple, List, Dict
 
+from django.db.models import F
+
 from util import time_utils
-from web_app.model.users import USER_ROLE_BUSINESS, User
+from web_app.model.users import USER_ROLE_BUSINESS, User, UserAccountRecord, RECORD_TYPE_LINE_ID, RECORD_TYPE_NONE
 
 
 def get_business_user_ids() -> Tuple[list, int]:
@@ -60,3 +62,18 @@ def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
     logging.info("dispatcher2#分发处理， u_ids = %s", u_ids)
     logging.info("dispatcher2#分发处理， user_num_map = %s", user_num_map)
 
+
+def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
+    start_t, end_t = time_utils.get_cur_day_time_range()
+    for k, v in u_record_map.items():
+        q = UserAccountRecord.objects.filter(user_id=k, create_time__gte=start_t, create_time__lt=end_t)
+        if q.exists():
+            q.update(data_num=F('data_num') + v, update_time=time_utils.get_now_bj_time())
+        else:
+            UserAccountRecord.objects.create(
+                user_id=k,
+                data_num=v,
+                type=t,
+                create_time=time_utils.get_now_bj_time(),
+                update_time=time_utils.get_now_bj_time()
+            )

@@ -50,35 +50,6 @@
 
                 </div>
                 <div class="layui-inline">
-                    <label class="layui-form-label">范围日期</label>
-                    <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_start">
-                    </div>
-                    <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_end">
-                    </div>
-                </div>
-                {% if request.session.user.role == 0 %}
-                    {% comment %} <div class="layui-inline">
-                        <label class="layui-form-label">上传人</label>
-                        <div class="layui-input-inline">
-                            <select name="op_user_select" lay-search="">
-                                <option value="">直接选择或搜索选择</option>
-                            </select>
-                        </div>
-                    </div>{% endcomment %}
-                    <div class="layui-inline">
-                        <label class="layui-form-label">上传人</label>
-                        <div class="layui-input-inline">
-                            <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
-                                   lay-verify="op_username"
-                                   class="layui-input"/>
-                        </div>
-                    </div>
-                {% endif %}
-                <div class="layui-inline">
                     <label class="layui-form-label">状态</label>
                     <div class="layui-input-inline">
                         <select name="used">
@@ -111,19 +82,10 @@
 
 {% comment %} component {% endcomment %}
 
-<script type="text/html" id="toolbar">
-    <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
-    <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出（当日）</a>
-    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>
-</script>
 
 <script type="text/html" id="table_control">
     <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
-    {% if request.session.user.role == 0 %}
-        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-    {% endif %}
 </script>
 
 <script type="text/html" id="qr_image">
@@ -297,11 +259,15 @@
                 , trigger: 'click'
             });
         });
+        let op_col_width = 120
+        {% if request.session.user.role == 0 %}
+            op_col_width = 180
+        {% endif %}
         /*表格渲染*/
         table.render({
             id: 'list',
             elem: '#list',
-            url: '/api/account_qr/list',
+            url: '/api/wa/account_qr/business_list',
             page: true,
             toolbar: '#toolbar',
             cellMinWidth: 80,
@@ -315,23 +281,12 @@
                 {field: 'work', title: '工作', align: 'center'},
                 {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
-                {
-                    field: 'is_bind',
-                    title: '绑定状态',
-                    align: 'center',
-                    sort: true,
-                    templet: bindTemplate,
-                    minWidth: 110
-                },
-                {% if request.session.user.role == 0 %}
-                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
-                {% endif %}
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 130}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
             ]],
-            defaultToolbar: ['filter',]
+            defaultToolbar: ['filter']
         });
 
         /*表格头工具监听*/
@@ -355,8 +310,6 @@
                     return
                 }
                 exportByIds(ids)
-            } else if (layEvent === 'dispatch') {
-                handleDispatch();
             }
         });
 
@@ -409,43 +362,11 @@
 
         initSearchForm();
 
-        function initAddForm() {
-            form.on('submit(addSubmit)', function (massage) {
-                console.log(massage)
-                layer.load();
-                $.ajax({
-                    url: '/api/account_id/upload',
-                    type: 'POST',
-                    headers: headers,
-                    data: massage.field,
-                    success: function (res) {
-                        if (res.code >= 0) {
-                            console.log("添加成功")
-                            layer.closeAll('loading');
-                            layer.load(2);
-                            layer.msg("添加成功", {icon: 6});
-                            setTimeout(function () {
-                                table.reload("list");
-                                layer.closeAll();//关闭所有的弹出层
-                            }, 1000);
-                        } else {
-                            layer.msg(res.msg, {icon: 5})
-                        }
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                });
-                return false
-            })
-
-        }
-
         function initUpload() {
             let layerId = 0
             const batchUpload = upload.render({
                 elem: '#upload',
-                url: '/api/account_qr/upload',
+                url: '/api/wa/account_qr/upload',
                 accept: 'images',
                 field: 'image',
                 headers: headers,
@@ -512,7 +433,7 @@
             let layerId = 0;
             const batchUpload = upload.render({
                 elem: '#batchUpload',
-                url: '/api/account_qr/bat_upload',
+                url: '/api/wa/account_qr/bat_upload',
                 accept: 'file',
                 field: 'file',
                 headers: headers,
@@ -551,7 +472,6 @@
                         }
                     });
                     layer.msg("上传成功", {icon: 6});
-                    handleDispatch();
                 },
                 error: function (index, upload) {
                     console.log(`upload error index = ${index} upload = ${upload}`)
@@ -573,34 +493,6 @@
             });
         }
 
-        function handleDispatch() {
-            layer.confirm('确定分发数据到用户吗？', function (index) {
-                layer.close(index);
-                const index2 = layer.load(0);
-                $.ajax({
-                    url: "/api/account_qr/dispatcher",
-                    type: "post",
-                    headers: headers,
-                    dataType: "JSON",
-                    success: function (msg) {
-                        if (msg.code === 0) {
-                            layer.msg(msg.msg, {icon: 6});
-                            setTimeout(function () {
-                                layer.close(index2);
-                            }, 1000);
-                            return;
-                        }
-                        layer.msg(msg.msg, {icon: 5});
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                    complete() {
-                        layer.close(index2);
-                    }
-                });
-            });
-        }
 
         function initEditForm(obj) {
             const data = obj.data;
@@ -621,7 +513,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 $.ajax({
-                    url: '/api/account_qr/update',
+                    url: '/api/wa/account_qr/update',
                     type: 'POST',
                     headers: headers,
                     data: {
@@ -655,7 +547,7 @@
                 layer.close(index);
                 const index2 = layer.load(0);
                 $.ajax({
-                    url: "/api/account_qr/del",
+                    url: "/api/wa/account_qr/del",
                     data: {id: obj.data.id, account_id: obj.data.account_id},
                     type: "post",
                     headers: headers,
@@ -688,7 +580,7 @@
         function exportByIds(ids) {
             console.log("exportByIds#ids = ", ids);
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
+            xhr.open('get', "/api/wa/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {
@@ -720,7 +612,7 @@
 
             console.log("handleExport")
             const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_qr/export", true);
+            xhr.open('get', "/api/wa/account_qr/export", true);
             xhr.responseType = "blob"; // 返回类型blob
             // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
             xhr.onload = function (e) {
@@ -777,15 +669,6 @@
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
             } else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
-            }
-        }
-
-        function bindTemplate(res) {
-
-            if (res.is_bind) {
-                return `<span class="layui-badge layui-bg-blue">已绑定</span>`
-            } else {
-                return `<span class="layui-badge layui-bg-gray">未绑定</span>`
             }
         }
 

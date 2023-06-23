@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 import shutil
 import traceback
@@ -17,11 +16,11 @@ from util import utils, qr_util, time_utils, excel_util
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
-from web_app.dao import line_account_dao, user_dao
+from web_app.dao import wa_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
-from web_app.model.accounts import AccountQr, LineUserAccountQrRecord
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
+from web_app.model.wa_accounts import WaUserQrRecord, WaAccountQr
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util
 
@@ -42,7 +41,7 @@ def account_qr_list(request: HttpRequest):
 
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = line_account_dao.search_account_qr_page(body, start_row, end_row, user)
+    res, count = wa_dao.search_account_qr_page(body, start_row, end_row, user)
     return RestResponse.success_list(count=count, data=res)
 
 
@@ -62,7 +61,7 @@ def business_list(request: HttpRequest):
         map(
             lambda x: x.get('account_id'),
             list(
-                LineUserAccountQrRecord.objects.filter(q).distinct()
+                WaUserQrRecord.objects.filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -74,7 +73,7 @@ def business_list(request: HttpRequest):
 
     logging.info("当前用户所分配的ids = %s", record_ids)
 
-    query = rest_list_util.search_account_common_field(AccountQr.objects, body)
+    query = rest_list_util.search_account_common_field(WaAccountQr.objects, body)
     query = query.filter(id__in=record_ids)
     res = list(
         query.values(
@@ -98,7 +97,7 @@ def dispatch_record_list(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("二维码分配记录搜索 用户 = %s, body = %s", user.username, body)
     # 记录列表
-    query = LineUserAccountQrRecord.objects.filter(user__isnull=False, account__isnull=False)
+    query = WaUserQrRecord.objects.filter(user__isnull=False, account__isnull=False)
     query = rest_list_util.search_record_common(query, body)
     record_list = list(query.all()[start_row: end_row])
 
@@ -117,7 +116,6 @@ def dispatch_record_list(request: HttpRequest):
 
 def account_qr_add(request: HttpRequest):
     body = utils.request_body(request)
-    # TODO 二维码
     qr = request.FILES['qr_file']
     country = body.get("country", "")
     age = body.get("age", 0)
@@ -134,7 +132,7 @@ def account_qr_add(request: HttpRequest):
     if utils.str_is_null(qr_content):
         return RestResponse.failure("添加失败，解析二维码失败")
 
-    AccountQr.objects.create(
+    WaAccountQr.objects.create(
         qr_content=qr_content, qr_path=qr, country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=user.id
@@ -162,7 +160,7 @@ def account_qr_update(request: HttpRequest):
     if not user_id or utils.str_is_null(user_id):
         return RestResponse.failure("修改失败，未获取到登录用户信息")
 
-    query = AccountQr.objects.filter(id=db_id)
+    query = WaAccountQr.objects.filter(id=db_id)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
     role = request.session.get('user').get('role')
@@ -180,7 +178,7 @@ def account_qr_update(request: HttpRequest):
             upd_field['used'] = _status
             if not _status:
                 logging.info("管理员编辑为不使用")
-                _q = LineUserAccountQrRecord.objects.filter(account_id=db_id)
+                _q = WaUserQrRecord.objects.filter(account_id=db_id)
                 if _q.exists():
                     _q.update(used=False)
             else:
@@ -189,7 +187,7 @@ def account_qr_update(request: HttpRequest):
         elif is_business_user:
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
-            _q = LineUserAccountQrRecord.objects.filter(user_id=user_id, account_id=db_id)
+            _q = WaUserQrRecord.objects.filter(user_id=user_id, account_id=db_id)
             if _q.exists():
                 _q.update(used=True)
 
@@ -210,7 +208,7 @@ def account_qr_del(request: HttpRequest):
     if utils.str_is_null(id_) or not utils.is_int(id_):
         return RestResponse.failure("删除失败，id不能为空或只能数字")
 
-    AccountQr.objects.filter(id=id_).delete()
+    WaAccountQr.objects.filter(id=id_).delete()
     return RestResponse.success("删除成功")
 
 
@@ -245,11 +243,11 @@ def account_qr_upload(request: HttpRequest):
     if not parsed:
         return RestResponse.failure("上传失败，无法解析二维码")
 
-    query = AccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
+    query = WaAccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
     if query.exists():
         return RestResponse.failure("上传失败，二维码已经存在")
 
-    AccountQr.objects.create(
+    WaAccountQr.objects.create(
         qr_content=str(parsed).strip(),
         qr_path=f,
         op_user_id=user_id
@@ -309,7 +307,7 @@ def account_qr_batch_upload(request: HttpRequest):
             shutil.rmtree(zip_dir)
         return RestResponse.failure("上传失败，解压zip不包含图片")
 
-    # key qr_content : AccountQr
+    # key qr_content : WaAccountQr
     c_qr = {}
     c_qr_image = {}
     t_fm = time_utils.fmt_datetime(time_utils.get_now_bj_time(), "%Y_%m_%d")
@@ -335,7 +333,7 @@ def account_qr_batch_upload(request: HttpRequest):
         db_path = t_dir + str(uuid.uuid4()) + str(os.path.splitext(name)[-1])
         logging.info("生成数据库保持的文件路径 path = %s", db_path)
         c_qr_image[parsed] = (i_path, db_path)
-        c_qr[parsed] = AccountQr(qr_content=str(parsed).strip(), qr_path=db_path, op_user_id=user_id)
+        c_qr[parsed] = WaAccountQr(qr_content=str(parsed).strip(), qr_path=db_path, op_user_id=user_id)
 
     if len(c_qr) == 0:
         if os.path.exists(zip_dir):
@@ -344,7 +342,7 @@ def account_qr_batch_upload(request: HttpRequest):
 
     c_qr_keys = list(c_qr.keys())
     # 查询已经存在的记录
-    query_list = AccountQr.objects.filter(qr_content__in=c_qr_keys)
+    query_list = WaAccountQr.objects.filter(qr_content__in=c_qr_keys)
 
     # 去掉数据库已经存在的数据
     for query in query_list:
@@ -360,7 +358,7 @@ def account_qr_batch_upload(request: HttpRequest):
 
     db_qr_list = list(c_qr.values())
     try:
-        AccountQr.objects.bulk_create(db_qr_list)
+        WaAccountQr.objects.bulk_create(db_qr_list)
     except Exception:
         if os.path.exists(zip_dir):
             shutil.rmtree(zip_dir)
@@ -406,7 +404,7 @@ def account_qr_export_with_id(request: HttpRequest):
         logging.info("export id 失败，需要登录")
         return HttpResponse(status=404, content="下载失败，需要登录")
 
-    query_list = AccountQr.objects.filter(id__in=ids, op_user_id=user_id).all()
+    query_list = WaAccountQr.objects.filter(id__in=ids, op_user_id=user_id).all()
     return handle_export(query_list)
 
 
@@ -421,12 +419,12 @@ def account_qr_export(request: HttpRequest):
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         # 管理员导出全部数据
         logging.info("管理员导出全部数据")
-        query_list = AccountQr.objects.all()
+        query_list = WaAccountQr.objects.all()
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
         # 非管理员导出当天数据
-        query_list = AccountQr.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+        query_list = WaAccountQr.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
     return handle_export(query_list)
 
 
@@ -475,7 +473,7 @@ def handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
     try:
-        code, msg = line_account_dao.dispatcher_account_qr(is_all)
+        code, msg = wa_dao.dispatcher_account_qr(is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)
