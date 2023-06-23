@@ -38,7 +38,7 @@ def op_admin(func):
         if isinstance(request, HttpRequest):
             logging.debug(f"admin 权限拦截器, 处理函数 {func.__name__}")
             user = request.session.get('user')
-            if user is None or not user.get('is_admin'):
+            if user is None or user.get('role') != 0:
                 return RestResponse.failure("非管理员无法操作")
 
         return func(*args, **kw)

@@ -11,10 +11,10 @@ from util import utils, time_utils, excel_util, http_utils
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
-from web_app.dao import account_dao, user_dao
+from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.accounts import AccountId
-from web_app.model.users import User
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
 from web_app.settings import BASE_DIR
 
 logging.basicConfig(
@@ -32,7 +32,7 @@ def account_id_list(request: HttpRequest):
         return RestResponse.success_list(count=0, data=[])
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = account_dao.search_account_id_page(body, start_row, end_row, user)
+    res, count = line_account_dao.search_account_id_page(body, start_row, end_row, user)
     return RestResponse.success_list(count=count, data=res)
 
 
@@ -89,18 +89,31 @@ def account_id_update(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    used = body.get('used')
 
     query = AccountId.objects.filter(id=int(a_id))
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
-    query.update(
-        account_id=account_id,
-        country=country, age=age,
-        work=work, money=money, mark=mark,
-        op_user_id=int(user_id),
-        update_time=time_utils.get_now_bj_time()
-    )
+    role = request.session.get('user').get('role')
+    is_business_user = role == USER_ROLE_BUSINESS
+    is_admin = role == USER_ROLE_ADMIN
+    upd_field = {
+        "account_id": account_id, "country": country, "age": age,
+        "work": work, "money": money, "mark": mark,
+        "op_user_id": int(user_id),
+        "update_time": time_utils.get_now_bj_time()
+    }
+
+    if is_admin and not utils.str_is_null(used):
+        logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+        upd_field['used'] = utils.is_bool_val(used)
+    elif is_business_user:
+        logging.info("业务员编辑, 直接修改为已使用")
+        upd_field['used'] = True
+
+    logging.info("要跟新的字段 = %s", upd_field)
+    query.update(**upd_field)
 
     return RestResponse.success("更新成功")
 
@@ -222,7 +235,17 @@ def account_id_export(request):
     if not http_utils.check_user_id(user_id):
         return RestResponse.failure("导出，未获取到登录用户信息")
 
-    query_list = list(AccountId.objects.all())
+    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+        logging.info("管理员导出全部数据")
+        # 管理员导出全部数据
+        query_list = list(AccountId.objects.all())
+    else:
+        logging.info("非管理员导出自身当天全部数据")
+        start, end = time_utils.get_cur_day_time_range()
+        # 非管理员导出当天数据
+        query_list = list(
+            AccountId.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+        )
     logging.info("export id # 数据大小 = %s", len(query_list))
     excel_list: List[ExcelBean] = list()
     for data in query_list:

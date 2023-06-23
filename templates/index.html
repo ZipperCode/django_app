@@ -64,38 +64,63 @@
                         <span>主页</span>
                     </a>
                 </li>
-                <li>
-                    <a>
-                        <i class="iconfont icon-guanliyuan"></i>
-                        <span>用户管理</span>
-                        <i class="iconfont icon-jiantouyou1"></i>
-                    </a>
-                    <dl>
-                        <dd>
-                            <a data-url="/view/auth/user_view">
-                                <i class="iconfont icon-guanliyuan"></i>
-                                <span>用户列表</span>
-                            </a>
-                        </dd>
-                    </dl>
-                </li>
+                {% if request.session.user.role == 0 %}
+                    <li>
+                        <a>
+                            <i class="iconfont icon-guanliyuan"></i>
+                            <span>用户管理</span>
+                            <i class="iconfont icon-jiantouyou1"></i>
+                        </a>
+                        <dl>
+                            <dd>
+                                <a data-url="/view/auth/user_view">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>用户列表</span>
+                                </a>
+                            </dd>
+                        </dl>
+                    </li>
+                {% endif %}
+
                 <li>
                     <a data-url="admin">
                         <i class="iconfont icon-quanxian"></i>
-                        <span>上传管理</span>
+                        <span>Lines管理</span>
                         <i class="iconfont icon-jiantouyou1"></i>
                     </a>
                     <dl>
                         <dd>
                             <a data-url="/view/auth/account_id/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>ID管理</span>
+                                <span>LinesID管理</span>
                             </a>
                         </dd>
                         <dd>
                             <a data-url="/view/auth/account_qr/list">
                                 <i class="iconfont icon-guanliyuan"></i>
-                                <span>二维码管理</span>
+                                <span>Lines二维码管理</span>
+                            </a>
+                        </dd>
+                    </dl>
+                </li>
+
+                <li>
+                    <a data-url="admin">
+                        <i class="iconfont layui-icon layui-icon-chat"></i>
+                        <span>WhatsApp管理</span>
+                        <i class="iconfont icon-jiantouyou1"></i>
+                    </a>
+                    <dl>
+                        <dd>
+                            <a data-url="/view/auth/account_id/list">
+                                <i class="iconfont icon-guanliyuan"></i>
+                                <span>WhatsAppID管理</span>
+                            </a>
+                        </dd>
+                        <dd>
+                            <a data-url="/view/auth/account_qr/list">
+                                <i class="iconfont icon-guanliyuan"></i>
+                                <span>WhatsApp二维码管理</span>
                             </a>
                         </dd>
                     </dl>

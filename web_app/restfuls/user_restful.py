@@ -46,6 +46,7 @@ def update_user(request: HttpRequest):
     username = body.get("username", "")
     password = body.get('password', "")
     name = body.get('name', "")
+    role = body.get('role', 2)
     logging.info("update_user#username = " + str(username))
     logging.info("update_user#password = " + str(password))
     logging.info("update_user#name = " + str(name))
@@ -53,7 +54,7 @@ def update_user(request: HttpRequest):
         return http_utils.ret_error("username is null")
     if utils.str_is_null(str(password)):
         return http_utils.ret_error("password is null")
-    user_dao.update_user(username, password, name)
+    user_dao.update_user(username, password, name, role)
     return RestResponse.success()
 
 
@@ -77,7 +78,8 @@ def login(request: HttpRequest):
         'id': user.id,
         'username': user.username,
         'name': user.name,
-        'is_admin': user.is_admin
+        'is_admin': user.is_admin,
+        'role': user.role
     }
     return RestResponse.success("登录成功")
 
@@ -144,13 +146,18 @@ def user_list(request: HttpRequest):
     logging.info("用户列表# body = %s", body)
 
     username = body.get('username', "")
+    role = body.get('role', "")
+
     user_query = User.objects
 
     if not utils.str_is_null(username):
-        user_query = user_query.filter(username__contains=username  )
+        user_query = user_query.filter(username__contains=username)
+
+    if not utils.str_is_null(role) or utils.is_int(role):
+        user_query = user_query.filter(role=int(role))
 
     query = user_query.values(
-        'id', 'username', 'name', 'is_admin', 'create_time', 'update_time'
+        'id', 'username', 'name', 'role', 'create_time', 'update_time'
     )[start_row: end_row]
     count = query.count()
     return RestResponse.success_list(count=count, data=list(query))
@@ -177,6 +184,7 @@ def user_add(request: HttpRequest):
     username = body.get("username", "")
     password = body.get('password', '')
     name = body.get('name', '')
+    role = body.get('role', 2)
     logging.info("user_add#username = " + str(username))
     logging.info("user_add#password = " + str(password))
     logging.info("user_add#name = " + str(name))
@@ -190,7 +198,7 @@ def user_add(request: HttpRequest):
         return RestResponse.failure("添加失败，用户已存在")
 
     create_user = User.objects.create(
-        username=username, password=password, name=name,
+        username=username, password=password, name=name, role=role,
         create_time=time_utils.get_now_bj_time(),
         update_time=time_utils.get_now_bj_time()
     )
@@ -212,7 +220,10 @@ def user_update(request: HttpRequest):
         return RestResponse.failure("更新失败，记录不存在")
 
     name = body.get('name', '')
-    rows = query.update(name=name, update_time=time_utils.get_now_bj_time())
+    role = body.get('role')
+    if role is None or utils.is_int(role):
+        return RestResponse.failure("更新失败，角色信息不能为空")
+    rows = query.update(name=name, update_time=time_utils.get_now_bj_time(), role=role)
     return RestResponse.success(data={
         'rows': rows
     })

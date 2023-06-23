@@ -1,15 +1,22 @@
 from django.db import models
 
+USER_ROLE_ADMIN = 0
+USER_ROLE_UPLOADER = 1
+USER_ROLE_BUSINESS = 2
+
+ROLE_CHOOSE = (
+    (USER_ROLE_ADMIN, u"管理员"),
+    (USER_ROLE_UPLOADER, u"粉端账号"),
+    (USER_ROLE_BUSINESS, u"业务员"),
+)
+
 
 class User(models.Model):
     id = models.AutoField(primary_key=True)
     username = models.CharField("用户名", max_length=255, null=False, unique=True)
     password = models.CharField("密码", max_length=64, null=False)
     is_admin = models.BooleanField("是否管理员", default=False)
+    role = models.IntegerField("用户角色", choices=ROLE_CHOOSE, default=2)
     name = models.CharField("显示的名称", max_length=255, null=True)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
-
-
-
-

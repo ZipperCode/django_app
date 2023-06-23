@@ -26,10 +26,10 @@ def get_user(request: HttpRequest):
     return None
 
 
-def update_user(username: str, password: str, name: str):
+def update_user(username: str, password: str, name: str, role):
     query = User.objects.filter(phone=username)
     if not query.exists():
-        return User.objects.create(username=username, password=password, name=name)
+        return User.objects.create(username=username, password=password, name=name, role=role)
     else:
         return query.update(password=password, name=name)
 

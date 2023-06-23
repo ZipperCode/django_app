@@ -65,5 +65,7 @@ urlpatterns = [
     path('api/account_qr/export', account_qr_restful.account_qr_export),
 
 
+
+
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
 ] + static(settings.MEDIA_URL, serve, document_root=settings.MEDIA_ROOT)

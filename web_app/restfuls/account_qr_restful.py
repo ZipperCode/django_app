@@ -14,11 +14,11 @@ from util import utils, qr_util, time_utils, excel_util
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
-from web_app.dao import account_dao
+from web_app.dao import line_account_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.accounts import AccountId, AccountQr
-from web_app.model.users import User
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 
 logging.basicConfig(
@@ -38,7 +38,7 @@ def account_id_list(request: HttpRequest):
 
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = account_dao.search_account_qr_page(body, start_row, end_row, int(user_id))
+    res, count = line_account_dao.search_account_qr_page(body, start_row, end_row, int(user_id))
     return RestResponse.success_list(count=count, data=res)
 
 
@@ -81,6 +81,7 @@ def account_qr_update(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    used = body.get('used')
     if utils.str_is_null(db_id) or not utils.is_int(db_id):
         return RestResponse.failure("修改失败，id不能为空或只能数字")
 
@@ -91,10 +92,22 @@ def account_qr_update(request: HttpRequest):
     query = AccountQr.objects.filter(id=db_id)
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
+    role = request.session.get('user').get('role')
+    is_business_user = role == USER_ROLE_BUSINESS
+    is_admin = role == USER_ROLE_ADMIN
+    upd_field = {
+        "country": country, "age": age,
+        "work": work, "money": money, "mark": mark,
+        "update_time": time_utils.get_now_bj_time()
+    }
+    if is_admin and not utils.str_is_null(used):
+        logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+        upd_field['used'] = utils.is_bool_val(used)
+    elif is_business_user:
+        logging.info("业务员编辑, 直接修改为已使用")
+        upd_field['used'] = True
 
-    query.update(
-        country=country, age=age, work=work, money=money, mark=mark
-    )
+    query.update(**upd_field)
 
     return RestResponse.success("更新成功")
 
@@ -319,7 +332,15 @@ def account_qr_export(request: HttpRequest):
         logging.info("export id 失败，需要登录")
         return HttpResponse(status=404, content="下载失败，需要登录")
 
-    query_list = AccountQr.objects.filter(op_user_id=user_id).all()
+    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+        # 管理员导出全部数据
+        logging.info("管理员导出全部数据")
+        query_list = AccountQr.objects.all()
+    else:
+        logging.info("非管理员导出自身当天全部数据")
+        start, end = time_utils.get_cur_day_time_range()
+        # 非管理员导出当天数据
+        query_list = AccountQr.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
     return handle_export(query_list)
 
 

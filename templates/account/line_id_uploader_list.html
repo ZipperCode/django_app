@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>管理员列表</title>
+    <title>上传人管理列表</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
     <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
@@ -50,37 +50,17 @@
                     </div>
 
                 </div>
-
                 <div class="layui-inline">
-                    <label class="layui-form-label">范围日期</label>
+                    <label class="layui-form-label">状态</label>
                     <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_start">
-                    </div>
-                    <div class="layui-input-inline">
-                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
-                               name="date_end">
+                        <select name="used">
+                            <option value="">请选择</option>
+                            <option value="false">未使用</option>
+                            <option value="true">已使用</option>
+                        </select>
                     </div>
                 </div>
-                {% if request.session.user.is_admin %}
-                    {% comment %}<div class="layui-inline">
-                        <label class="layui-form-label">上传人</label>
-                        <div class="layui-input-inline">
-                            <select name="op_user_select" lay-search="">
-                                <option value="">直接选择或搜索选择</option>
-                            </select>
-                        </div>
-                    </div>{% endcomment %}
-                    <div class="layui-inline">
-                        <label class="layui-form-label">上传人</label>
-                        <div class="layui-input-inline">
-                            <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
-                                   lay-verify="op_username"
-                                   class="layui-input"/>
-                        </div>
 
-                    </div>
-                {% endif %}
                 <div class="layui-inline">
                     <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
                     </button>
@@ -107,17 +87,11 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出</a>
+    <a class="layui-btn layui-btn-sm" href="/api/account_id/export">全部批量导出（当日）</a>
 </script>
-
 <script type="text/html" id="table_control">
-    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
-    {% if request.session.user.is_admin %}
-        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-    {% endif %}
 </script>
-
 {% comment %} Form {% endcomment %}
 <div class="layui-row" id="addForm" style="display:none;">
     <div class="layui-col-md10">
@@ -158,7 +132,6 @@
     <br/>
     <button class="layui-btn  layui-btn-submit layui-btn-fluid" lay-submit="" id="btnBatchUpload">确认上传</button>
 </div>
-
 
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
@@ -227,8 +200,7 @@
         const layer = layui.layer,
             form = layui.form;
         const table = layui.table;
-        const laydate = layui.laydate;
-        const laytpl = layui.laytpl;
+
         const upload = layui.upload
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
@@ -236,21 +208,6 @@
             "X-CSRFToken": csrftoken
         };
 
-        lay('.test-item').each(function () {
-            const date = new Date()
-            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-            laydate.render({
-                elem: this,
-                type: 'datetime',
-                min: '2023-1-1 00:00:00',
-                max: max
-                , trigger: 'click'
-            });
-        });
-        let op_col_width = 120
-        {% if request.session.user.is_admin %}
-            op_col_width = 180
-        {% endif %}
 
         /*表格渲染*/
         table.render({
@@ -268,16 +225,12 @@
                 {field: 'age', title: '年龄', align: 'center', sort: true},
                 {field: 'work', title: '工作', align: 'center', sort: true},
                 {field: 'money', title: '收入', align: 'center', sort: true},
-
-                {% if request.session.user.is_admin %}
-                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
-                {% endif %}
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
-                {field: 'update_time', title: '更新时间', align: 'center', sort: true},
-                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 70}
             ]],
-            defaultToolbar: ['filter', 'exports']
+            defaultToolbar: ['filter']
         });
 
         /*表格头工具监听*/
@@ -300,8 +253,6 @@
                     content: $("#uploadDialog")
                 });
                 initBatchUpload()
-            } else if (layEvent === 'batch_export') {
-                handleExport()
             }
         });
 
@@ -316,8 +267,6 @@
                     content: $("#editForm")
                 });
                 initEditForm(obj);
-            } else if (layEvent === 'del') {
-                handleDel(obj);
             } else if (layEvent === 'copy') {
                 const text = obj.data.account_id
                 {% comment %}if (navigator.clipboard) {
@@ -444,7 +393,6 @@
             });
         }
 
-
         function initEditForm(obj) {
             const data = obj.data;
             $("#p_username").innerHTML = data.username;
@@ -494,93 +442,14 @@
             });
         }
 
-        function handleDel(obj) {
-            layer.confirm('确定删除吗？', function (index) {
-                layer.close(index);
-                const index2 = layer.load(0);
-                $.ajax({
-                    url: "/api/account_id/del",
-                    data: {id: obj.data.id, account_id: obj.data.account_id},
-                    type: "post",
-                    headers: headers,
-                    dataType: "JSON",
-                    success: function (msg) {
-                        if (msg.code === 0) {
-                            layer.msg(msg.msg);
-                            setTimeout(function () {
-                                layer.closeAll();//关闭所有的弹出层2
-                                table.reload("list", {
-                                    page: {
-                                        curr: 1
-                                    }
-                                });//修改成功修改表格数据不进行跳转
-                            }, 1000);
-                            return;
-                        }
-                        layer.msg(msg.msg, {icon: 5});
-                    },
-                    error: function () {
-                        layer.msg("请求失败", {icon: 5})
-                    },
-                    complete() {
-                        layer.close(index2);
-                    }
-                });
-            });
-        }
-
-        function handleExport() {
-            const xhr = new XMLHttpRequest();
-            xhr.open('get', "/api/account_id/export", true); // 也可以使用POST方式，根据接口
-            xhr.responseType = "blob"; // 返回类型blob
-            // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
-            xhr.onload = function () {
-                // 请求完成
-                if (this.status === 200) {
-                    // 返回200
-                    const blob = new Blob([this.response], {
-                        type: "application/vnd.ms-excel"
-                    });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    $("body").append(a); // 修复firefox中无法触发click
-                    a.click();
-                    $(a).remove();
-                } else if (this.status === 404 || this.status === 500) {
-                    console.log("404 response = ", this.response)
-                    layer.msg("导出失败，" + this.status, {icon: 5})
-                }
-            };
-            xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
-            xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
-                layer.msg("导出失败，请求超时", {icon: 5})
+        function usedTemplate(res) {
+            console.log("used = " + res.used)
+            if (res.used) {
+                return `<span class="layui-badge layui-bg-green">已使用</span>`
+            } else {
+                return `<span class="layui-badge layui-bg-orange">未使用</span>`
             }
-            // 发送ajax请求
-            xhr.send()
         }
-
-        (function initUserList() {
-            $.ajax({
-                url: '/api/user_simple_list',
-                success: function (res) {
-                    if (res.code >= 0) {
-                        let data = res.data;
-                        let selectElements = $("select[name='op_user_select']");
-                        for (let j = 0; j < selectElements.length; j++) {
-                            for (let i = 0; i < data.length; i++) {
-                                let item = data[i];
-                                selectElements.eq(j).append(
-                                    `<option value="${item.id}">${item.username}</option>`
-                                );
-                            }
-                        }
-                        form.render('select');
-                    } else {
-                        console.log("策略列表，错误：", res.msg)
-                    }
-                }
-            });
-        })();
 
         //滚动条
         jQuery(".page-main").scrollbar();

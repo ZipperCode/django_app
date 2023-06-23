@@ -11,7 +11,7 @@ from django.utils.crypto import md5
 
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
-from web_app.model.users import User
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_UPLOADER, USER_ROLE_BUSINESS
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -151,9 +151,38 @@ def user_edit_view(request: HttpRequest):
 
 @log_func
 def account_id_list_view(request: HttpRequest):
-    return render(request, 'account/id_list.html')
+    logging.info(request)
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'account/line_id_list.html')
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'account/line_id_uploader_list.html')
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'account/line_id_business_list.html')
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })
 
 
 @log_func
 def account_qr_list_view(request: HttpRequest):
-    return render(request, 'account/qr_list.html')
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'account/line_qr_list.html')
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'account/line_qr_uploader_list.html')
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'account/line_qr_business_list.html')
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })

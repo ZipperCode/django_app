@@ -14,6 +14,7 @@ class AccountId(models.Model):
     money = models.DecimalField("收入", default=0.0, max_digits=10, decimal_places=2)
     mark = models.TextField("备注", null=True)
     op_user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
@@ -38,6 +39,7 @@ class AccountQr(models.Model):
     money = models.DecimalField("收入", default=0.0, max_digits=10, decimal_places=2)
     mark = models.TextField("备注", null=True)
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
+    used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
@@ -52,3 +54,19 @@ class AccountQr(models.Model):
         if not utils.str_is_null(op_u.name):
             op_name = op_u.name
         return op_name
+
+
+class LineUserAccountIdRecord(models.Model):
+    id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
+    a_id = models.ForeignKey(to="AccountId", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
+    create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
+    update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
+
+
+class LineUserAccountQrRecord(models.Model):
+    id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
+    qr_id = models.ForeignKey(to="AccountQr", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
+    create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
+    update_time = models.DateTimeField("更新时间", null=True, auto_now=True)

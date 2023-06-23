@@ -27,10 +27,22 @@ def get_now_bj_time() -> str:
     return utc_now.astimezone(TIME_ZONE_ASIA_SHANG_HAI).strftime(DATE_TIME_FORMAT)
 
 
+def get_now_bj_datetime() -> datetime:
+    utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    return utc_now.astimezone(TIME_ZONE_ASIA_SHANG_HAI)
+
+
 def get_now_sydney_time() -> datetime:
     utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)
     return utc_now.astimezone(TIME_ZONE_AUSTRALIA_SYDNEY)
     # return datetime.now(tz=UTC)
+
+
+def get_cur_day_time_range() -> tuple:
+    bj_t = get_now_bj_datetime()
+    cur_start_t = datetime(bj_t.year, bj_t.month, bj_t.day, 0, 0, 0)
+    cur_end_t = datetime(bj_t.year, bj_t.month, bj_t.day, 23, 59, 59)
+    return cur_start_t, cur_end_t
 
 
 def fmt_utc2sydney_time(t):
