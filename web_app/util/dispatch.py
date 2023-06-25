@@ -46,6 +46,7 @@ def dispatcher_user(ids_: List[int], u_ids: List[int], div_num: int, mod_num: in
                 u_id = u_ids[j]
                 a_index += 1
                 func(u_id, _id)
+                j += 1
 
     if mod_num > 0:
         logging.info("dispatcher#将剩余的数据，依次分配到用户")
@@ -55,6 +56,7 @@ def dispatcher_user(ids_: List[int], u_ids: List[int], div_num: int, mod_num: in
             _id = ids_[a_index]
             a_index += 1
             func(u_id, _id)
+            i += 1
 
 
 def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, int], func):
