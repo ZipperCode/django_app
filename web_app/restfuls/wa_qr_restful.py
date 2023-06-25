@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import shutil
@@ -310,7 +311,7 @@ def account_qr_batch_upload(request: HttpRequest):
     # key qr_content : WaAccountQr
     c_qr = {}
     c_qr_image = {}
-    t_fm = time_utils.fmt_datetime(time_utils.get_now_bj_time(), "%Y_%m_%d")
+    t_fm = time_utils.fmt_datetime(datetime.datetime.strptime(time_utils.get_now_bj_time()), "%Y_%m_%d")
     t_dir = f"upload/{t_fm}/"
     executor = ThreadPoolExecutor(max_workers=30)
 
