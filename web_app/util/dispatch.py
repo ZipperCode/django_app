@@ -41,7 +41,7 @@ def dispatcher_user(ids_: List[int], u_ids: List[int], div_num: int, mod_num: in
         i = 0
         while i < div_num and a_index < len_ids:
             j = 0
-            while j < len_ids and a_index < len_ids:
+            while j < len(u_ids) and a_index < len_ids:
                 _id = ids_[a_index]
                 u_id = u_ids[j]
                 a_index += 1
