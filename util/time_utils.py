@@ -22,9 +22,14 @@ DATE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
 
 
-def get_now_bj_time() -> str:
+def get_now_bj_time_str() -> str:
     utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)
     return utc_now.astimezone(TIME_ZONE_ASIA_SHANG_HAI).strftime(DATE_TIME_FORMAT)
+
+
+def get_now_bj_time() -> datetime:
+    utc_now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    return utc_now.astimezone(TIME_ZONE_ASIA_SHANG_HAI)
 
 
 def get_now_bj_datetime() -> datetime:
@@ -120,5 +125,5 @@ def get_now_utc():
 
 
 if __name__ == '__main__':
-    print(get_now_bj_time())
+    print(get_now_bj_time_str())
     pass

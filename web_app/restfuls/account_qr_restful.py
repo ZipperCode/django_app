@@ -17,6 +17,7 @@ from django.utils.encoding import escape_uri_path
 from util import utils, qr_util, time_utils, excel_util
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
+from util.time_utils import DATE_FORMAT
 from util.utils import handle_uploaded_file
 from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
@@ -172,7 +173,7 @@ def account_qr_update(request: HttpRequest):
     upd_field = {
         "country": country, "age": age,
         "work": work, "money": money, "mark": mark,
-        "update_time": time_utils.get_now_bj_time()
+        "update_time": time_utils.get_now_bj_time_str()
     }
     with transaction.atomic():
         if is_admin and not utils.str_is_null(used):
@@ -313,7 +314,7 @@ def account_qr_batch_upload(request: HttpRequest):
     # key qr_content : AccountQr
     c_qr = {}
     c_qr_image = {}
-    t_fm = time_utils.fmt_datetime(datetime.datetime.strptime(time_utils.get_now_bj_time()), "%Y_%m_%d")
+    t_fm = time_utils.fmt_datetime(time_utils.get_now_bj_time(), "%Y_%m_%d")
     t_dir = f"upload/{t_fm}/"
     executor = ThreadPoolExecutor(max_workers=30)
 

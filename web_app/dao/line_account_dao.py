@@ -87,8 +87,8 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
                 user_id=_u_id,
                 account_id=_a_id,
                 used=False,
-                create_time=time_utils.get_now_bj_time(),
-                update_time=time_utils.get_now_bj_time()
+                create_time=time_utils.get_now_bj_time_str(),
+                update_time=time_utils.get_now_bj_time_str()
             )
         )
 
@@ -140,8 +140,8 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
             LineUserAccountQrRecord(
                 user_id=_u_id,
                 account_id=_a_id,
-                create_time=time_utils.get_now_bj_time(),
-                update_time=time_utils.get_now_bj_time()
+                create_time=time_utils.get_now_bj_time_str(),
+                update_time=time_utils.get_now_bj_time_str()
             )
         )
 

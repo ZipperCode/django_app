@@ -68,12 +68,12 @@ def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
     for k, v in u_record_map.items():
         q = UserAccountRecord.objects.filter(user_id=k, create_time__gte=start_t, create_time__lt=end_t)
         if q.exists():
-            q.update(data_num=F('data_num') + v, update_time=time_utils.get_now_bj_time())
+            q.update(data_num=F('data_num') + v, update_time=time_utils.get_now_bj_time_str())
         else:
             UserAccountRecord.objects.create(
                 user_id=k,
                 data_num=v,
                 type=t,
-                create_time=time_utils.get_now_bj_time(),
-                update_time=time_utils.get_now_bj_time()
+                create_time=time_utils.get_now_bj_time_str(),
+                update_time=time_utils.get_now_bj_time_str()
             )

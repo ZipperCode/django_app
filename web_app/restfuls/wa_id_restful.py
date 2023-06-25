@@ -137,8 +137,8 @@ def account_id_add(request: HttpRequest):
         account_id=account_id, country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=user_id,
-        create_time=time_utils.get_now_bj_time(),
-        update_time=time_utils.get_now_bj_time()
+        create_time=time_utils.get_now_bj_time_str(),
+        update_time=time_utils.get_now_bj_time_str()
     )
 
     return RestResponse.success("添加成功")
@@ -178,7 +178,7 @@ def account_id_update(request: HttpRequest):
         "account_id": account_id, "country": country, "age": age,
         "work": work, "money": money, "mark": mark,
         "op_user_id": int(user_id),
-        "update_time": time_utils.get_now_bj_time()
+        "update_time": time_utils.get_now_bj_time_str()
     }
 
     with transaction.atomic():
@@ -251,8 +251,8 @@ def account_id_upload(request: HttpRequest):
 
     WaAccountId.objects.create(
         account_id=a_id, op_user_id=int(user_id),
-        create_time=time_utils.get_now_bj_time(),
-        update_time=time_utils.get_now_bj_time()
+        create_time=time_utils.get_now_bj_time_str(),
+        update_time=time_utils.get_now_bj_time_str()
     )
     return RestResponse.success("上传成功")
 
@@ -309,8 +309,8 @@ def account_id_batch_upload(request: HttpRequest):
     for data in data_list:
         db_data_list.append(WaAccountId(
             account_id=data, op_user_id=int(user_id),
-            create_time=time_utils.get_now_bj_time(),
-            update_time=time_utils.get_now_bj_time()
+            create_time=time_utils.get_now_bj_time_str(),
+            update_time=time_utils.get_now_bj_time_str()
         ))
     WaAccountId.objects.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={

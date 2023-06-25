@@ -199,8 +199,8 @@ def user_add(request: HttpRequest):
 
     create_user = User.objects.create(
         username=username, password=password, name=name, role=role,
-        create_time=time_utils.get_now_bj_time(),
-        update_time=time_utils.get_now_bj_time()
+        create_time=time_utils.get_now_bj_time_str(),
+        update_time=time_utils.get_now_bj_time_str()
     )
     create_user.password = ''
     return RestResponse.success(data=utils.object_to_json(create_user))
@@ -223,7 +223,7 @@ def user_update(request: HttpRequest):
     role = body.get('role')
     if role is None or not utils.is_int(role):
         return RestResponse.failure("更新失败，角色信息不能为空")
-    rows = query.update(name=name, update_time=time_utils.get_now_bj_time(), role=role)
+    rows = query.update(name=name, update_time=time_utils.get_now_bj_time_str(), role=role)
     return RestResponse.success(data={
         'rows': rows
     })
