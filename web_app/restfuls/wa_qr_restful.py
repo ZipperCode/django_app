@@ -55,13 +55,13 @@ def business_list(request: HttpRequest):
 
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(user_id=user.id, create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
 
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
             list(
-                WaUserQrRecord.objects.filter(q).distinct()
+                WaUserQrRecord.objects.filter(user_id=user.id).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
