@@ -1,8 +1,12 @@
 import logging
 from typing import Tuple, List, Dict
 
+from django.db import transaction
+from django.db.models import QuerySet
+
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
+from web_app.model.accounts import LineUserAccountIdRecord
 from web_app.model.users import USER_ROLE_BUSINESS, User, UserAccountRecord, RECORD_TYPE_LINE_ID, RECORD_TYPE_NONE
 
 
@@ -110,6 +114,7 @@ def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
 
 
 def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
+    logging.info("保存数量值#recordMap = %s", u_record_map)
     start_t, end_t = time_utils.get_cur_day_time_range()
     for k, v in u_record_map.items():
         q = UserAccountRecord.objects.filter(user_id=k, create_time__gte=start_t, create_time__lt=end_t)
@@ -150,6 +155,36 @@ def user_num_record(t: int) -> Tuple[Dict[int, int], int]:
         user_map[u_id] = n
         if max_count < n:
             max_count = n
+
+    logging.info("user_num_record#最大用户拥有的数据数量 %s, max_count = %s", user_map, max_count)
+    return user_map, max_count
+
+
+@log_func
+def user_num_record2(objects: QuerySet, t: int) -> Tuple[Dict[int, int], int]:
+    """
+    用户当天的数据数量
+    @return 用户数量Map和最大数量元组
+    """
+    start_t, end_t = time_utils.get_cur_day_time_range()
+    business_u_ids = list(map(lambda x: int(x.get("id")), User.objects.filter(role=USER_ROLE_BUSINESS).values('id')))
+    user_map: Dict[int, int] = dict()
+    max_count = 0
+
+    with transaction.atomic():
+        for u in business_u_ids:
+            _count = objects.filter(
+                create_time__gte=start_t, create_time__lt=end_t, account__isnull=False, user_id=u
+            ).count()
+            logging.info("用户 %s 当天拥有的数据量为 %s", u, _count)
+            user_map[u] = _count
+            if max_count < _count:
+                max_count = _count
+            uar = UserAccountRecord.objects.filter(
+                create_time__gte=start_t, create_time__lt=end_t, user_id=u, type=t
+            )
+            if uar.exists():
+                uar.update(data_num=_count)
 
     logging.info("user_num_record#最大用户拥有的数据数量 %s, max_count = %s", user_map, max_count)
     return user_map, max_count

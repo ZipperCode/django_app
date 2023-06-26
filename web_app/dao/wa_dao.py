@@ -71,7 +71,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     bat_aid_record_list: List[WaUserIdRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_WA_ID)
+    u_record_map, max_num = dispatch.user_num_record2(WaUserIdRecord.objects, RECORD_TYPE_WA_ID)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
@@ -129,7 +129,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     logging.info("WaAccountQr#二维码数量为 = %s, 用户数量为= %s", len_ids, len_u_ids)
     logging.info("WaAccountQr#个用户分配Id数量为 = %s, 剩余未分配的数量为= %s", div_num, mod_num)
     bat_aid_record_list: List[WaUserQrRecord] = []
-    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_WA_QR)
+    u_record_map, max_num = dispatch.user_num_record2(WaUserQrRecord.objects, RECORD_TYPE_WA_QR)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):

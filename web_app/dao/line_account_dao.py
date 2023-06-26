@@ -73,7 +73,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     bat_aid_record_list: List[LineUserAccountIdRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_LINE_ID)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects, RECORD_TYPE_LINE_ID)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
@@ -127,12 +127,10 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     if len_ids == 0:
         return -1, "未找到当日可分配的数据"
     logging.info("lineAccountQr#查询到当天新增的数据量为 = %s", len_ids)
-    div_num, mod_num = dispatch.get_dispatcher_num(len_ids, len_u_ids)
     logging.info("lineAccountQr#二维码数量为 = %s, 用户数量为= %s", len_ids, len_u_ids)
-    logging.info("lineAccountQr#个用户分配Id数量为 = %s, 剩余未分配的数量为= %s", div_num, mod_num)
     bat_aid_record_list: List[LineUserAccountQrRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_LINE_QR)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects, RECORD_TYPE_LINE_QR)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
