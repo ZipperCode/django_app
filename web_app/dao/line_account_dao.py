@@ -136,11 +136,13 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
+        logging.info("add_record = uid = %s, id = %s", _u_id, _a_id)
         _num = u_record_map.get(_u_id)
         if _num is None:
             _num = 1
         else:
             _num += 1
+        u_record_map[_u_id] = _num
         add_u_ids.add(_u_id)
         bat_aid_record_list.append(
             LineUserAccountQrRecord(

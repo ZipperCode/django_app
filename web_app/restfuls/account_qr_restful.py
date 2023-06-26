@@ -223,40 +223,45 @@ def account_qr_upload(request: HttpRequest):
     filename = request.POST["filename"]
     if not f:
         return HttpResponse("上传失败，数据传输异常")
+    if request.session['in_used']:
+        return RestResponse.failure("上传失败，正在处理中")
+    request.session['in_used'] = True
+    try:
+        user_id = request.session.get('user_id')
+        if not user_id or utils.str_is_null(user_id):
+            return RestResponse.failure("上传失败，未获取到登录用户信息")
 
-    user_id = request.session.get('user_id')
-    if not user_id or utils.str_is_null(user_id):
-        return RestResponse.failure("上传失败，未获取到登录用户信息")
+        logging.info("account_qr_upload# f = %s", type(f))
+        logging.info("account_qr_upload#name = %s", filename)
+        ext = str(os.path.splitext(filename)[-1])
+        logging.info("account_qr_upload#ext = %s", ext)
+        new_file_name = str(uuid.uuid1()) + ext
+        logging.info("account_id_batch_upload#new_file_name = %s", ext)
+        temp_path = os.path.join(TEMP_DIR, new_file_name)
+        path = handle_uploaded_file(temp_path, f)
+        logging.info("上传图片，临时文件为 = %s", temp_path)
+        if not path or not os.path.exists(temp_path):
+            return RestResponse.failure("上传失败，保存临时文件失败")
 
-    logging.info("account_qr_upload# f = %s", type(f))
-    logging.info("account_qr_upload#name = %s", filename)
-    ext = str(os.path.splitext(filename)[-1])
-    logging.info("account_qr_upload#ext = %s", ext)
-    new_file_name = str(uuid.uuid1()) + ext
-    logging.info("account_id_batch_upload#new_file_name = %s", ext)
-    temp_path = os.path.join(TEMP_DIR, new_file_name)
-    path = handle_uploaded_file(temp_path, f)
-    logging.info("上传图片，临时文件为 = %s", temp_path)
-    if not path or not os.path.exists(temp_path):
-        return RestResponse.failure("上传失败，保存临时文件失败")
+        # 识别图片
+        parsed = qr_util.get_qr_code(temp_path)
+        # os.remove(temp_path)
+        logging.info("account_qr_upload#parsed = %s", parsed)
+        if not parsed:
+            return RestResponse.failure("上传失败，无法解析二维码")
 
-    # 识别图片
-    parsed = qr_util.get_qr_code(temp_path)
-    # os.remove(temp_path)
-    logging.info("account_qr_upload#parsed = %s", parsed)
-    if not parsed:
-        return RestResponse.failure("上传失败，无法解析二维码")
+        query = AccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
+        if query.exists():
+            return RestResponse.failure("上传失败，二维码已经存在")
 
-    query = AccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
-    if query.exists():
-        return RestResponse.failure("上传失败，二维码已经存在")
-
-    AccountQr.objects.create(
-        qr_content=str(parsed).strip(),
-        qr_path=f,
-        op_user_id=user_id
-    )
-    return RestResponse.success("上传成功")
+        AccountQr.objects.create(
+            qr_content=str(parsed).strip(),
+            qr_path=f,
+            op_user_id=user_id
+        )
+        return RestResponse.success("上传成功")
+    finally:
+        request.session['in_used'] = False
 
 
 @log_func
