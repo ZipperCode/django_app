@@ -71,7 +71,8 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     bat_aid_record_list: List[WaUserIdRecord] = []
 
-    u_record_map: Dict[int, int] = dict()
+    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_WA_ID)
+    add_u_ids = set()
 
     def add_record(_u_id, _a_id):
         _num = u_record_map.get(_u_id)
@@ -79,6 +80,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
             _num = 1
         else:
             _num += 1
+        add_u_ids.add(_u_id)
         u_record_map[_u_id] = _num
         bat_aid_record_list.append(
             WaUserIdRecord(
@@ -91,7 +93,8 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
         )
 
     logging.info("WaAccountId#处理数据分发用户")
-    dispatch.dispatcher_user(a_ids, u_ids, div_num, mod_num, add_record)
+    # dispatch.dispatcher_user(a_ids, u_ids, div_num, mod_num, add_record)
+    dispatch.dispatcher_user2(a_ids, u_ids, u_record_map.copy(), max_num, add_record)
     logging.info("WaAccountId#开始处理AccountIdRecord数据批量插入")
 
     if len(bat_aid_record_list) == 0:
@@ -107,7 +110,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
         logging.info("WaAccountId#将数据 bind 设置为True ids = %s", a_ids)
         WaAccountId.objects.filter(id__in=a_ids).update(is_bind=True)
 
-    return 0, f"成功分配{len_ids}条数据到{len_u_ids}个业务员手中"
+    return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
 
 
 def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
@@ -126,7 +129,8 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     logging.info("WaAccountQr#二维码数量为 = %s, 用户数量为= %s", len_ids, len_u_ids)
     logging.info("WaAccountQr#个用户分配Id数量为 = %s, 剩余未分配的数量为= %s", div_num, mod_num)
     bat_aid_record_list: List[WaUserQrRecord] = []
-    u_record_map: Dict[int, int] = dict()
+    u_record_map, max_num = dispatch.user_num_record(RECORD_TYPE_WA_QR)
+    add_u_ids = set()
 
     def add_record(_u_id, _a_id):
         _num = u_record_map.get(_u_id)
@@ -134,6 +138,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
             _num = 1
         else:
             _num += 1
+        add_u_ids.add(_u_id)
         bat_aid_record_list.append(
             WaUserQrRecord(
                 user_id=_u_id,
@@ -144,7 +149,8 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
         )
 
     logging.info("WaAccountQr#处理数据分发用户")
-    dispatch.dispatcher_user(data_ids, u_ids, div_num, mod_num, add_record)
+    # dispatch.dispatcher_user(data_ids, u_ids, div_num, mod_num, add_record)
+    dispatch.dispatcher_user2(data_ids, u_ids, u_record_map.copy(), max_num, add_record)
     if len(bat_aid_record_list) == 0:
         return -1, "分配失败，原因:len = 0"
     logging.info("WaAccountQr#开始处理 二维码-用户-记录 数据批量插入")
@@ -157,4 +163,4 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
         logging.info("WaAccountQr#将数据 bind 设置为True")
         WaAccountQr.objects.filter(id__in=data_ids).update(is_bind=True)
 
-    return 0, f"成功分配{len_ids}条数据到{len_u_ids}个业务员手中"
+    return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
