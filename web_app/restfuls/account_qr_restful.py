@@ -223,7 +223,7 @@ def account_qr_upload(request: HttpRequest):
     filename = request.POST["filename"]
     if not f:
         return HttpResponse("上传失败，数据传输异常")
-    if request.session['in_used']:
+    if request.session.get('in_used'):
         return RestResponse.failure("上传失败，正在处理中")
     request.session['in_used'] = True
     try:
