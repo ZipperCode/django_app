@@ -18,16 +18,15 @@ logging.basicConfig(
 def search_account_id_page(body, start_row, end_row, user: User):
     query = rest_list_util.search_account_common_field(WaAccountId.objects, body)
     if user.role == USER_ROLE_UPLOADER:
-        logging.info("当前用户是角色是上传人，取当天上传的数据")
-        start_t, end_t = time_utils.get_cur_day_time_range()
-        query = query.filter(create_time__gte=start_t, create_time__lt=end_t, op_user__id=user.id)
+        logging.info("当前用户是角色是上传人，取上传的数据")
+        query = query.filter(used=False, op_user__id=user.id)
 
     res = list(
         query.values(
             'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used', 'is_bind',
             'op_user__username', 'create_time', 'update_time'
-        )
-    )[start_row: end_row]
+        ).order_by('create_time')[start_row: end_row]
+    )
 
     return list(res), query.count()
 
@@ -39,16 +38,15 @@ def search_account_qr_page(body, start_row, end_row, user: User):
     if not utils.str_is_null(qr_content):
         query = query.filter(qr_content__contains=qr_content)
     if user.role == USER_ROLE_UPLOADER:
-        logging.info("当前用户是角色是上传人，取当天上传的数据")
-        start_t, end_t = time_utils.get_cur_day_time_range()
-        query = query.filter(create_time__gte=start_t, create_time__lt=end_t, op_user__id=user.id)
+        logging.info("当前用户是角色是上传人，取上传的数据")
+        query = query.filter(used=False, op_user__id=user.id)
 
     res = list(
         query.values(
             'id', 'qr_content', 'qr_path', 'country', 'age', 'work', 'money', 'mark', 'used', 'is_bind',
             'op_user__username', 'create_time', 'update_time'
-        )
-    )[start_row: end_row]
+        ).order_by('create_time')[start_row: end_row]
+    )
 
     return list(res), query.count()
 
