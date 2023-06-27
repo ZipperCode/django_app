@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/user_add', user_restful.user_add),
     path('api/user_update', user_restful.user_update),
     path('api/user_del', user_restful.user_del),
+    path('api/user/bind_dispatch', user_restful.user_bind_dispatch),
 
     path('api/account_id/list', account_restful.account_id_list),
     path('api/account_id/business_list', account_restful.account_id_business_list),

@@ -92,6 +92,14 @@
                 </div>
             </div>
             <div class="layui-form-item">
+                <label class="layui-form-label required">用户名</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="name"
+                           autocomplete="off" placeholder="请输入名称"
+                           class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
                 <label class="layui-form-label">用户类型<span style="color: red">*</span></label>
                 <div class="layui-input-inline">
                     <select name="role">
@@ -104,11 +112,22 @@
 
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label required">用户名</label>
-                <div class="layui-input-block required">
-                    <input type="text" name="name"
-                           autocomplete="off" placeholder="请输入名称"
-                           class="layui-input">
+                <label class="layui-form-label">后台类型<span style="color: red">*</span></label>
+                <div class="layui-input-inline">
+                    <select name="back_type">
+                        <option value="">请选择</option>
+                        <option value="1">Line</option>
+                        <option value="2">WhatsApp</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否禁用分配</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="bind_dispatch" lay-skin="switch" lay-filter="editForm"
+                           title="禁用|正常">
                 </div>
             </div>
 
@@ -136,7 +155,6 @@
                 <label class="layui-form-label required">用户名</label>
                 <div class="layui-input-block required">
                     <input type="text" name="name"
-                           required lay-verify="required"
                            autocomplete="off" placeholder="请输入名称"
                            class="layui-input">
                 </div>
@@ -152,6 +170,27 @@
                     </select>
                 </div>
 
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">后台类型<span style="color: red">*</span></label>
+                <div class="layui-input-inline">
+                    <select name="back_type" lay-verify="back_type">
+                        <option value="">请选择</option>
+                        <option value="1">Line</option>
+                        <option value="2">WhatsApp</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否禁用分配</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="bind_dispatch" lay-skin="switch" lay-filter="editForm"
+                           lay-verify="required"
+                           title="禁用|正常">
+                </div>
             </div>
 
             <div class="layui-form-item" style="margin-top:40px">
@@ -195,6 +234,17 @@
 
 
 </div>
+<script type="text/html" id="userBindDispatchTpl">
+
+    {% verbatim %} {{# if (d.role == 2) { }} {% endverbatim %}
+    <input type="checkbox" name="sex" value="{% verbatim %}{{d.bind_dispatch}}{% endverbatim %}" lay-skin="switch"
+           lay-text="禁用|正常"
+           lay-filter="commuteIsOpen" {% verbatim %} {{ d.bind_dispatch ? 'checked' : '' }}{% endverbatim %}
+    u_id="{% verbatim %}{{d.id}}{% endverbatim %}">
+
+    {% verbatim %} {{# } }} {% endverbatim %}
+
+</script>
 
 
 {% comment %} {% endcomment %}
@@ -222,8 +272,17 @@
                 {field: 'username', title: '客服账号', align: 'center'},
                 {field: 'name', title: '名称', align: 'center'},
                 {field: 'role', title: '角色', align: 'center', templet: roleTemplate,},
+                {
+                    field: 'bind_dispatch',
+                    title: '可分配状态',
+                    width: 100,
+                    templet: '#userBindDispatchTpl',
+                    unresize: true,
+                    align: 'center'
+                },
+                {field: 'back_type', title: '后台类型', align: 'center', templet: backTypeTemplet,},
                 {field: 'create_time', title: '创建时间', align: 'center'},
-                {field: 'update_time', title: '更新时间', width: 160, align: 'center'},
+                {field: 'update_time', title: '更新时间', align: 'center'},
                 {% if request.session.user.role == 0 %}
                     {
                         field: 'action',
@@ -262,6 +321,13 @@
                     return "必须选择一个角色类型"
                 }
             },
+            back_type: function (value, item) {
+                console.log("value = ", value);
+                if (value == null || value === "") {
+                    $(item).focus();
+                    return "必须选择一个后台类型"
+                }
+            },
             role2: function (value, item) {
                 console.log("value2 = ", value, item);
                 if (value == null || value === "") {
@@ -269,6 +335,36 @@
                     return "必须选择一个角色类型"
                 }
             }
+        });
+        form.on('switch(commuteIsOpen)', function (obj) {
+            layer.tips("当前设置为：" + (obj.elem.checked ? "禁用分配" : "解除禁用"));
+            layer.load(1);
+            const uId = $(obj.elem).attr("u_id")
+            $.ajax({
+                url: '/api/user/bind_dispatch',
+                type: 'POST',
+                headers: headers,
+                data: {
+                    'id': uId,
+                    "bind_dispatch": obj.elem.checked
+                },
+                success: function (res) {
+                    layer.closeAll('loading');
+                    console.log("res = ", res);
+                    if (res.code >= 0) {
+                        layer.load(2);
+                        layer.msg("修改成功", {icon: 6});
+                        setTimeout(function () {
+                            table.reload("list", {
+                                bind_dispatch: obj.elem.checked ? "1" : "0"
+                            });
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
+                    } else {
+                        layer.msg("修改失败", {icon: 5});
+                    }
+                }
+            })
         });
 
         /*表格头工具监听*/
@@ -326,6 +422,14 @@
         initSearchForm();
 
         function initAddForm() {
+            form.val("addForm", {
+                username: "",
+                password: "",
+                name: "",
+                role: "",
+                bind_dispatch: "",
+                back_type: "",
+            });
             form.on('submit(addSubmit)', function (massage) {
                 if (massage.field.role == null || massage.field.role === "") {
                     layer.msg("必须选择一个角色类型", {icon: 5})
@@ -334,7 +438,12 @@
                 let username = massage.field.username;
                 let password = $.md5(massage.field.password);
                 let name = massage.field.name
-                let role = massage.field.role;
+                let role = massage.field.role
+                let back_type = massage.field.back_type;
+                let bind_dispatch = massage.field.bind_dispatch;
+                if (bind_dispatch === undefined) {
+                    bind_dispatch = 'off';
+                }
                 console.log(massage)
                 const layerId = layer.load(1);
                 $.ajax({
@@ -345,7 +454,9 @@
                         'username': username,
                         'password': password,
                         'name': name,
-                        'role': role
+                        'role': role,
+                        'back_type': back_type,
+                        'bind_dispatch': bind_dispatch
                     },
                     success: function (res) {
                         if (res.code >= 0) {
@@ -373,39 +484,65 @@
 
         function initEditForm(obj) {
             const data = obj.data;
-
-            form.val("editForm", data);
+            console.log("edit = ", data)
+            if (data.bind_dispatch === undefined) {
+                data.bind_dispatch = 'off';
+            }
+            form.val("editForm", {
+                'id': data.id,
+                'username': data.username,
+                'role': data.role,
+                'back_type': data.back_type,
+                'bind_dispatch': data.bind_dispatch
+            });
 
             form.on('submit(editForm)', function (massage) {
-                console.log("updatw = massage", massage)
+                console.log("updatw = massage", massage.field)
                 if (massage.field.role == null || massage.field.role === "") {
                     layer.msg("必须选择一个角色类型", {icon: 5})
                     return false
                 }
-
-                layer.load(1);
+                let username = massage.field.username;
+                let name = massage.field.name
+                let role = massage.field.role
+                let back_type = massage.field.back_type;
+                let bind_dispatch = massage.field.bind_dispatch;
+                if (bind_dispatch === undefined) {
+                    bind_dispatch = 'off';
+                }
+                let upd_data = {
+                    id: data.id,
+                    username: username,
+                    name: name,
+                    role: role,
+                    back_type: back_type,
+                    bind_dispatch: bind_dispatch,
+                }
+                const layerId = layer.load(1);
                 $.ajax({
                     url: '/api/user_update',
                     type: 'POST',
                     headers: headers,
-                    data: {
-                        id: data.id,
-                        ...massage.field
-                    },
+                    data: upd_data,
                     success: function (res) {
+                        console.log(res);
                         if (res.code >= 0) {
                             console.log("修改成功")
                             layer.closeAll('loading');
-                            layer.load(2);
-                            layer.msg("修改成功", {icon: 6});
+                            layer.msg(res.msg, {icon: 6});
                             setTimeout(function () {
                                 layer.closeAll();//关闭所有的弹出层
                                 table.reload("list", massage.field);//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg("修改失败", {icon: 5});
+                            layer.msg(res.msg, {icon: 5});
                         }
-                    }
+                        layer.close(layerId);
+                    },
+                    error: function () {
+                        layer.close(layerId);
+                        layer.msg("请求失败", {icon: 5})
+                    },
                 });
                 form.render();
                 return false;
@@ -540,6 +677,15 @@
                     break;
             }
             return `<span></span>`
+        }
+
+        function backTypeTemplet(res) {
+            if (res.back_type === 1) {
+                return `<span class="layui-badge layui-bg-green">Lines</span>`
+            } else if (res.back_type === 2) {
+                return `<span class="layui-badge">WhatsApp</span>`
+            }
+            return `<span>无</span>`
         }
 
     });

@@ -5,7 +5,7 @@ from django.db import transaction
 
 from util import utils, time_utils
 from web_app.decorators.admin_decorator import log_func
-from web_app.model.users import User, USER_ROLE_UPLOADER, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_QR
+from web_app.model.users import User, USER_ROLE_UPLOADER, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_QR, USER_BACK_TYPE_WA
 from web_app.model.wa_accounts import WaAccountId, WaAccountQr, WaUserIdRecord, WaUserQrRecord
 from web_app.util import dispatch, rest_list_util
 
@@ -54,7 +54,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
 def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
     logging.info("WaAccountId#处理id数据分发")
     # 用户表id列表和长度
-    u_ids, len_u_ids = dispatch.get_business_user_ids()
+    u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_WA)
     logging.info("WaAccountId#查询到业务员数量为 = %s", len_u_ids)
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"
@@ -114,7 +114,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     logging.info("WaAccountQr#处理二维码数据分发")
     # 用户表id列表和长度
-    u_ids, len_u_ids = dispatch.get_business_user_ids()
+    u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_WA)
     logging.info("WaAccountQr#查询到业务员数量为 = %s", len_u_ids)
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"

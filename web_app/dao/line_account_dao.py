@@ -8,7 +8,7 @@ from util import utils, time_utils
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.accounts import AccountId, AccountQr, LineUserAccountIdRecord, LineUserAccountQrRecord
 from web_app.model.users import User, USER_ROLE_UPLOADER, UserAccountRecord, RECORD_TYPE_LINE_ID, \
-    RECORD_TYPE_LINE_QR
+    RECORD_TYPE_LINE_QR, USER_BACK_TYPE_LINE
 from web_app.util import dispatch, rest_list_util
 
 logging.basicConfig(
@@ -56,7 +56,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
 def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
     logging.info("lineAccountId#处理id数据分发")
     # 用户表id列表和长度
-    u_ids, len_u_ids = dispatch.get_business_user_ids()
+    u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_LINE)
     logging.info("lineAccountId#查询到业务员数量为 = %s", len_u_ids)
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"
@@ -116,7 +116,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     logging.info("lineAccountQr#处理二维码数据分发")
     # 用户表id列表和长度
-    u_ids, len_u_ids = dispatch.get_business_user_ids()
+    u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_LINE)
     logging.info("lineAccountQr#查询到业务员数量为 = %s", len_u_ids)
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"

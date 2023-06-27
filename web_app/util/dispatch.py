@@ -16,6 +16,13 @@ def get_business_user_ids() -> Tuple[list, int]:
     return u_ids, len_ids
 
 
+def get_business_user_ids2(back_type: int) -> Tuple[list, int]:
+    query = User.objects.filter(role=USER_ROLE_BUSINESS, back_type=back_type, bind_dispatch=False).values('id')
+    u_ids = list(map(lambda x: x.get('id'), list(query)))
+    len_ids = len(u_ids)
+    return u_ids, len_ids
+
+
 def get_account_list(objects, is_all: bool = False) -> Tuple[list, int]:
     cur_start_t, cur_end_t = time_utils.get_cur_day_time_range()
     filter_filed = {

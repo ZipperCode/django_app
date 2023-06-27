@@ -10,6 +10,16 @@ ROLE_CHOOSE = (
     (USER_ROLE_BUSINESS, u"业务员"),
 )
 
+USER_BACK_TYPE_NONE = 0
+USER_BACK_TYPE_LINE = 1
+USER_BACK_TYPE_WA = 2
+
+USER_BACK_TYPE = (
+    (USER_BACK_TYPE_NONE, u'无类型'),
+    (USER_BACK_TYPE_LINE, u"Line类型"),
+    (USER_BACK_TYPE_WA, u"WhatsApp类型")
+)
+
 
 class User(models.Model):
     id = models.AutoField(primary_key=True)
@@ -18,6 +28,8 @@ class User(models.Model):
     is_admin = models.BooleanField("是否管理员", default=False)
     role = models.IntegerField("用户角色", choices=ROLE_CHOOSE, default=2)
     name = models.CharField("显示的名称", max_length=255, null=True)
+    back_type = models.IntegerField("后台类型", choices=USER_BACK_TYPE, default=USER_BACK_TYPE_NONE)
+    bind_dispatch = models.BooleanField("是否禁用分配", default=False)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 

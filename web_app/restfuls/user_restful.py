@@ -10,7 +10,7 @@ from util import utils, http_utils, time_utils
 from util.restful import RestResponse, CJsonEncoder
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, op_admin, api_op_user
-from web_app.model.users import User
+from web_app.model.users import User, USER_BACK_TYPE_NONE, USER_BACK_TYPE_WA, USER_BACK_TYPE_LINE
 from web_app.settings import BASE_DIR
 
 logging.basicConfig(
@@ -79,7 +79,9 @@ def login(request: HttpRequest):
         'username': user.username,
         'name': user.name,
         'is_admin': user.is_admin,
-        'role': user.role
+        'role': user.role,
+        'back_type': user.back_type,
+        'bind_dispatch': user.bind_dispatch
     }
     return RestResponse.success("登录成功")
 
@@ -157,9 +159,9 @@ def user_list(request: HttpRequest):
         user_query = user_query.filter(role=int(role))
 
     query = user_query.values(
-        'id', 'username', 'name', 'role', 'create_time', 'update_time'
+        'id', 'username', 'name', 'role', 'bind_dispatch', 'back_type', 'create_time', 'update_time'
     )[start_row: end_row]
-    count = query.count()
+    count = user_query.count()
     return RestResponse.success_list(count=count, data=list(query))
 
 
@@ -196,9 +198,24 @@ def user_add(request: HttpRequest):
     query = User.objects.filter(username=username)
     if query.exists():
         return RestResponse.failure("添加失败，用户已存在")
+    bind_dispatch = body.get("bind_dispatch")
+    if utils.str_is_null(bind_dispatch):
+        return RestResponse.failure("参数错误，缺少禁用参数")
+
+    bind_dispatch = str(bind_dispatch) == 'on'
+
+    back_type = body.get('back_type')
+    if utils.str_is_null(back_type) or not utils.is_int(back_type):
+        return RestResponse.failure("参数错误，后台类型必须是一个数值")
+
+    back_type = int(back_type)
+    logging.info("addUser#back_type = %s", back_type)
+    if back_type not in (USER_BACK_TYPE_NONE, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA):
+        return RestResponse.failure("参数错误，后台类型选择错误，未知类型:" + str(back_type))
 
     create_user = User.objects.create(
         username=username, password=password, name=name, role=role,
+        bind_dispatch=bind_dispatch, back_type=back_type,
         create_time=time_utils.get_now_bj_time_str(),
         update_time=time_utils.get_now_bj_time_str()
     )
@@ -215,15 +232,41 @@ def user_update(request: HttpRequest):
     u_id = body.get("id", "")
     if not str(u_id).isdigit() and int(u_id) <= 0:
         return RestResponse.failure("参数错误，需要username或id")
-    query = User.objects.filter(id=u_id)
-    if not query.exists():
-        return RestResponse.failure("更新失败，记录不存在")
 
     name = body.get('name', '')
     role = body.get('role')
+
     if role is None or not utils.is_int(role):
         return RestResponse.failure("更新失败，角色信息不能为空")
-    rows = query.update(name=name, update_time=time_utils.get_now_bj_time_str(), role=role)
+
+    bind_dispatch = body.get("bind_dispatch")
+    if utils.str_is_null(bind_dispatch):
+        return RestResponse.failure("参数错误，缺少禁用参数")
+
+    bind_dispatch = str(bind_dispatch) == 'on'
+
+    upd_dict = {
+        'name': name,
+        'role': role,
+        'bind_dispatch': bind_dispatch,
+        'update_time': time_utils.get_now_bj_time_str()
+    }
+
+    back_type = body.get('back_type')
+    if not utils.str_is_null(back_type):
+        if not utils.is_int(back_type):
+            return RestResponse.failure("参数错误，后台类型必须是一个数值")
+
+        back_type = int(back_type)
+        logging.info("updateUser#back_type = %s", back_type)
+        if back_type not in (USER_BACK_TYPE_NONE, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA):
+            return RestResponse.failure("参数错误，后台类型选择错误，未知类型:" + str(back_type))
+
+        upd_dict['back_type'] = back_type
+    query = User.objects.filter(id=u_id)
+    if not query.exists():
+        return RestResponse.failure("更新失败，用户记录不存在")
+    rows = query.update(**upd_dict)
     return RestResponse.success(data={
         'rows': rows
     })
@@ -237,7 +280,7 @@ def user_del(request: HttpRequest):
     u_id = body.get("id", "")
     username = body.get("username", "")
     if utils.str_is_null(username) or (not str(u_id).isdigit() and int(u_id) <= 0):
-        RestResponse.failure("参数错误，需要username或id")
+        return RestResponse.failure("参数错误，需要username或id")
     q = Q(id=u_id) | Q(username=username)
     query = User.objects.filter(q)
     if not query.exists():
@@ -251,6 +294,32 @@ def user_del(request: HttpRequest):
         'deleted': deleted,
         'delete_count': del_count
     })
+
+
+@log_func
+@api_op_user
+@op_admin
+def user_bind_dispatch(request: HttpRequest):
+    """
+    禁用用户分配
+    """
+    body = utils.request_body(request)
+    u_id = body.get("id", "")
+    bind_dispatch = body.get("bind_dispatch")
+    if not str(u_id).isdigit() and int(u_id) <= 0:
+        return RestResponse.failure("参数错误，需要用户id")
+
+    if utils.str_is_null(bind_dispatch):
+        return RestResponse.failure("参数错误，需要禁用参数")
+
+    bind_dispatch = utils.is_bool_val(bind_dispatch)
+    query = User.objects.filter(id=u_id)
+    if not query.exists():
+        return RestResponse.failure("修改失败，用户 " + u_id + " 不存在")
+
+    query.update(bind_dispatch=bind_dispatch, update_time=time_utils.get_now_bj_time_str())
+
+    return RestResponse.success("禁用成功" if bind_dispatch else "解除禁用成功")
 
 
 def file_down(request, name: str):

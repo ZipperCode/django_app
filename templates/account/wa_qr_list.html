@@ -320,13 +320,15 @@
             cols: [[
                 {type: 'checkbox', fixed: 'left'},
                 {field: 'id', title: '编号', width: 70, align: 'center'},
-                {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 240},
+                {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 340},
                 {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
                 {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},
-                {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
-                {field: 'work', title: '工作', align: 'center'},
-                {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
+
+                {% if request.session.user.role == 0 %}
+                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
+                {% endif %}
+                {field: 'mark', title: '备注', align: 'center', minWidth: 220},
                 {
                     field: 'is_bind',
                     title: '绑定状态',
@@ -335,10 +337,9 @@
                     templet: bindTemplate,
                     minWidth: 110
                 },
-                {% if request.session.user.role == 0 %}
-                    {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
-                {% endif %}
-                {field: 'mark', title: '备注', align: 'center'},
+                {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
+                {field: 'work', title: '工作', align: 'center'},
+                {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
