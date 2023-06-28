@@ -17,6 +17,9 @@ logging.basicConfig(
 
 def search_account_id_page(body, start_row, end_row, user: User):
     query = rest_list_util.search_account_common_field(WaAccountId.objects, body)
+    account_id = body.get("account_id")
+    if not utils.str_is_null(account_id):
+        query = query.filter(account_id__contains=account_id)
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
         query = query.filter(used=False, op_user__id=user.id)
