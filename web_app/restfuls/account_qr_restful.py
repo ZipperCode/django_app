@@ -182,12 +182,13 @@ def account_qr_update(request: HttpRequest):
             upd_field['used'] = _status
             if not _status:
                 logging.info("管理员编辑为不使用")
-                _q = LineUserAccountQrRecord.objects.filter(account_id=db_id)
-                if _q.exists():
-                    _q.update(used=False)
             else:
                 # 修改is_bind=True，分发的时候就过滤这个了
                 upd_field['is_bind'] = True
+                logging.info("管理员编辑为已使用，同步更新记录状态")
+            _q = LineUserAccountQrRecord.objects.filter(account_id=db_id)
+            if _q.exists():
+                _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
         elif is_business_user:
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
@@ -212,6 +213,7 @@ def account_qr_del(request: HttpRequest):
     if utils.str_is_null(id_) or not utils.is_int(id_):
         return RestResponse.failure("删除失败，id不能为空或只能数字")
 
+    LineUserAccountQrRecord.objects.filter(account_id=id_).delete()
     AccountQr.objects.filter(id=id_).delete()
     return RestResponse.success("删除成功")
 

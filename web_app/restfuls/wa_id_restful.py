@@ -191,11 +191,16 @@ def account_id_update(request: HttpRequest):
                 # 1:1关系，直接找对应数据就行了
                 _q = WaUserIdRecord.objects.filter(account_id=a_id)
                 if _q.exists():
-                    _q.update(used=False)
+                    _q.update(used=False, update_time=time_utils.get_now_bj_time_str())
 
             else:
                 # 修改is_bind=True，分发的时候就过滤这个了
+                logging.info("管理员编辑已使用，同步将用户的状态设置为 True")
                 upd_field['is_bind'] = True
+                _q = WaUserIdRecord.objects.filter(account_id=a_id)
+                if _q.exists():
+                    _q.update(used=True, update_time=time_utils.get_now_bj_time_str())
+
         elif is_business_user:
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
@@ -224,7 +229,7 @@ def account_id_del(request: HttpRequest):
     logging.info("account_id_del#a_id = %s", account_id)
     if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
-
+    WaUserIdRecord.objects.filter(account_id=account_id).delete()
     WaAccountId.objects.filter(account_id=account_id).delete()
     return RestResponse.success("删除成功")
 

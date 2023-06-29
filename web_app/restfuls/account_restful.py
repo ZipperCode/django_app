@@ -189,12 +189,13 @@ def account_id_update(request: HttpRequest):
             if not _status:
                 logging.info("管理员编辑为未使用")
                 # 1:1关系，直接找对应数据就行了
-                _q = LineUserAccountIdRecord.objects.filter(account_id=a_id)
-                if _q.exists():
-                    _q.update(used=False)
             else:
                 # 修改is_bind=True，分发的时候就过滤这个了
                 upd_field['is_bind'] = True
+                logging.info("管理员编辑为已使用，同步更新记录状态")
+            _q = LineUserAccountIdRecord.objects.filter(account_id=a_id)
+            if _q.exists():
+                _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
         elif is_business_user:
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
@@ -224,6 +225,7 @@ def account_id_del(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
 
+    LineUserAccountIdRecord.objects.filter(account_id=account_id).delete()
     AccountId.objects.filter(account_id=account_id).delete()
     return RestResponse.success("删除成功")
 
