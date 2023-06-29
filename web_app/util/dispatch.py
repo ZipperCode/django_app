@@ -170,13 +170,12 @@ def user_num_record(t: int) -> Tuple[Dict[int, int], int]:
 
 
 @log_func
-def user_num_record2(objects: QuerySet, t: int) -> Tuple[Dict[int, int], int]:
+def user_num_record2(objects: QuerySet, business_u_ids: list, t: int) -> Tuple[Dict[int, int], int]:
     """
     用户当天的数据数量
     @return 用户数量Map和最大数量元组
     """
     start_t, end_t = time_utils.get_cur_day_time_range()
-    business_u_ids = list(map(lambda x: int(x.get("id")), User.objects.filter(role=USER_ROLE_BUSINESS).values('id')))
     user_map: Dict[int, int] = dict()
     max_count = 0
 

@@ -225,7 +225,7 @@ def account_id_del(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
 
-    LineUserAccountIdRecord.objects.filter(account_id=account_id).delete()
+    LineUserAccountIdRecord.objects.filter(account__account_id=account_id).delete()
     AccountId.objects.filter(account_id=account_id).delete()
     return RestResponse.success("删除成功")
 

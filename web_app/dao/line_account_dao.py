@@ -74,7 +74,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     bat_aid_record_list: List[LineUserAccountIdRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects, RECORD_TYPE_LINE_ID)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects, u_ids, RECORD_TYPE_LINE_ID)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
@@ -131,7 +131,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     logging.info("lineAccountQr#二维码数量为 = %s, 用户数量为= %s", len_ids, len_u_ids)
     bat_aid_record_list: List[LineUserAccountQrRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects, RECORD_TYPE_LINE_QR)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects, u_ids, RECORD_TYPE_LINE_QR)
     add_u_ids = set()
 
     def add_record(_u_id, _a_id):
