@@ -209,12 +209,21 @@ def account_qr_del(request: HttpRequest):
 
     body = utils.request_body(request)
     id_ = body.get('id', "")
-    logging.info("account_qr_del#id_ = %s", id_)
+    logging.info("lineQrDel#id_ = %s", id_)
     if utils.str_is_null(id_) or not utils.is_int(id_):
         return RestResponse.failure("删除失败，id不能为空或只能数字")
 
     LineUserAccountQrRecord.objects.filter(account_id=id_).delete()
-    AccountQr.objects.filter(id=id_).delete()
+    query = AccountQr.objects.filter(id=id_)
+    if query.exists():
+        try:
+            qr_path = os.path.join(MEDIA_ROOT, str(query.first().qr_path))
+            if os.path.exists(qr_path) and os.path.isfile(qr_path):
+                os.remove(qr_path)
+        except BaseException:
+            logging.info("lineQrDel#删除记录同时删除上传图片失败，trace %s", traceback.format_exc())
+        finally:
+            query.delete()
     return RestResponse.success("删除成功")
 
 
@@ -228,6 +237,7 @@ def account_qr_upload(request: HttpRequest):
     if request.session.get('in_used'):
         return RestResponse.failure("上传失败，正在处理中")
     request.session['in_used'] = True
+    temp_path = None
     try:
         user_id = request.session.get('user_id')
         if not user_id or utils.str_is_null(user_id):
@@ -255,6 +265,7 @@ def account_qr_upload(request: HttpRequest):
         query = AccountQr.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
         if query.exists():
             return RestResponse.failure("上传失败，二维码已经存在")
+        f.name = str(uuid.uuid1()) + ext
 
         AccountQr.objects.create(
             qr_content=str(parsed).strip(),
@@ -263,6 +274,9 @@ def account_qr_upload(request: HttpRequest):
         )
         return RestResponse.success("上传成功")
     finally:
+        if temp_path is not None and os.path.exists(temp_path) and os.path.isfile(temp_path):
+            os.remove(temp_path)
+
         request.session['in_used'] = False
 
 
@@ -309,6 +323,10 @@ def account_qr_batch_upload(request: HttpRequest):
         if os.path.exists(zip_dir):
             shutil.rmtree(zip_dir)
         return RestResponse.failure("上传失败，解压zip文件失败")
+    finally:
+        # 解压后删除上传的zip文件
+        if os.path.exists(temp_path) and os.path.isfile(temp_path):
+            os.remove(temp_path)
 
     if not os.path.exists(zip_dir) or not os.listdir(zip_dir):
         return RestResponse.failure("上传失败，解压zip内容为空")
