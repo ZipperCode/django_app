@@ -15,9 +15,11 @@ def get_business_user_ids() -> Tuple[list, int]:
     len_ids = len(u_ids)
     return u_ids, len_ids
 
-
+@log_func
 def get_business_user_ids2(back_type: int) -> Tuple[list, int]:
+    logging.info("back_type = %s", back_type)
     query = User.objects.filter(role=USER_ROLE_BUSINESS, back_type=back_type, bind_dispatch=False).values('id')
+    logging.info("获取到的用户列表为 = %s", list(query))
     u_ids = list(map(lambda x: x.get('id'), list(query)))
     len_ids = len(u_ids)
     return u_ids, len_ids
