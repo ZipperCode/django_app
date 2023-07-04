@@ -31,6 +31,7 @@ def get_account_list(objects, is_all: bool = False) -> Tuple[list, int]:
         'is_bind': False
     }
     if not is_all:
+        logging.info("is_all = False, 分配当天")
         filter_filed['create_time__gte'] = cur_start_t
         filter_filed['create_time__lt'] = cur_end_t
 

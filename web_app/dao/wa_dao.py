@@ -63,7 +63,10 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
         return -1, "未找到可用的业务员"
     # AccountId表数据
     a_ids, len_ids = dispatch.get_account_list(WaAccountId.objects, is_all)
+    logging.info("a_ids= %s, len = %s", a_ids, len_ids)
     if len_ids == 0:
+        if is_all:
+            return -1, "未找到可分配的数据"
         return -1, "未找到当日可分配的数据"
     logging.info("WaAccountId#查询到当天新增的数据量为 = %s", len_ids)
     div_num, mod_num = dispatch.get_dispatcher_num(len_ids, len_u_ids)
@@ -115,7 +118,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
 
 def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
-    logging.info("WaAccountQr#处理二维码数据分发")
+    logging.info("WaAccountQr#处理二维码数据分发 is_all = %s", is_all)
     # 用户表id列表和长度
     u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_WA)
     logging.info("WaAccountQr#查询到业务员数量为 = %s", len_u_ids)
@@ -124,6 +127,8 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     # AccountId表数据
     data_ids, len_ids = dispatch.get_account_list(WaAccountQr.objects, is_all)
     if len_ids == 0:
+        if is_all:
+            return -1, "未找到可分配的数据"
         return -1, "未找到当日可分配的数据"
     logging.info("WaAccountQr#查询到当天新增的数据量为 = %s", len_ids)
     div_num, mod_num = dispatch.get_dispatcher_num(len_ids, len_u_ids)

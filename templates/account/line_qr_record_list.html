@@ -84,6 +84,17 @@
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
+        lay('.test-item').each(function () {
+            const date = new Date()
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+            laydate.render({
+                elem: this,
+                type: 'datetime',
+                min: '2023-1-1 00:00:00',
+                max: max
+                , trigger: 'click'
+            });
+        });
         /*表格渲染*/
         table.render({
             id: 'list',
