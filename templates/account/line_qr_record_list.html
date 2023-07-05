@@ -84,6 +84,7 @@
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
+         const laydate = layui.laydate;
         lay('.test-item').each(function () {
             const date = new Date()
             const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
