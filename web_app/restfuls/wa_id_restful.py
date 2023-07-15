@@ -48,15 +48,20 @@ def account_id_business_list(request: HttpRequest):
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
 
+
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
     q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+    record_query = WaUserIdRecord.objects
+    account_id = body.get("account_id", "")
+    if not utils.str_is_null(account_id):
+        record_query.filter(account__account_id__contains=account_id)
 
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
             list(
-                WaUserIdRecord.objects.filter(user_id=user.id).filter(q).distinct()
+                record_query.filter(user_id=user.id).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
