@@ -54,7 +54,8 @@ def account_id_business_list(request: HttpRequest):
     record_query = LineUserAccountIdRecord.objects
     account_id = body.get("account_id", "")
     if not utils.str_is_null(account_id):
-        record_query.filter(account__account_id__contains=account_id)
+        logging.info("添加账号id过滤")
+        record_query = record_query.filter(account__account_id__contains=account_id)
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
