@@ -80,6 +80,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     def add_record(_u_id, _a_id):
         _num = u_record_map.get(_u_id)
+        logging.info("WaAccountId#将 %s 分配给 %s 用户当前数量为 = %s", _a_id, _u_id, _num)
         if _num is None:
             _num = 1
         else:
