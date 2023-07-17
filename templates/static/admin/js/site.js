@@ -380,7 +380,7 @@ var pageCount = 0;
         pageItem = addPageItem(id , title , is_default);
         NProgress.configure({parent : '.admin-body'}).start();
     } else {
-        refresh = true;
+        // refresh = true;
     }
     if(pageBody.hasClass('on') == false){   //没有被选中
         $(".admin-body").find('.on').removeClass('on');
