@@ -256,15 +256,17 @@ def account_id_upload(request: HttpRequest):
     if not http_utils.check_user_id(user_id):
         return RestResponse.failure("上传，未获取到登录用户信息")
 
-    query = WaAccountId.objects.filter(account_id=a_id)
-    if query.exists():
+    query, created = WaAccountId.objects.get_or_create(
+        account_id=a_id,
+        defaults={
+            'op_user_id': int(user_id),
+            "create_time": time_utils.get_now_bj_time_str(),
+            "update_time": time_utils.get_now_bj_time_str()
+        }
+    )
+    if not created:
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
 
-    WaAccountId.objects.create(
-        account_id=a_id, op_user_id=int(user_id),
-        create_time=time_utils.get_now_bj_time_str(),
-        update_time=time_utils.get_now_bj_time_str()
-    )
     return RestResponse.success("上传成功")
 
 
@@ -323,6 +325,7 @@ def account_id_batch_upload(request: HttpRequest):
             create_time=time_utils.get_now_bj_time_str(),
             update_time=time_utils.get_now_bj_time_str()
         ))
+
     WaAccountId.objects.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={
         'exists_ids': exists_list,
