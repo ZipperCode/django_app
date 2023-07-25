@@ -247,7 +247,7 @@ def account_id_upload(request: HttpRequest):
         return RestResponse.failure("must use post")
 
     body = utils.request_body(request)
-    a_id = body.get('account_id', "")
+    a_id = str(body.get('account_id', "")).strip()
     logging.info("account_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
@@ -306,6 +306,7 @@ def account_id_batch_upload(request: HttpRequest):
         return RestResponse.failure("上传失败，解析内容为空")
     data_list = list(set(data_list))
     logging.info("account_id_batch_upload#data_list 1 = %s", data_list)
+    data_list = list(map(lambda x: str(x).strip(), data_list))
 
     exists_query = WaAccountId.objects.filter(account_id__in=data_list)
 

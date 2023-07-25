@@ -124,7 +124,7 @@ def account_id_add(request: HttpRequest):
         return RestResponse.failure("添加失败，未获取到登录用户信息")
 
     body = utils.request_body(request)
-    account_id = body.get("account_id", "")
+    account_id = str(body.get("account_id", "")).strip()
     country = body.get("country", "")
     age = body.get("age", 0)
     work = body.get("work", "")
@@ -157,7 +157,7 @@ def account_id_update(request: HttpRequest):
 
     body = utils.request_body(request)
     a_id = body.get('id')
-    account_id = body.get("account_id", "")
+    account_id = str(body.get("account_id", "")).strip()
     if utils.str_is_null(a_id) or not utils.is_int(a_id):
         return RestResponse.failure("修改失败，主键为空或异常")
 
@@ -241,7 +241,7 @@ def account_id_upload(request: HttpRequest):
         return RestResponse.failure("must use post")
 
     body = utils.request_body(request)
-    a_id = body.get('account_id', "")
+    a_id = str(body.get('account_id', "")).strip()
     logging.info("account_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
@@ -298,6 +298,7 @@ def account_id_batch_upload(request: HttpRequest):
         return RestResponse.failure("上传失败，解析内容为空")
     data_list = list(set(data_list))
     logging.info("account_id_batch_upload#data_list 1 = %s", data_list)
+    data_list = list(map(lambda x: str(x).strip(), data_list))
 
     exists_query = AccountId.objects.filter(account_id__in=data_list)
 
