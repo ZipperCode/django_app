@@ -14,8 +14,8 @@ ENV IN_DOCKER 1
 # CMD [ "python3" , "--version"]
 
 # 安装netcat
-RUN apt-get update && apt install -y netcat
-RUN apt install -y gcc && apt install -y python3-dev
+RUN apt-get update && apt install -y netcat-traditional
+RUN apt install -y gcc && apt install -y python3-dev && apt-get install -y vim
 
 # 设置 python 环境变量
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -29,6 +29,8 @@ WORKDIR $APP_HOME
 # 将当前目录加入到工作目录中（. 表示当前目录）
 ADD . $APP_HOME
 
+#RUN pip3 config set global.index-url http://mirrors.aliyun.com/pypi/simple
+#RUN pip3 config set install.trusted-host mirrors.aliyun.com
 RUN pip3 install uwsgi
 
 # 更新pip版本

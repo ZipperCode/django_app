@@ -42,9 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'web_app'
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,6 +76,13 @@ TEMPLATES = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    )}
+
 WSGI_APPLICATION = 'web_app.wsgi.application'
 
 # Database
@@ -84,7 +91,7 @@ WSGI_APPLICATION = 'web_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR /'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 
 }
