@@ -87,7 +87,7 @@ def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
             min_num = v
 
     # 最大 - 最小 = 填充次数
-    logging.info("dispatcher2#开始填充用户不满足的数量, 填充次数 = %s，最大 = %s, 最小", (max_num - min_num), max_num, min_num)
+    logging.info("dispatcher2#开始填充用户不满足的数量, 填充次数 = %s，最大 = %s, 最小 = %s", (max_num - min_num), max_num, min_num)
     for i in range(0, max_num - min_num):
         for user_id, data_num in user_num_map.items():
             if a_index >= len_ids:
