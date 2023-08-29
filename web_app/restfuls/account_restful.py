@@ -242,16 +242,18 @@ def account_id_upload(request: HttpRequest):
 
     body = utils.request_body(request)
     a_id = str(body.get('account_id', "")).strip()
-    logging.info("account_id_upload#a_id = %s", a_id)
+    logging.info("account_line_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
 
     user_id = request.session.get('user_id')
     if not http_utils.check_user_id(user_id):
+        logging.info("account_line_id_upload#上传失败，未获取到用户信息")
         return RestResponse.failure("上传，未获取到登录用户信息")
 
     query = AccountId.objects.filter(account_id=a_id)
     if query.exists():
+        logging.info("account_line_id_upload#已经存在")
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
 
     AccountId.objects.create(
