@@ -21,7 +21,7 @@ ENV PATH $PATH:$JAVA_HOME/bin
 RUN ln -s /usr/local/java/jdk-11.0.1/bin/java /usr/bin/java
 
 # CMD [ "python3" , "--version"]
-# RUN apt-get update
+RUN apt-get update && apt-get upgrade -y
 # 安装netcat
 RUN apt install -y netcat-traditional
 RUN apt install -y gcc && apt install -y python3-dev
