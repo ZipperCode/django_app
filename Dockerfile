@@ -1,5 +1,5 @@
 # 建立 python3.10 环境
-FROM python:3
+FROM python:3.11
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
@@ -20,6 +20,7 @@ ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
 ENV PATH $PATH:$JAVA_HOME/bin
 RUN ln -s /usr/local/java/jdk-11.0.1/bin/java /usr/bin/java
 
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 # CMD [ "python3" , "--version"]
 RUN apt-get update && apt-get upgrade -y
 # 安装netcat
