@@ -20,6 +20,10 @@ ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
 ENV PATH $PATH:$JAVA_HOME/bin
 RUN ln -s /usr/local/java/jdk-11.0.1/bin/java /usr/bin/java
 
+
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free" > /etc/apt/sources.list
+RUN echo "deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free" >> /etc/apt/sources.list
+
 # CMD [ "python3" , "--version"]
 RUN apt-get update && apt-get upgrade -y
 # 安装netcat
