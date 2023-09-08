@@ -1,0 +1,1 @@
+0 0 * * * /usr/bin/python3 split_uwsgi_log.py
