@@ -188,6 +188,11 @@ def account_id_update(request: HttpRequest):
     }
 
     with transaction.atomic():
+        if utils.str_is_null(used):
+            logging.info("要跟新的字段 = %s", upd_field)
+            query.update(**upd_field)
+            return RestResponse.success("更新成功")
+
         if is_admin and not utils.str_is_null(used):
             logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
             _status = utils.is_bool_val(used)
@@ -213,7 +218,7 @@ def account_id_update(request: HttpRequest):
             # 同时更新Record
             _q = WaUserIdRecord.objects.filter(user_id=user_id, account_id=a_id)
             if _q.exists():
-                _q.update(used=True)
+                _q.update(used=True, update_time=time_utils.get_now_bj_time_str())
 
         logging.info("要跟新的字段 = %s", upd_field)
         query.update(**upd_field)
