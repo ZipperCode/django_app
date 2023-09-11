@@ -18,7 +18,7 @@ from util.excel_util import ExcelBean
 from util.restful import RestResponse
 from util.time_utils import DATE_FORMAT
 from util.utils import handle_uploaded_file
-from web_app.dao import wa_dao, user_dao
+from web_app.dao import user_dao, wa2_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
@@ -43,7 +43,7 @@ def wa2_account_qr_list(request: HttpRequest):
 
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = wa_dao.search_account_qr_page(body, start_row, end_row, user)
+    res, count = wa2_dao.search_account_qr_page(body, start_row, end_row, user)
     return RestResponse.success_list(count=count, data=res)
 
 
@@ -499,7 +499,7 @@ def wa2_handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
     try:
-        code, msg = wa_dao.dispatcher_account_qr(is_all)
+        code, msg = wa2_dao.dispatcher_account_qr(is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)

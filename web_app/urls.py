@@ -20,7 +20,7 @@ from django.views.static import serve
 
 from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_restful, wa_qr_restful, \
-    wa_id_restful2, wa_qr_restful2
+    wa2_id_restful, wa2_qr_restful
 
 urlpatterns = [
     path('', views.login_view),
