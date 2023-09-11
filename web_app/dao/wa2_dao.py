@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 
-def search_account_id_page2(body, start_row, end_row, user: User):
+def search_account_id_page(body, start_row, end_row, user: User):
     query = rest_list_util.search_account_common_field(WaAccountId2.objects, body)
     account_id = body.get("account_id")
     if not utils.str_is_null(account_id):
