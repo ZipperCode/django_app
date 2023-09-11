@@ -61,7 +61,7 @@ class WaAccountQr2(models.Model):
 class WaUserIdRecord2(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
-    account = models.ForeignKey(to="WaAccountId", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
+    account = models.ForeignKey(to="WaAccountId2", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
     used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
@@ -78,7 +78,7 @@ class WaUserIdRecord2(models.Model):
 class WaUserQrRecord2(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
-    account = models.ForeignKey(to="WaAccountQr", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
+    account = models.ForeignKey(to="WaAccountQr2", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
     used = models.BooleanField("是否使用", default=False)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
