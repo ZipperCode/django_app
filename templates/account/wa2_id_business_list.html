@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>业务员id列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <style>
+        .box_parent {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="page-main scrollbar-inner">
+    <div class="page-container">
+        <div class="page-fluid">
+            <form class="layui-form layui-unselect table-form" action="">
+                <div class="layui-inline">
+                    <label class="layui-form-label">ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入ID" autocomplete="off" name="account_id"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">国家</label>
+                    <div class="layui-input-inline">
+                        <select name="country">
+                            <option value="">请选择</option>
+                            <option value="日本">日本</option>
+                            <option value="意大利">意大利</option>
+                            <option value="英国">英国</option>
+                            <option value="美国">美国</option>
+                            <option value="法国">法国</option>
+                            <option value="斯洛文尼亚">斯洛文尼亚</option>
+                            <option value="捷克">捷克</option>
+                            <option value="克罗地亚">克罗地亚</option>
+                            <option value="德国">德国</option>
+                            <option value="西班牙">西班牙</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入备注" name="mark" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-inline">
+                        <select name="used">
+                            <option value="">请选择</option>
+                            <option value="false">未使用</option>
+                            <option value="true">已使用</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
+                    </button>
+                </div>
+            </form>
+
+            <table id="list" lay-filter="list"></table>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/static/admin/iconfont/iconfont.js"></script>
+<script type="text/javascript" src="/static/jquery/jquery-3.4.1.js"></script>
+<script type="text/javascript" src="/static/admin/js/common.js"></script>
+<script type="text/javascript" src="/static/scrollbar/jquery.scrollbar.min.js"></script>
+<script type="text/javascript" src="/static/layui/layui.js"></script>
+<script type="text/javascript" src="/static/admin/js/user_form.js"></script>
+<script type="text/javascript" src="/static/admin/js/utils.js"></script>
+
+
+{% comment %} component {% endcomment %}
+
+<script type="text/html" id="table_control">
+    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
+    <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
+</script>
+
+{% comment %} Form {% endcomment %}
+
+<div class="layui-row" id="editForm" style="display:none;">
+    <div class="layui-col-md10">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
+            <input type="hidden" name="id">
+            <div class="layui-form-item">
+                <label class="layui-form-label required">ID</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="account_id" lay-verify="account_id" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">国家</label>
+                <div class="layui-input-inline">
+                    <select name="country">
+                        <option value="">请选择</option>
+                        <option value="日本">日本</option>
+                        <option value="意大利">意大利</option>
+                        <option value="英国">英国</option>
+                        <option value="美国">美国</option>
+                        <option value="法国">法国</option>
+                        <option value="斯洛文尼亚">斯洛文尼亚</option>
+                        <option value="捷克">捷克</option>
+                        <option value="克罗地亚">克罗地亚</option>
+<option value="德国">德国</option>
+<option value="西班牙">西班牙</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">年龄</label>
+                <div class="layui-input-block required">
+                    <input type="number" name="age"
+                           autocomplete="off" placeholder="请输入年龄" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">工作</label>
+                <div class="layui-input-block required">
+                    <input type="text" name="work" autocomplete="off" placeholder="请输入工作" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label required">收入</label>
+                <div class="layui-input-inline" style="width: 100px;">
+                    <input type="number" name="money" placeholder="￥" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                    <textarea name="mark" placeholder="备注信息" class="layui-textarea"></textarea>
+                </div>
+            </div>
+
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="editSubmit">确认修改
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% comment %} {% endcomment %}
+{% csrf_token %}
+<script type="text/javascript">
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
+        const layer = layui.layer,
+            form = layui.form;
+        const table = layui.table;
+        const laydate = layui.laydate;
+        const laytpl = layui.laytpl;
+        const upload = layui.upload
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const headers = {
+            "Accept": "application/json; charset=utf-8",
+            "X-CSRFToken": csrftoken
+        };
+
+        let op_col_width = 120
+
+
+        /*表格渲染*/
+        table.render({
+            id: 'list',
+            elem: '#list',
+            url: '/api/wa2/account_id/business_list',
+            page: true,
+            toolbar: '#toolbar',
+            cellMinWidth: 80,
+            cols: [[
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'account_id', title: 'ID', align: 'center', minWidth: 200},
+                {field: 'country', title: '国家', align: 'center', sort: true},
+                {field: 'age', title: '年龄', align: 'center', sort: true},
+                {field: 'work', title: '工作', align: 'center', sort: true},
+                {field: 'money', title: '收入', align: 'center', sort: true},
+                {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
+                {field: 'mark', title: '备注', align: 'center'},
+                {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
+                {% if request.session.user.role != 1 %}
+                    {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
+                {% endif %}
+
+            ]],
+            defaultToolbar: ['filter']
+        });
+
+        /*表格头工具监听*/
+        table.on('toolbar(list)', function (obj) {
+            const data = obj.data; //获得当前行数据
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+        });
+
+        /*表格行工具监听*/
+        table.on('tool(list)', function (obj) {
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            if (layEvent === 'edit') {
+                layer.open({
+                    type: 1,
+                    title: "修改数据",
+                    area: ['600px', '600px'],
+                    content: $("#editForm")
+                });
+                initEditForm(obj);
+            } else if (layEvent === 'copy') {
+                const text = obj.data.account_id
+                {% comment %}if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text);
+                }{% endcomment %}
+                const copyipt = document.createElement("input");
+                copyipt.setAttribute("value", text);
+                document.body.appendChild(copyipt);
+                copyipt.select();
+                document.execCommand("copy");
+                document.body.removeChild(copyipt);
+                layer.msg("复制成功，内容为：" + text, {icon: 6});
+            }
+        });
+
+        function initSearchForm() {
+            form.on('submit(search)', function (data) {
+                table.reload('list', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    },
+                    where: data.field
+                });
+                return false;
+            });
+            form.render();
+        }
+
+        initSearchForm();
+
+        function initEditForm(obj) {
+            const data = obj.data;
+
+            form.val("editForm", {
+                id: data.id,
+                account_id: data.account_id,
+                country: data.country,
+                age: data.age,
+                work: data.work,
+                money: data.money,
+                mark: data.mark,
+            });
+
+            form.verify({
+                account_id: function (value, item) {
+                    if (!/^.+$/.test(value)) {
+                        $(item).focus();
+                        return 'ID不能为空';
+                    }
+                }
+            });
+            form.on('submit(editSubmit)', function (massage) {
+                console.log("updatw = massage", massage)
+                layer.load(1);
+                $.ajax({
+                    url: '/api/wa2/account_id/update',
+                    type: 'POST',
+                    headers: headers,
+                    data: massage.field,
+                    success: function (res) {
+                        if (res.code >= 0) {
+                            console.log("修改成功")
+                            layer.closeAll('loading');
+                            layer.load(2);
+                            layer.msg("修改成功", {icon: 6});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层
+                                table.reload("list", massage.field);//修改成功修改表格数据不进行跳转
+                            }, 1000);
+                        } else {
+                            layer.msg("修改失败", {icon: 5});
+                        }
+                    }
+                });
+                return false
+            });
+        }
+
+        function usedTemplate(res) {
+            if (res.used) {
+                return `<span class="layui-badge layui-bg-green">已使用</span>`
+            } else {
+                return `<span class="layui-badge layui-bg-orange">未使用</span>`
+            }
+        }
+
+        //滚动条
+        jQuery(".page-main").scrollbar();
+
+
+    });
+</script>
+</body>
+</html>

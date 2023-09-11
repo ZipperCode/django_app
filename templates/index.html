@@ -168,6 +168,48 @@
                     </li>
                 {% endif %}
 
+                {% if request.session.user.role == 0 or request.session.user.back_type == 2 %}
+                    <li>
+                        <a data-url="admin">
+                            <i class="iconfont layui-icon layui-icon-chat"></i>
+                            <span>WhatsApp2管理</span>
+                            <i class="iconfont icon-jiantouyou1"></i>
+                        </a>
+                        <dl>
+                            <dd>
+                                <a data-url="/view/auth/whatsapp2/account_id/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>WA2 ID管理</span>
+                                </a>
+                            </dd>
+                            {% if request.session.user.role == 0 %}
+                                <dd>
+                                    <a data-url="/view/auth/whatsapp2/aid_record/list">
+                                        <i class="iconfont icon-guanliyuan"></i>
+                                        <span>WA2 ID分配数据</span>
+                                    </a>
+                                </dd>
+                            {% endif %}
+                            <dd>
+                                <a data-url="/view/auth/whatsapp2/account_qr/list">
+                                    <i class="iconfont icon-guanliyuan"></i>
+                                    <span>WA2 二维码管理</span>
+                                </a>
+                            </dd>
+
+
+                            {% if request.session.user.role == 0 %}
+                                <dd>
+                                    <a data-url="/view/auth/whatsapp2/qr_record/list">
+                                        <i class="iconfont icon-guanliyuan"></i>
+                                        <span>WA2 二维码分配数据</span>
+                                    </a>
+                                </dd>
+                            {% endif %}
+                        </dl>
+                    </li>
+                {% endif %}
+
                 <li>
                     <a data-url="/view/auth/setting.html">
                         <i class="iconfont icon-set"></i>
