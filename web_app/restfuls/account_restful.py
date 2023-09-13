@@ -338,7 +338,7 @@ def account_id_export(request):
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         logging.info("管理员导出全部数据")
         # 管理员导出全部数据
-        query_list = list(AccountId.objects.all())
+        query_list = list(AccountId.objects.filter(op_user__id__isnull=False).all())
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
