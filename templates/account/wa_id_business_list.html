@@ -145,6 +145,17 @@
                     <input type="number" name="money" placeholder="￥" autocomplete="off" class="layui-input">
                 </div>
             </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">状态</label>
+                <div class="layui-input-inline">
+                    <select name="used">
+                        <option value="">不设置</option>
+                        <option value="0">未使用</option>
+                        <option value="1">已使用</option>
+                        <option value="2">无效</option>
+                    </select>
+                </div>
+            </div>
             <div class="layui-form-item layui-form-text">
                 <label class="layui-form-label">备注</label>
                 <div class="layui-input-block">
@@ -267,6 +278,7 @@
                 work: data.work,
                 money: data.money,
                 mark: data.mark,
+                used: data.used + ""
             });
 
             form.verify({
