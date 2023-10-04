@@ -210,6 +210,7 @@ def wa2_account_id_update(request: HttpRequest):
         elif is_business_user:
             logging.info("业务员编辑, 直接修改为已使用")
             upd_field['used'] = True
+            del upd_field['op_user_id']
             # 同时更新Record
             _q = WaUserIdRecord2.objects.filter(user_id=user_id, account_id=a_id)
             if _q.exists():
