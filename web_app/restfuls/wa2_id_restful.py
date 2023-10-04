@@ -188,11 +188,6 @@ def wa2_account_id_update(request: HttpRequest):
     }
 
     with transaction.atomic():
-        if utils.str_is_null(used):
-            logging.info("要跟新的字段 = %s", upd_field)
-            query.update(**upd_field)
-            return RestResponse.success("更新成功")
-
         if is_admin and not utils.str_is_null(used):
             logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
             _status = utils.is_bool_val(used)
