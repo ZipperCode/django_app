@@ -17,6 +17,7 @@ from util.utils import handle_uploaded_file
 from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.accounts import AccountId, LineUserAccountIdRecord
+from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util
@@ -50,7 +51,7 @@ def account_id_business_list(request: HttpRequest):
 
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
     record_query = LineUserAccountIdRecord.objects
     account_id = body.get("account_id", "")
     if not utils.str_is_null(account_id):
@@ -186,28 +187,26 @@ def account_id_update(request: HttpRequest):
     }
 
     with transaction.atomic():
-        if is_admin and not utils.str_is_null(used):
-            logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
-            _status = utils.is_bool_val(used)
-            upd_field['used'] = _status
-            if not _status:
-                logging.info("管理员编辑为未使用")
-                # 1:1关系，直接找对应数据就行了
-            else:
-                # 修改is_bind=True，分发的时候就过滤这个了
-                upd_field['is_bind'] = True
-                logging.info("管理员编辑为已使用，同步更新记录状态")
-            _q = LineUserAccountIdRecord.objects.filter(account_id=a_id)
-            if _q.exists():
-                _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
-        elif is_business_user:
-            logging.info("业务员编辑, 直接修改为已使用")
-            upd_field['used'] = True
-            del upd_field['op_user_id']
-            # 同时更新Record
-            _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account_id=a_id)
-            if _q.exists():
-                _q.update(used=True)
+        if not utils.str_is_null(used):
+            _status = utils.get_status(used)
+            logging.info("修改状态，当前状态值为%s", str(_status))
+            if is_admin:
+                upd_field['used'] = _status
+                logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+                if _status == UsedStatus.Used:
+                    # 修改is_bind=True，分发的时候就过滤这个了
+                    upd_field['is_bind'] = True
+                    logging.info("管理员编辑为已使用，同步更新记录状态")
+                _q = LineUserAccountIdRecord.objects.filter(account__account_id=account_id)
+                if _q.exists():
+                    _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
+            elif is_business_user:
+                logging.info("业务员编辑, 直接状态为 = %s", str(_status))
+                upd_field['used'] = _status
+                del upd_field['op_user_id']
+                _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account__account_id=account_id)
+                if _q.exists():
+                    _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
 
         logging.info("要跟新的字段 = %s", upd_field)
         query.update(**upd_field)

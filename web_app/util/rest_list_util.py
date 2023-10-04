@@ -13,7 +13,7 @@ def search_record_common(query: QuerySet, body) -> QuerySet:
     date_end = body.get('date_end')
     # 过滤使用状态
     if not utils.str_is_null(used):
-        query = query.filter(account__used=utils.is_bool_val(used))
+        query = query.filter(account__used=utils.get_status(used))
     # 模糊记录用户
     if not utils.str_is_null(username):
         query = query.filter(user__username__contains=username)
@@ -42,7 +42,7 @@ def search_account_common_field(query: QuerySet, body) -> QuerySet:
     query.filter(op_user__isnull=False)
     # 过滤使用状态
     if not utils.str_is_null(used):
-        query = query.filter(used=utils.is_bool_val(used))
+        query = query.filter(used=utils.get_status(used))
     # 模糊搜索上传人
     if not utils.str_is_null(op_username):
         query = query.filter(op_user__username__contains=op_username)

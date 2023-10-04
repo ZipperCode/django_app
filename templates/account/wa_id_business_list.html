@@ -60,8 +60,9 @@
                     <div class="layui-input-inline">
                         <select name="used">
                             <option value="">请选择</option>
-                            <option value="false">未使用</option>
-                            <option value="true">已使用</option>
+                            <option value="0">未使用</option>
+                            <option value="1">已使用</option>
+                            <option value="2">无效</option>
                         </select>
                     </div>
                 </div>
@@ -304,9 +305,11 @@
         }
 
         function usedTemplate(res) {
-            if (res.used) {
+            if (res.used === 1) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
-            } else {
+            } else if (res.used === 2){
+                return `<span class="layui-badge">无效</span>`
+            }else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
             }
         }

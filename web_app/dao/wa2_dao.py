@@ -5,6 +5,7 @@ from django.db import transaction
 
 from util import utils, time_utils
 from web_app.decorators.admin_decorator import log_func
+from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_UPLOADER, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_QR, USER_BACK_TYPE_WA, \
     RECORD_TYPE_WA_ID2, RECORD_TYPE_WA_QR2
 from web_app.model.wa_accounts2 import WaAccountId2, WaAccountQr2, WaUserIdRecord2, WaUserQrRecord2
@@ -23,7 +24,7 @@ def search_account_id_page(body, start_row, end_row, user: User):
         query = query.filter(account_id__contains=account_id)
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
-        query = query.filter(used=False, op_user__id=user.id)
+        query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
     res = list(
         query.values(
@@ -43,7 +44,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
         query = query.filter(qr_content__contains=qr_content)
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
-        query = query.filter(used=False, op_user__id=user.id)
+        query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
     res = list(
         query.values(
@@ -92,7 +93,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
             WaUserIdRecord2(
                 user_id=_u_id,
                 account_id=_a_id,
-                used=False,
+                used=UsedStatus.Default,
                 create_time=time_utils.get_now_bj_time_str(),
                 update_time=time_utils.get_now_bj_time_str()
             )

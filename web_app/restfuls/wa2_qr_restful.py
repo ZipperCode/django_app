@@ -21,6 +21,7 @@ from util.utils import handle_uploaded_file
 from web_app.dao import user_dao, wa2_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
+from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
 from web_app.model.wa_accounts2 import WaUserQrRecord2, WaAccountQr2
 from web_app.settings import BASE_DIR, MEDIA_ROOT
@@ -57,7 +58,7 @@ def wa2_business_list(request: HttpRequest):
 
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=False)
+    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
 
     record_ids = list(
         map(
@@ -174,26 +175,26 @@ def wa2_account_qr_update(request: HttpRequest):
         "update_time": time_utils.get_now_bj_time_str()
     }
     with transaction.atomic():
-        if is_admin and not utils.str_is_null(used):
-            logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
-            _status = utils.is_bool_val(used)
-            upd_field['used'] = _status
-            if not _status:
-                logging.info("管理员编辑为不使用")
-            else:
-                # 修改is_bind=True，分发的时候就过滤这个了
-                upd_field['is_bind'] = True
-                logging.info("管理员编辑为已使用，同步更新记录状态")
-            _q = WaUserQrRecord2.objects.filter(account_id=db_id)
-            if _q.exists():
-                _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
-
-        elif is_business_user:
-            logging.info("业务员编辑, 直接修改为已使用")
-            upd_field['used'] = True
-            _q = WaUserQrRecord2.objects.filter(user_id=user_id, account_id=db_id)
-            if _q.exists():
-                _q.update(used=True)
+        if not utils.str_is_null(used):
+            _status = utils.get_status(used)
+            logging.info("修改状态，当前状态值为%s", str(_status))
+            if is_admin:
+                upd_field['used'] = _status
+                logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
+                if _status == UsedStatus.Used:
+                    # 修改is_bind=True，分发的时候就过滤这个了
+                    upd_field['is_bind'] = True
+                    logging.info("管理员编辑为已使用，同步更新记录状态")
+                _q = WaUserQrRecord2.objects.filter(account_id=db_id)
+                if _q.exists():
+                    _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
+            elif is_business_user:
+                logging.info("业务员编辑, 直接状态为 = %s", str(_status))
+                upd_field['used'] = _status
+                del upd_field['op_user_id']
+                _q = WaUserQrRecord2.objects.filter(user_id=user_id, account_id=db_id)
+                if _q.exists():
+                    _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
 
         query.update(**upd_field)
 

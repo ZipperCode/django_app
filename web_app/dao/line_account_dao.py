@@ -7,6 +7,7 @@ from django.db.models import F
 from util import utils, time_utils
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.accounts import AccountId, AccountQr, LineUserAccountIdRecord, LineUserAccountQrRecord
+from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_UPLOADER, UserAccountRecord, RECORD_TYPE_LINE_ID, \
     RECORD_TYPE_LINE_QR, USER_BACK_TYPE_LINE
 from web_app.util import dispatch, rest_list_util
@@ -24,7 +25,7 @@ def search_account_id_page(body, start_row, end_row, user: User):
         query = query.filter(account_id__contains=account_id)
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
-        query = query.filter(used=False, op_user__id=user.id)
+        query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
     res = list(
         query.values(
@@ -44,7 +45,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
         query = query.filter(qr_content__contains=qr_content)
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
-        query = query.filter(used=False, op_user__id=user.id)
+        query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
     res = list(
         query.values(
@@ -89,7 +90,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
             LineUserAccountIdRecord(
                 user_id=_u_id,
                 account_id=_a_id,
-                used=False,
+                used=UsedStatus.Default,
                 create_time=time_utils.get_now_bj_time_str(),
                 update_time=time_utils.get_now_bj_time_str()
             )

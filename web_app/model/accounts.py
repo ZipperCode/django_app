@@ -1,6 +1,7 @@
 from django.db import models
 
 from util import utils
+from web_app.model.const import UsedStatus
 from web_app.model.users import User
 
 
@@ -15,7 +16,7 @@ class AccountId(models.Model):
     mark = models.TextField("备注", null=True)
     op_user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     is_bind = models.BooleanField("是否绑定用户", default=False)
-    used = models.BooleanField("是否使用", default=False)
+    used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
@@ -41,7 +42,7 @@ class AccountQr(models.Model):
     mark = models.TextField("备注", null=True)
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     is_bind = models.BooleanField("是否绑定用户", default=False)
-    used = models.BooleanField("是否使用", default=False)
+    used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
@@ -62,7 +63,7 @@ class LineUserAccountIdRecord(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
     account = models.ForeignKey(to="AccountId", verbose_name="账号ID外键", null=True, on_delete=models.SET_NULL)
-    used = models.BooleanField("是否使用", default=False)
+    used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
@@ -79,7 +80,7 @@ class LineUserAccountQrRecord(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="User", verbose_name="用户外键", null=True, on_delete=models.SET_NULL)
     account = models.ForeignKey(to="AccountQr", verbose_name="二维码表外键", null=True, on_delete=models.SET_NULL)
-    used = models.BooleanField("是否使用", default=False)
+    used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
     create_time = models.DateTimeField("创建时间", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
