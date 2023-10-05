@@ -507,3 +507,20 @@ def handle_dispatcher(request: HttpRequest):
     except BaseException as e:
         logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
         return RestResponse.failure("分发错误，请联系管理员")
+
+
+@log_func
+def handle_used_state(request: HttpRequest):
+    body = utils.request_body(request)
+    logging.info("批量修改使用状态#wa_qr#body = %s", str(body))
+    try:
+        ids = body.get("ids", "")
+        ids = ids.split(",")
+        used = body.get('used')
+        used = utils.get_status(used)
+        WaAccountQr.objects.filter(id__in=ids).update(used=used)
+        WaUserQrRecord.objects.filter(account__id__in=ids).update(used=used)
+        return RestResponse.success()
+    except BaseException as e:
+        logging.info("批量修改使用状态失败 %s => %s", str(e), traceback.format_exc())
+        return RestResponse.failure("批量修改失败")

@@ -126,6 +126,7 @@
     <a class="layui-btn layui-btn-sm" href="/api/wa2/account_id/export">全部批量导出</a>
     <a class="layui-btn layui-btn-sm" lay-event="dispatch">分发当日新增数据</a>
     <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>
+    <a class="layui-btn layui-btn-sm" lay-event="batch_used_state">批量修改状态</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -253,7 +254,29 @@
         </form>
     </div>
 </div>
-
+<div class="layui-row" id="batchUpdateUsedStateForm" style="display: none;">
+    <div class="layui-col-md12">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="batchUpdateUsedStateForm">
+            <div class="layui-inline">
+                <label class="layui-form-label">状态</label>
+                <div class="layui-input-inline">
+                    <select name="used">
+                        <option value="">不设置</option>
+                        <option value="0">未使用</option>
+                        <option value="1">已使用</option>
+                        <option value="2">无效</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="usedSubmit">确认修改
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -281,6 +304,7 @@
                 , trigger: 'click'
             });
         });
+        var globalCurrentPage = 1;
         let op_col_width = 120
         {% if request.session.user.role == 0 %}
             op_col_width = 180
@@ -321,7 +345,10 @@
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
 
             ]],
-            defaultToolbar: ['filter', 'exports']
+            defaultToolbar: ['filter', 'exports'],
+            done: function (res, curr, count) {
+                globalCurrentPage = curr
+            }
         });
 
         /*表格头工具监听*/
@@ -350,6 +377,9 @@
                 handleDispatch();
             } else if (layEvent === 'dispatch_all') {
                 handleDispatch(true);
+            } else if (layEvent === 'batch_used_state') {
+                let checkStatus = table.checkStatus(obj.config.id);
+                handleBatchUsedState(checkStatus)
             }
         });
 
@@ -416,7 +446,11 @@
                             layer.load(2);
                             layer.msg("添加成功", {icon: 6});
                             setTimeout(function () {
-                                table.reload("list");
+                                table.reload("list", {
+                                    page: {
+                                        curr: globalCurrentPage
+                                    }
+                                });
                                 layer.closeAll();//关闭所有的弹出层
                             }, 1000);
                         } else {
@@ -531,7 +565,11 @@
                             layer.msg("修改成功", {icon: 6});
                             setTimeout(function () {
                                 layer.closeAll();//关闭所有的弹出层
-                                table.reload("list", massage.field);//修改成功修改表格数据不进行跳转
+                                table.reload("list", {
+                                    page: {
+                                        curr: globalCurrentPage
+                                    }
+                                });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
                             layer.msg("修改失败", {icon: 5});
@@ -644,6 +682,67 @@
                 });
             });
         }
+        function handleBatchUsedState(checkStatus){
+            if (checkStatus.data.length === 0) {
+                layer.msg("请至少选择一个列表项", {icon: 5});
+                return
+            }
+            console.log("checkStatus = " + JSON.stringify(checkStatus))
+            let ids = checkStatus.data.map((data) => data.id)
+            layer.open({
+                    type: 1,
+                    title: "请选择状态",
+                    area: ['400px', '300px'],
+                    content: $("#batchUpdateUsedStateForm")
+            });
+            form.val("batchUpdateUsedStateForm", {
+                used: ""
+            });
+
+            form.verify({
+                used: function (value, item) {
+                    if(value === "" || value === undefined) {
+                        $(item).focus();
+                        return "请选择一个状态"
+                    }
+                }
+            });
+            form.on('submit(usedSubmit)', function (massage) {
+                console.log("updatw = massage", massage)
+                layer.load(1);
+                let formData = {
+                    "used": massage.field.used,
+                    "ids": ids.join(",")
+                }
+
+                $.ajax({
+                    url: '/api/wa2/account_id/bat_used_update',
+                    type: 'POST',
+                    headers: headers,
+                    data: formData,
+                    success: function (res) {
+                        if (res.code >= 0) {
+                            console.log("修改成功")
+                            layer.closeAll('loading');
+                            layer.load(2);
+                            layer.msg("修改成功", {icon: 6});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层
+                                table.reload("list", {
+                                    page: {
+                                        curr: globalCurrentPage
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
+                        } else {
+                            layer.msg("修改失败", {icon: 5});
+                        }
+                    }
+                });
+                return false
+            });
+        }
+
 
         function usedTemplate(res) {
             if (res.used === 1) {

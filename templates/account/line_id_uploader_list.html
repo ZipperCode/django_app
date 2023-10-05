@@ -204,7 +204,29 @@
         </form>
     </div>
 </div>
-
+<div class="layui-row" id="batchUpdateUsedStateForm" style="display: none;">
+    <div class="layui-col-md12">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="batchUpdateUsedStateForm">
+            <div class="layui-inline">
+                <label class="layui-form-label">状态</label>
+                <div class="layui-input-inline">
+                    <select name="used">
+                        <option value="">不设置</option>
+                        <option value="0">未使用</option>
+                        <option value="1">已使用</option>
+                        <option value="2">无效</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="usedSubmit">确认修改
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -220,7 +242,7 @@
             "X-CSRFToken": csrftoken
         };
 
-
+        var globalCurrentPage = 1;
         /*表格渲染*/
         table.render({
             id: 'list',
@@ -250,7 +272,10 @@
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 70}
             ]],
-            defaultToolbar: ['filter']
+            defaultToolbar: ['filter'],
+            done: function (res, curr, count) {
+                globalCurrentPage = curr
+            }
         });
 
         /*表格头工具监听*/
@@ -339,7 +364,11 @@
                             layer.load(2);
                             layer.msg("添加成功", {icon: 6});
                             setTimeout(function () {
-                                table.reload("list");
+                                table.reload("list",{
+                                    page: {
+                                        curr: globalCurrentPage
+                                    }
+                                });
                                 layer.closeAll();//关闭所有的弹出层
                             }, 1000);
                         } else {
