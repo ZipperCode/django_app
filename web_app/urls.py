@@ -15,12 +15,11 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
 from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_restful, wa_qr_restful, \
-    wa2_id_restful, wa2_qr_restful
+    wa2_id_restful, wa2_qr_restful, wa_id_api, wa_qr_api
 
 urlpatterns = [
                   path('', views.login_view),
@@ -47,6 +46,12 @@ urlpatterns = [
                   path('view/auth/whatsapp2/aid_record/list', views.whatsapp2_aid_record_list_view),
                   path('view/auth/whatsapp2/qr_record/list', views.whatsapp2_qr_record_list_view),
 
+                  # Whatsapp common
+                  path('view/auth/wa/account_id/list', views.wa_account_id_list_view),
+                  path('view/auth/wa/account_qr/list', views.wa_account_qr_list_view),
+                  path('view/auth/wa/aid_record/list', views.wa_aid_record_list_view),
+                  path('view/auth/wa/qr_record/list', views.wa_qr_record_list_view),
+
                   path('view/login', views.login_view),
                   path('logout', views.logout),
                   path('404.html', views.not_found_view),
@@ -56,6 +61,7 @@ urlpatterns = [
                   path('api/admin/modify_pwd', user_restful.modify_password_admin),
                   path('api/user_list', user_restful.user_list),
                   path('api/user_simple_list', user_restful.user_simple_list),
+                  path('api/back_type_list', user_restful.back_type_list),
                   path('api/user_add', user_restful.user_add),
                   path('api/user_update', user_restful.user_update),
                   path('api/user_del', user_restful.user_del),
@@ -135,6 +141,31 @@ urlpatterns = [
                   path('api/wa2/account_qr/dispatcher', wa2_qr_restful.wa2_handle_dispatcher),
                   path('api/wa2/qr_record/list', wa2_qr_restful.wa2_dispatch_record_list),
                   path('api/wa2/account_qr/bat_used_update', wa2_qr_restful.handle_used_state),
+
+                  # wa3
+                  path('api/wa_id/list', wa_id_api.wa_id_list),
+                  path('api/wa_id/business_list', wa_id_api.wa_id_business_list),
+                  path('api/wa_id/add', wa_id_api.wa_id_add),
+                  path('api/wa_id/update', wa_id_api.wa_id_update),
+                  path('api/wa_id/del', wa_id_api.wa_id_del),
+                  path('api/wa_id/upload', wa_id_api.wa_id_upload),
+                  path('api/wa_id/bat_upload', wa_id_api.wa_id_batch_upload),
+                  path('api/wa_id/export', wa_id_api.wa_id_export),
+                  path('api/wa_id/dispatcher', wa_id_api.wa_handle_dispatcher),
+                  path('api/wa_id/record/list', wa_id_api.wa_dispatch_record_list),
+                  path('api/wa_id/bat_used_update', wa_id_api.handle_used_state),
+                  # WhatsApp Qr
+                  path('api/wa_qr/list', wa_qr_api.wa_qr_list),
+                  path('api/wa_qr/business_list', wa_qr_api.wa_qr_business_list),
+                  path('api/wa_qr/upload', wa_qr_api.wa_qr_upload),
+                  path('api/wa_qr/bat_upload', wa_qr_api.wa_qr_batch_upload),
+                  path('api/wa_qr/update', wa_qr_api.wa_qr_update),
+                  path('api/wa_qr/del', wa_qr_api.wa_qr_del),
+                  path('api/wa_qr/export_select', wa_qr_api.wa_qr_export_with_id),
+                  path('api/wa_qr/export', wa_qr_api.wa_qr_export),
+                  path('api/wa_qr/dispatcher', wa_qr_api.wa_qr_handle_dispatcher),
+                  path('api/wa_qr/record/list', wa_qr_api.wa_dispatch_record_list),
+                  path('api/wa_qr/bat_used_update', wa_qr_api.handle_used_state),
 
                   re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
               ] + static(settings.MEDIA_URL, serve, document_root=settings.MEDIA_ROOT)

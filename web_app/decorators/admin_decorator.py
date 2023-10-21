@@ -25,6 +25,8 @@ def log_func(func):
             request = args[0]
             if isinstance(request, HttpRequest):
                 body = utils.request_body(request)
+                back_type = body.get("back_type", -1)
+                logging.info("back_type = %s", back_type)
                 logging.info("body = %s", body)
         return func(*args, **kw)
 

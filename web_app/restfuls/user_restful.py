@@ -2,15 +2,16 @@ import logging
 import os
 
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse, JsonResponse, FileResponse
+from django.http import HttpRequest, HttpResponse, FileResponse
 from django.utils.encoding import escape_uri_path
 from django.views.decorators.csrf import csrf_exempt
 
 from util import utils, http_utils, time_utils
-from util.restful import RestResponse, CJsonEncoder
+from util.restful import RestResponse
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, op_admin, api_op_user
-from web_app.model.users import User, USER_BACK_TYPE_NONE, USER_BACK_TYPE_WA, USER_BACK_TYPE_LINE
+from web_app.model.users import User, USER_TYPES, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, \
+    USER_BACK_TYPE_WA3, USER_BACK_TYPE_WA4, USER_BACK_TYPE_WA5
 from web_app.settings import BASE_DIR
 
 logging.basicConfig(
@@ -210,7 +211,7 @@ def user_add(request: HttpRequest):
 
     back_type = int(back_type)
     logging.info("addUser#back_type = %s", back_type)
-    if back_type not in (USER_BACK_TYPE_NONE, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA):
+    if back_type not in USER_TYPES:
         return RestResponse.failure("参数错误，后台类型选择错误，未知类型:" + str(back_type))
 
     create_user = User.objects.create(
@@ -259,7 +260,7 @@ def user_update(request: HttpRequest):
 
         back_type = int(back_type)
         logging.info("updateUser#back_type = %s", back_type)
-        if back_type not in (USER_BACK_TYPE_NONE, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA):
+        if back_type not in USER_TYPES:
             return RestResponse.failure("参数错误，后台类型选择错误，未知类型:" + str(back_type))
 
         upd_dict['back_type'] = back_type
@@ -337,3 +338,34 @@ def file_down(request, name: str):
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = 'attachment;filename="' + escape_uri_path(file_name) + '"'
     return response
+
+
+@csrf_exempt
+@log_func
+def back_type_list(request: HttpRequest):
+    return RestResponse.success(data=[
+        {
+            "title": "Line",
+            "value": USER_BACK_TYPE_LINE,
+        },
+        {
+            "title": "WhatsApp",
+            "value": USER_BACK_TYPE_WA,
+        },
+        {
+            "title": "WhatsApp2",
+            "value": USER_BACK_TYPE_WA2,
+        },
+        {
+            "title": "WhatsApp3",
+            "value": USER_BACK_TYPE_WA3,
+        },
+        {
+            "title": "WhatsApp4",
+            "value": USER_BACK_TYPE_WA4,
+        },
+        {
+            "title": "WhatsApp5",
+            "value": USER_BACK_TYPE_WA5,
+        },
+    ])

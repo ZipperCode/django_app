@@ -1,4 +1,3 @@
-import datetime
 import logging
 import os
 import shutil
@@ -16,14 +15,13 @@ from django.utils.encoding import escape_uri_path
 from util import utils, qr_util, time_utils, excel_util
 from util.excel_util import ExcelBean
 from util.restful import RestResponse
-from util.time_utils import DATE_FORMAT
 from util.utils import handle_uploaded_file
-from web_app.dao import user_dao, wa2_dao
+from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
-from web_app.model.wa_accounts2 import WaUserQrRecord2, WaAccountQr2
+from web_app.service import wa_service
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util
 
@@ -37,19 +35,24 @@ TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
 
 @log_func
 @api_op_user
-def wa2_account_qr_list(request: HttpRequest):
+def wa_qr_list(request: HttpRequest):
     user = user_dao.get_user(request)
     if user is None or not isinstance(user, User):
         return RestResponse.failure("获取信息失败，用户未登录")
 
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    res, count = wa2_dao.search_account_qr_page(body, start_row, end_row, user)
+
+    back_type = body.get('back_type') or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return RestResponse.success_list(count=0, data=[])
+    res, count = wa_service.search_aqr_page(body, start_row, end_row, user, queryset)
     return RestResponse.success_list(count=count, data=res)
 
 
 @log_func
-def wa2_business_list(request: HttpRequest):
+def wa_qr_business_list(request: HttpRequest):
     user = user_dao.get_user(request)
     if user is None or not isinstance(user, User):
         return RestResponse.success_list(count=0, data=[])
@@ -59,12 +62,18 @@ def wa2_business_list(request: HttpRequest):
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
     q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
+    back_type = body.get('back_type') or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    if not queryset or not record_queryset:
+        logging.info("backType错误，%s", back_type)
+        return RestResponse.success_list(count=0, data=[])
 
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
             list(
-                WaUserQrRecord2.objects.filter(user_id=user.id).filter(q).distinct()
+                record_queryset.filter(user_id=user.id).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -76,7 +85,7 @@ def wa2_business_list(request: HttpRequest):
 
     logging.info("当前用户所分配的ids = %s", record_ids)
 
-    query = rest_list_util.search_account_common_field(WaAccountQr2.objects, body)
+    query = rest_list_util.search_account_common_field(queryset, body)
     query = query.filter(id__in=record_ids)
     res = list(
         query.values(
@@ -89,7 +98,7 @@ def wa2_business_list(request: HttpRequest):
 
 
 @log_func
-def wa2_dispatch_record_list(request: HttpRequest):
+def wa_dispatch_record_list(request: HttpRequest):
     """
     分配给用户的数据
     """
@@ -100,7 +109,13 @@ def wa2_dispatch_record_list(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("二维码分配记录搜索 用户 = %s, body = %s", user.username, body)
     # 记录列表
-    query = WaUserQrRecord2.objects.filter(user__isnull=False, account__isnull=False)
+    back_type = body.get('back_type') or user.back_type
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    if not record_queryset:
+        logging.info("backType错误，%s", back_type)
+        return RestResponse.success_list(count=0, data=[])
+
+    query = record_queryset.filter(user__isnull=False, account__isnull=False)
     query = rest_list_util.search_record_common(query, body)
     record_list = list(query.all()[start_row: end_row])
 
@@ -117,7 +132,8 @@ def wa2_dispatch_record_list(request: HttpRequest):
     return RestResponse.success_list(count=query.count(), data=result_list)
 
 
-def wa2_account_qr_add(request: HttpRequest):
+@log_func
+def wa_qr_add(request: HttpRequest):
     body = utils.request_body(request)
     qr = request.FILES['qr_file']
     country = body.get("country", "")
@@ -128,14 +144,21 @@ def wa2_account_qr_add(request: HttpRequest):
 
     user = request.session.get('user')
     logging.info("account_id_upload#user = %s", user.username)
-    if not User.objects.filter(username=user.username).exists():
+    user = user_dao.get_user(request)
+    if not user:
         return RestResponse.failure("添加失败，操作用户不存在")
 
     qr_content = "content"
     if utils.str_is_null(qr_content):
         return RestResponse.failure("添加失败，解析二维码失败")
 
-    WaAccountQr2.objects.create(
+    back_type = body.get('back_type') or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        logging.info("backType错误，%s", back_type)
+        return RestResponse.failure(f"添加失败backType错误 {back_type}")
+
+    queryset.create(
         qr_content=qr_content, qr_path=qr, country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=user.id
@@ -146,7 +169,7 @@ def wa2_account_qr_add(request: HttpRequest):
 
 @api_post
 @api_op_user
-def wa2_account_qr_update(request: HttpRequest):
+def wa_qr_update(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("qr_update# body = %s", str(body))
     db_id = body.get('id', "")
@@ -159,12 +182,19 @@ def wa2_account_qr_update(request: HttpRequest):
     if utils.str_is_null(db_id) or not utils.is_int(db_id):
         return RestResponse.failure("修改失败，id不能为空或只能数字")
 
-    user_id = request.session.get('user_id')
-    if not user_id or utils.str_is_null(user_id):
-        return RestResponse.failure("修改失败，未获取到登录用户信息")
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("添加失败，操作用户不存在")
 
-    query = WaAccountQr2.objects.filter(id=db_id)
-    if not query.exists():
+    user_id = user.id
+    back_type = body.get('back_type') or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    if not queryset or not record_queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+
+    queryset = queryset.filter(id=db_id)
+    if not queryset.exists():
         return RestResponse.failure("修改失败，记录不存在")
     role = request.session.get('user').get('role')
     is_business_user = role == USER_ROLE_BUSINESS
@@ -185,24 +215,24 @@ def wa2_account_qr_update(request: HttpRequest):
                     # 修改is_bind=True，分发的时候就过滤这个了
                     upd_field['is_bind'] = True
                     logging.info("管理员编辑为已使用，同步更新记录状态")
-                _q = WaUserQrRecord2.objects.filter(account_id=db_id)
+                _q = record_queryset.filter(account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
-                _q = WaUserQrRecord2.objects.filter(user_id=user_id, account_id=db_id)
+                _q = record_queryset.filter(user_id=user_id, account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
 
-        query.update(**upd_field)
+        queryset.update(**upd_field)
 
     return RestResponse.success("更新成功")
 
 
 @log_func
 @op_admin
-def wa2_account_qr_del(request: HttpRequest):
+def wa_qr_del(request: HttpRequest):
     if request.method != "POST":
         return RestResponse.failure("must use post")
 
@@ -211,24 +241,35 @@ def wa2_account_qr_del(request: HttpRequest):
     logging.info("WaQrDel#id_ = %s", id_)
     if utils.str_is_null(id_) or not utils.is_int(id_):
         return RestResponse.failure("删除失败，id不能为空或只能数字")
-    WaUserQrRecord2.objects.filter(account_id=id_).delete()
 
-    query = WaAccountQr2.objects.filter(id=id_)
-    if query.exists():
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("添加失败，操作用户不存在")
+
+    back_type = body.get('back_type') or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    if not queryset or not record_queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+
+    record_queryset.filter(account_id=id_).delete()
+
+    queryset = queryset.filter(id=id_)
+    if queryset.exists():
         try:
-            qr_path = os.path.join(MEDIA_ROOT, str(query.first().qr_path))
+            qr_path = os.path.join(MEDIA_ROOT, str(queryset.first().qr_path))
             if os.path.exists(qr_path) and os.path.isfile(qr_path):
                 os.remove(qr_path)
         except BaseException:
             logging.info("WaQrDel#删除记录同时删除上传图片失败，trace %s", traceback.format_exc())
         finally:
-            query.delete()
+            queryset.delete()
     return RestResponse.success("删除成功")
 
 
 @log_func
 @api_op_user
-def wa2_account_qr_upload(request: HttpRequest):
+def wa_qr_upload(request: HttpRequest):
     f = request.FILES["image"]
     filename = request.POST["filename"]
     if not f:
@@ -237,6 +278,16 @@ def wa2_account_qr_upload(request: HttpRequest):
         return RestResponse.failure("上传失败，正在处理中")
     request.session['in_used'] = True
     temp_path = None
+
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("失败，操作用户不存在")
+
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+
     try:
         user_id = request.session.get('user_id')
         if not user_id or utils.str_is_null(user_id):
@@ -261,11 +312,11 @@ def wa2_account_qr_upload(request: HttpRequest):
         if not parsed:
             return RestResponse.failure("上传失败，无法解析二维码")
 
-        query = WaAccountQr2.objects.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
+        query = queryset.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
         if query.exists():
             return RestResponse.failure("上传失败，二维码已经存在")
         f.name = str(uuid.uuid1()) + ext
-        WaAccountQr2.objects.create(
+        queryset.create(
             qr_content=str(parsed).strip(),
             qr_path=f,
             op_user_id=user_id
@@ -279,14 +330,20 @@ def wa2_account_qr_upload(request: HttpRequest):
 
 @log_func
 @api_op_user
-def wa2_account_qr_batch_upload(request: HttpRequest):
+def wa_qr_batch_upload(request: HttpRequest):
     f = request.FILES["file"]
     if not f:
         return HttpResponse("上传失败，数据传输异常")
 
-    user_id = request.session.get('user_id')
-    if not user_id or utils.str_is_null(user_id):
-        return RestResponse.failure("上传失败，未获取到登录用户信息")
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("失败，操作用户不存在")
+    user_id = user.id
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+
     ext = str(os.path.splitext(f.name)[-1])
     logging.info("account_qr_batch_upload#ext = %s", ext)
     f_name = str(uuid.uuid1())
@@ -333,7 +390,7 @@ def wa2_account_qr_batch_upload(request: HttpRequest):
             shutil.rmtree(zip_dir)
         return RestResponse.failure("上传失败，解压zip不包含图片")
 
-    # key qr_content : WaAccountQr2
+    # key qr_content : WaAccountQr3
     c_qr = {}
     c_qr_image = {}
     t_fm = time_utils.fmt_datetime(time_utils.get_now_bj_time(), "%Y_%m_%d")
@@ -359,7 +416,12 @@ def wa2_account_qr_batch_upload(request: HttpRequest):
         db_path = t_dir + str(uuid.uuid4()) + str(os.path.splitext(name)[-1])
         logging.info("生成数据库保持的文件路径 path = %s", db_path)
         c_qr_image[parsed] = (i_path, db_path)
-        c_qr[parsed] = WaAccountQr2(qr_content=str(parsed).strip(), qr_path=db_path, op_user_id=user_id)
+        data_dict = {
+            'qr_content': str(parsed).strip(), 'qr_path': db_path, 'op_user_id': user_id
+        }
+        model = wa_service.wa_qr_create_model(back_type, **data_dict)
+        if model:
+            c_qr[parsed] = model
 
     if len(c_qr) == 0:
         if os.path.exists(zip_dir):
@@ -368,7 +430,7 @@ def wa2_account_qr_batch_upload(request: HttpRequest):
 
     c_qr_keys = list(c_qr.keys())
     # 查询已经存在的记录
-    query_list = WaAccountQr2.objects.filter(qr_content__in=c_qr_keys)
+    query_list = queryset.filter(qr_content__in=c_qr_keys)
 
     # 去掉数据库已经存在的数据
     for query in query_list:
@@ -384,7 +446,7 @@ def wa2_account_qr_batch_upload(request: HttpRequest):
 
     db_qr_list = list(c_qr.values())
     try:
-        WaAccountQr2.objects.bulk_create(db_qr_list)
+        queryset.bulk_create(db_qr_list)
     except Exception:
         if os.path.exists(zip_dir):
             shutil.rmtree(zip_dir)
@@ -415,7 +477,7 @@ def wa2_account_qr_batch_upload(request: HttpRequest):
 
 @log_func
 @api_op_user
-def wa2_account_qr_export_with_id(request: HttpRequest):
+def wa_qr_export_with_id(request: HttpRequest):
     ids_str = request.GET['ids']
     logging.info("export ids = %s", str(ids_str))
     if utils.str_is_null(str(ids_str)):
@@ -425,32 +487,41 @@ def wa2_account_qr_export_with_id(request: HttpRequest):
     if len(ids) == 0:
         logging.info("export id 失败，请选择Id")
         return HttpResponse(status=404, content="失败，请选择Id")
-    user_id = request.session.get('user_id')
-    if not user_id or utils.str_is_null(user_id):
-        logging.info("export id 失败，需要登录")
-        return HttpResponse(status=404, content="下载失败，需要登录")
 
-    query_list = WaAccountQr2.objects.filter(id__in=ids, op_user_id=user_id).all()
+    user = user_dao.get_user(request)
+    if not user:
+        return HttpResponse(status=404, content="下载失败，需要登录")
+    user_id = user.id
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return HttpResponse(status=404, content=f"失败，用户类型错误 {back_type}")
+
+    query_list = queryset.filter(id__in=ids, op_user_id=user_id).all()
     return handle_export(query_list)
 
 
 @log_func
 @api_op_user
-def wa2_account_qr_export(request: HttpRequest):
-    user_id = request.session.get('user_id')
-    if not user_id or utils.str_is_null(user_id):
-        logging.info("export id 失败，需要登录")
+def wa_qr_export(request: HttpRequest):
+    user = user_dao.get_user(request)
+    if not user:
         return HttpResponse(status=404, content="下载失败，需要登录")
+    user_id = user.id
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return HttpResponse(status=404, content=f"失败，用户类型错误 {back_type}")
 
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         # 管理员导出全部数据
         logging.info("管理员导出全部数据")
-        query_list = WaAccountQr2.objects.all()
+        query_list = queryset.all()
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
         # 非管理员导出当天数据
-        query_list = WaAccountQr2.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+        query_list = queryset.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
     return handle_export(query_list)
 
 
@@ -495,11 +566,23 @@ def handle_export(query_list):
 
 
 @log_func
-def wa2_handle_dispatcher(request: HttpRequest):
+def wa_qr_handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
+
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("分发错误，未登录")
+    user_id = user.id
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    record_type = wa_service.get_record_type(back_type)
+    if not queryset or not record_queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+
     try:
-        code, msg = wa2_dao.dispatcher_account_qr(is_all)
+        code, msg = wa_service.dispatcher_aqr(queryset, back_type, record_queryset, record_type, is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)
@@ -512,13 +595,22 @@ def wa2_handle_dispatcher(request: HttpRequest):
 def handle_used_state(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("批量修改使用状态#waw_qr#body = %s", str(body))
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("分发错误，未登录")
+    user_id = user.id
+    back_type = request.POST['back_type'] or user.back_type
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_queryset = wa_service.wa_qr_record_queryset(back_type)
+    if not queryset or not record_queryset:
+        return RestResponse.failure(f"失败，用户类型错误 {back_type}")
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")
         used = body.get('used')
         used = utils.get_status(used)
-        WaAccountQr2.objects.filter(id__in=ids).update(used=used)
-        WaUserQrRecord2.objects.filter(account__id__in=ids).update(used=used)
+        queryset.filter(id__in=ids).update(used=used)
+        record_queryset.filter(account__id__in=ids).update(used=used)
         return RestResponse.success()
     except BaseException as e:
         logging.info("批量修改使用状态失败 %s => %s", str(e), traceback.format_exc())

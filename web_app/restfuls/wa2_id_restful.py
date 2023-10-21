@@ -183,7 +183,6 @@ def wa2_account_id_update(request: HttpRequest):
     upd_field = {
         "account_id": account_id, "country": country, "age": age,
         "work": work, "money": money, "mark": mark,
-        "op_user_id": int(user_id),
         "update_time": time_utils.get_now_bj_time_str()
     }
 
@@ -204,7 +203,6 @@ def wa2_account_id_update(request: HttpRequest):
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
-                del upd_field['op_user_id']
                 _q = WaUserIdRecord2.objects.filter(user_id=user_id, account_id=account_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())

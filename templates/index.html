@@ -126,88 +126,132 @@
                 {% endif %}
 
 
-                {% if request.session.user.role == 0 or request.session.user.back_type == 2 %}
-                    <li>
-                        <a data-url="admin">
-                            <i class="iconfont layui-icon layui-icon-chat"></i>
-                            <span>WhatsApp管理</span>
-                            <i class="iconfont icon-jiantouyou1"></i>
-                        </a>
-                        <dl>
-                            <dd>
-                                <a data-url="/view/auth/whatsapp/account_id/list">
-                                    <i class="iconfont icon-guanliyuan"></i>
-                                    <span>WA ID管理</span>
-                                </a>
-                            </dd>
-                            {% if request.session.user.role == 0 %}
+{#                {% if request.session.user.role == 0 or request.session.user.back_type == 2 %}#}
+{#                    <li>#}
+{#                        <a data-url="admin">#}
+{#                            <i class="iconfont layui-icon layui-icon-chat"></i>#}
+{#                            <span>WhatsApp管理</span>#}
+{#                            <i class="iconfont icon-jiantouyou1"></i>#}
+{#                        </a>#}
+{#                        <dl>#}
+{#                            <dd>#}
+{#                                <a data-url="/view/auth/whatsapp/account_id/list">#}
+{#                                    <i class="iconfont icon-guanliyuan"></i>#}
+{#                                    <span>WA ID管理</span>#}
+{#                                </a>#}
+{#                            </dd>#}
+{#                            {% if request.session.user.role == 0 %}#}
+{#                                <dd>#}
+{#                                    <a data-url="/view/auth/whatsapp/aid_record/list">#}
+{#                                        <i class="iconfont icon-guanliyuan"></i>#}
+{#                                        <span>WA ID分配数据</span>#}
+{#                                    </a>#}
+{#                                </dd>#}
+{#                            {% endif %}#}
+{#                            <dd>#}
+{#                                <a data-url="/view/auth/whatsapp/account_qr/list">#}
+{#                                    <i class="iconfont icon-guanliyuan"></i>#}
+{#                                    <span>WA 二维码管理</span>#}
+{#                                </a>#}
+{#                            </dd>#}
+{##}
+{##}
+{#                            {% if request.session.user.role == 0 %}#}
+{#                                <dd>#}
+{#                                    <a data-url="/view/auth/whatsapp/qr_record/list">#}
+{#                                        <i class="iconfont icon-guanliyuan"></i>#}
+{#                                        <span>WA 二维码分配数据</span>#}
+{#                                    </a>#}
+{#                                </dd>#}
+{#                            {% endif %}#}
+{#                        </dl>#}
+{#                    </li>#}
+{#                {% endif %}#}
+{##}
+{#                {% if request.session.user.role == 0 or request.session.user.back_type == 2 %}#}
+{#                    <li>#}
+{#                        <a data-url="admin">#}
+{#                            <i class="iconfont layui-icon layui-icon-chat"></i>#}
+{#                            <span>WhatsApp2管理</span>#}
+{#                            <i class="iconfont icon-jiantouyou1"></i>#}
+{#                        </a>#}
+{#                        <dl>#}
+{#                            <dd>#}
+{#                                <a data-url="/view/auth/whatsapp2/account_id/list">#}
+{#                                    <i class="iconfont icon-guanliyuan"></i>#}
+{#                                    <span>WA2 ID管理</span>#}
+{#                                </a>#}
+{#                            </dd>#}
+{#                            {% if request.session.user.role == 0 %}#}
+{#                                <dd>#}
+{#                                    <a data-url="/view/auth/whatsapp2/aid_record/list">#}
+{#                                        <i class="iconfont icon-guanliyuan"></i>#}
+{#                                        <span>WA2 ID分配数据</span>#}
+{#                                    </a>#}
+{#                                </dd>#}
+{#                            {% endif %}#}
+{#                            <dd>#}
+{#                                <a data-url="/view/auth/whatsapp2/account_qr/list">#}
+{#                                    <i class="iconfont icon-guanliyuan"></i>#}
+{#                                    <span>WA2 二维码管理</span>#}
+{#                                </a>#}
+{#                            </dd>#}
+{##}
+{##}
+{#                            {% if request.session.user.role == 0 %}#}
+{#                                <dd>#}
+{#                                    <a data-url="/view/auth/whatsapp2/qr_record/list">#}
+{#                                        <i class="iconfont icon-guanliyuan"></i>#}
+{#                                        <span>WA2 二维码分配数据</span>#}
+{#                                    </a>#}
+{#                                </dd>#}
+{#                            {% endif %}#}
+{#                        </dl>#}
+{#                    </li>#}
+{#                {% endif %}#}
+
+                {% if wa_menu_list %}
+                    {% for menu in wa_menu_list %}
+                        <li>
+                            <a data-url="admin">
+                                <i class="iconfont layui-icon layui-icon-chat"></i>
+                                <span>{{ menu.title }}</span>
+                                <i class="iconfont icon-jiantouyou1"></i>
+                            </a>
+                            <dl>
                                 <dd>
-                                    <a data-url="/view/auth/whatsapp/aid_record/list">
+                                    <a data-url="{{ menu.wa_id.path }}">
                                         <i class="iconfont icon-guanliyuan"></i>
-                                        <span>WA ID分配数据</span>
+                                        <span>{{ menu.wa_id.name }}</span>
                                     </a>
                                 </dd>
-                            {% endif %}
-                            <dd>
-                                <a data-url="/view/auth/whatsapp/account_qr/list">
-                                    <i class="iconfont icon-guanliyuan"></i>
-                                    <span>WA 二维码管理</span>
-                                </a>
-                            </dd>
-
-
-                            {% if request.session.user.role == 0 %}
+                                {% if request.session.user.role == 0 %}
+                                    <dd>
+                                        <a data-url="{{ menu.wa_id_rec.path }}">
+                                            <i class="iconfont icon-guanliyuan"></i>
+                                            <span>{{ menu.wa_id_rec.name }}</span>
+                                        </a>
+                                    </dd>
+                                {% endif %}
                                 <dd>
-                                    <a data-url="/view/auth/whatsapp/qr_record/list">
+                                    <a data-url="{{ menu.wa_qr.path }}">
                                         <i class="iconfont icon-guanliyuan"></i>
-                                        <span>WA 二维码分配数据</span>
+                                        <span>{{ menu.wa_qr.name }}</span>
                                     </a>
                                 </dd>
-                            {% endif %}
-                        </dl>
-                    </li>
-                {% endif %}
-
-                {% if request.session.user.role == 0 or request.session.user.back_type == 2 %}
-                    <li>
-                        <a data-url="admin">
-                            <i class="iconfont layui-icon layui-icon-chat"></i>
-                            <span>WhatsApp2管理</span>
-                            <i class="iconfont icon-jiantouyou1"></i>
-                        </a>
-                        <dl>
-                            <dd>
-                                <a data-url="/view/auth/whatsapp2/account_id/list">
-                                    <i class="iconfont icon-guanliyuan"></i>
-                                    <span>WA2 ID管理</span>
-                                </a>
-                            </dd>
-                            {% if request.session.user.role == 0 %}
-                                <dd>
-                                    <a data-url="/view/auth/whatsapp2/aid_record/list">
-                                        <i class="iconfont icon-guanliyuan"></i>
-                                        <span>WA2 ID分配数据</span>
-                                    </a>
-                                </dd>
-                            {% endif %}
-                            <dd>
-                                <a data-url="/view/auth/whatsapp2/account_qr/list">
-                                    <i class="iconfont icon-guanliyuan"></i>
-                                    <span>WA2 二维码管理</span>
-                                </a>
-                            </dd>
 
 
-                            {% if request.session.user.role == 0 %}
-                                <dd>
-                                    <a data-url="/view/auth/whatsapp2/qr_record/list">
-                                        <i class="iconfont icon-guanliyuan"></i>
-                                        <span>WA2 二维码分配数据</span>
-                                    </a>
-                                </dd>
-                            {% endif %}
-                        </dl>
-                    </li>
+                                {% if request.session.user.role == 0 %}
+                                    <dd>
+                                        <a data-url="{{ menu.wa_qr_rec.path }}">
+                                            <i class="iconfont icon-guanliyuan"></i>
+                                            <span>{{ menu.wa_qr_rec.name }}</span>
+                                        </a>
+                                    </dd>
+                                {% endif %}
+                            </dl>
+                        </li>
+                    {% endfor %}
                 {% endif %}
 
                 <li>

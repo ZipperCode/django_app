@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <style>
+        .box_parent {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="page-main scrollbar-inner">
+    <div class="page-container">
+        <div class="page-fluid">
+            <form class="layui-form layui-unselect table-form" action="">
+                <div class="layui-inline">
+                    <label class="layui-form-label">客服账号</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="username" placeholder="请输入客服账号查询" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-inline">
+                        <select name="used">
+                            <option value="">请选择</option>
+                            <option value="0">未使用</option>
+                            <option value="1">已使用</option>
+                            <option value="2">无效</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">范围日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_start">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_end">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
+                    </button>
+                </div>
+            </form>
+
+            <table id="list" lay-filter="list"></table>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/static/admin/iconfont/iconfont.js"></script>
+<script type="text/javascript" src="/static/jquery/jquery-3.4.1.js"></script>
+<script type="text/javascript" src="/static/admin/js/common.js"></script>
+<script type="text/javascript" src="/static/scrollbar/jquery.scrollbar.min.js"></script>
+<script type="text/javascript" src="/static/layui/layui.js"></script>
+<script type="text/javascript" src="/static/admin/js/user_form.js"></script>
+<script type="text/javascript" src="/static/admin/js/utils.js"></script>
+
+
+{% comment %} component {% endcomment %}
+
+{% comment %} {% endcomment %}
+{% csrf_token %}
+<script type="text/javascript">
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload'], function () {
+        const layer = layui.layer,
+            form = layui.form;
+        const table = layui.table;
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const headers = {
+            "Accept": "application/json; charset=utf-8",
+            "X-CSRFToken": csrftoken
+        };
+        const laydate = layui.laydate;
+        lay('.test-item').each(function () {
+            const date = new Date()
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+            laydate.render({
+                elem: this,
+                type: 'datetime',
+                min: '2023-1-1 00:00:00',
+                max: max
+                , trigger: 'click'
+            });
+        });
+        /*表格渲染*/
+        table.render({
+            id: 'list',
+            elem: '#list',
+            url: '/api/wa_qr/list?back_type={{ back_type }}',
+            page: true,
+            cellMinWidth: 80,
+            cols: [[
+                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'username', title: '客服账号', align: 'center', sort: true},
+                {field: 'account_qr', title: '绑定二维码内容', align: 'center', sort: true},
+                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
+                {field: 'create_time', title: '创建时间', align: 'center', sort: true, minWidth: 160},
+            ]],
+            defaultToolbar: ['filter']
+        });
+
+        /*表格头工具监听*/
+        table.on('toolbar(list)', function (obj) {
+            const data = obj.data; //获得当前行数据
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+        });
+
+        /*表格行工具监听*/
+        table.on('tool(list)', function (obj) {
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+        });
+
+        function initSearchForm() {
+            form.on('submit(search)', function (data) {
+                table.reload('list', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    },
+                    where: data.field
+                });
+                return false;
+            });
+            form.render();
+        }
+
+        initSearchForm();
+
+        function usedTemplate(res) {
+            if (res.used === 1) {
+                return `<span class="layui-badge layui-bg-green">已使用</span>`
+            } else if (res.used === 2) {
+                return `<span class="layui-badge">无效</span>`
+            } else {
+                return `<span class="layui-badge layui-bg-orange">未使用</span>`
+            }
+        }
+
+        //滚动条
+        jQuery(".page-main").scrollbar();
+
+
+    });
+</script>
+</body>
+</html>

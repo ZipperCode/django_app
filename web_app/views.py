@@ -12,6 +12,7 @@ from django.utils.crypto import md5
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_UPLOADER, USER_ROLE_BUSINESS
+from web_app.util.wa_map import MENU_MAP
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -38,7 +39,27 @@ async def hello(request: HttpRequest):
 
 @log_func
 def index_view(request: HttpRequest):
-    return render(request, 'index.html')
+    user = request.session.get('user')
+    context = {}
+    if user.get('role') != 0:
+        back_type = user.get('back_type')
+        wa_menu_list = []
+        # menu_list = UserMenu.objects.filter(user_id=user.id).all()
+        # if len(menu_list) > 0:
+        #     menu_types = map(lambda x: x.menu_type, menu_list)
+        #     for menu_type in menu_types:
+        #         d = MENU_MAP.get(menu_type)
+        #         if d:
+        #             wa_menu_list.append(d)
+        wa_dict = MENU_MAP.get(back_type)
+        if wa_dict:
+            wa_menu_list.append(wa_dict)
+        context['wa_menu_list'] = wa_menu_list
+
+    else:
+        context['wa_menu_list'] = list(MENU_MAP.values())
+
+    return render(request, 'index.html', context)
 
 
 @log_func
@@ -258,6 +279,7 @@ def whatsapp_qr_record_list_view(request):
 ========================================== whatsapp2 ==================================
 """
 
+
 @log_func
 def whatsapp2_account_id_list_view(request: HttpRequest):
     logging.info(request)
@@ -305,3 +327,72 @@ def whatsapp2_aid_record_list_view(request):
 @log_func
 def whatsapp2_qr_record_list_view(request):
     return render(request, 'account/wa2_qr_record_list.html')
+
+
+"""
+========================================== whatsapp common ==================================
+"""
+
+
+@log_func
+def wa_account_id_list_view(request: HttpRequest):
+    logging.info(request)
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+
+    back_type = request.GET['back_type'] or user.get('back_type')
+    context = {
+        "back_type": back_type
+    }
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'whatsapp/wa_id_list.html', context)
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'whatsapp/wa_id_uploader_list.html', context)
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'whatsapp/wa_id_business_list.html', context)
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })
+
+
+@log_func
+def wa_account_qr_list_view(request: HttpRequest):
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+    back_type = request.GET['back_type'] or user.get('back_type')
+    context = {
+        "back_type": back_type
+    }
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'whatsapp/wa_qr_list.html', context)
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'whatsapp/wa_qr_uploader_list.html', context)
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'whatsapp/wa_qr_business_list.html', context)
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })
+
+
+@log_func
+def wa_aid_record_list_view(request):
+    back_type = request.GET.get('back_type')
+    context = {
+        "back_type": back_type
+    }
+    return render(request, 'whatsapp/wa_id_record_list.html', context)
+
+
+@log_func
+def wa_qr_record_list_view(request):
+    back_type = request.GET.get('back_type')
+    context = {
+        "back_type": back_type
+    }
+    return render(request, 'whatsapp/wa_qr_record_list.html', context)

@@ -114,10 +114,12 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">后台类型<span style="color: red">*</span></label>
                 <div class="layui-input-inline">
-                    <select name="back_type">
+                    <select name="back_type" lay-search="">
                         <option value="">请选择</option>
-                        <option value="1">Line</option>
+                        {% comment %}<option value="1">Line</option>
                         <option value="2">WhatsApp</option>
+                        <option value="3">WhatsApp2</option>
+                        <option value="4">WhatsApp3</option>{% endcomment %}
                     </select>
                 </div>
 
@@ -175,10 +177,12 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">后台类型<span style="color: red">*</span></label>
                 <div class="layui-input-inline">
-                    <select name="back_type" lay-verify="back_type">
+                    <select name="back_type">
                         <option value="">请选择</option>
-                        <option value="1">Line</option>
+                        {% comment %}<option value="1">Line</option>
                         <option value="2">WhatsApp</option>
+                        <option value="3">WhatsApp2</option>
+                        <option value="4">WhatsApp3</option>{% endcomment %}
                     </select>
                 </div>
 
@@ -684,10 +688,40 @@
                 return `<span class="layui-badge layui-bg-green">Lines</span>`
             } else if (res.back_type === 2) {
                 return `<span class="layui-badge">WhatsApp</span>`
+            } else if (res.back_type === 3) {
+                return `<span class="layui-badge layui-bg-blue">WhatsApp2</span>`
+            } else if (res.back_type === 4) {
+                return `<span class="layui-badge layui-bg-orange">WhatsApp3</span>`
+            } else if (res.back_type === 5) {
+                return `<span class="layui-badge layui-bg-black">WhatsApp3</span>`
+            }else if (res.back_type === 6) {
+                return `<span class="layui-badge layui-bg-gray">WhatsApp3</span>`
             }
             return `<span>无</span>`
         }
 
+        (function initBackTypeList() {
+            $.ajax({
+                url: '/api/back_type_list',
+                success: function (res) {
+                    if (res.code >= 0) {
+                        let data = res.data;
+                        let selectElements = $("select[name='back_type']");
+                        for (let j = 0; j < selectElements.length; j++) {
+                            for (let i = 0; i < data.length; i++) {
+                                let item = data[i];
+                                selectElements.eq(j).append(
+                                    `<option value="${item.value}">${item.title}</option>`
+                                );
+                            }
+                        }
+                        form.render('select');
+                    } else {
+                        console.log("策略列表，错误：", res.msg)
+                    }
+                }
+            });
+        })();
     });
 </script>
 </body>

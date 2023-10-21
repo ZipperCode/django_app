@@ -10,11 +10,6 @@ from web_app.model.accounts import LineUserAccountIdRecord
 from web_app.model.users import USER_ROLE_BUSINESS, User, UserAccountRecord, RECORD_TYPE_LINE_ID, RECORD_TYPE_NONE
 
 
-def get_business_user_ids() -> Tuple[list, int]:
-    u_ids = list(map(lambda x: x.get('id'), list(User.objects.filter(role=USER_ROLE_BUSINESS).values('id'))))
-    len_ids = len(u_ids)
-    return u_ids, len_ids
-
 @log_func
 def get_business_user_ids2(back_type: int) -> Tuple[list, int]:
     logging.info("back_type = %s", back_type)
@@ -87,7 +82,8 @@ def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
             min_num = v
 
     # 最大 - 最小 = 填充次数
-    logging.info("dispatcher2#开始填充用户不满足的数量, 填充次数 = %s，最大 = %s, 最小 = %s", (max_num - min_num), max_num, min_num)
+    logging.info("dispatcher2#开始填充用户不满足的数量, 填充次数 = %s，最大 = %s, 最小 = %s", (max_num - min_num),
+                 max_num, min_num)
     for i in range(0, max_num - min_num):
         for user_id, data_num in user_num_map.items():
             if a_index >= len_ids:

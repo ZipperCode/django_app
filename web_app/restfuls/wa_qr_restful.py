@@ -191,7 +191,6 @@ def account_qr_update(request: HttpRequest):
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
-                del upd_field['op_user_id']
                 _q = WaUserQrRecord.objects.filter(user_id=user_id, account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
