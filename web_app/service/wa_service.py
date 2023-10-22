@@ -104,15 +104,15 @@ def wa_id_create_model(back_type, **create_dict):
         return None
     back_type = int(back_type)
     if back_type == USER_BACK_TYPE_WA:
-        model = WaAccountId(*create_dict)
+        model = WaAccountId(**create_dict)
     elif back_type == USER_BACK_TYPE_WA2:
-        model = WaAccountId2(*create_dict)
+        model = WaAccountId2(**create_dict)
     elif back_type == USER_BACK_TYPE_WA3:
-        model = WaAccountId3(*create_dict)
+        model = WaAccountId3(**create_dict)
     elif back_type == USER_BACK_TYPE_WA4:
-        model = WaAccountId4(*create_dict)
+        model = WaAccountId4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
-        model = WaAccountId5(*create_dict)
+        model = WaAccountId5(**create_dict)
 
     return model
 
@@ -123,15 +123,15 @@ def wa_id_record_create_model(back_type, **create_dict):
         return None
     back_type = int(back_type)
     if back_type == USER_BACK_TYPE_WA:
-        model = WaUserIdRecord(*create_dict)
+        model = WaUserIdRecord(**create_dict)
     elif back_type == USER_BACK_TYPE_WA2:
-        model = WaUserIdRecord2(*create_dict)
+        model = WaUserIdRecord2(**create_dict)
     elif back_type == USER_BACK_TYPE_WA3:
-        model = WaUserIdRecord3(*create_dict)
+        model = WaUserIdRecord3(**create_dict)
     elif back_type == USER_BACK_TYPE_WA4:
-        model = WaUserIdRecord4(*create_dict)
+        model = WaUserIdRecord4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
-        model = WaUserIdRecord5(*create_dict)
+        model = WaUserIdRecord5(**create_dict)
 
     return model
 
@@ -142,15 +142,15 @@ def wa_qr_create_model(back_type, **create_dict):
         return None
     back_type = int(back_type)
     if back_type == USER_BACK_TYPE_WA:
-        model = WaAccountQr(*create_dict)
+        model = WaAccountQr(**create_dict)
     elif back_type == USER_BACK_TYPE_WA2:
-        model = WaAccountQr2(*create_dict)
+        model = WaAccountQr2(**create_dict)
     elif back_type == USER_BACK_TYPE_WA3:
-        model = WaAccountQr3(*create_dict)
+        model = WaAccountQr3(**create_dict)
     elif back_type == USER_BACK_TYPE_WA4:
-        model = WaAccountQr4(*create_dict)
+        model = WaAccountQr4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
-        model = WaAccountQr5(*create_dict)
+        model = WaAccountQr5(**create_dict)
 
     return model
 
@@ -180,15 +180,15 @@ def wa_qr_record_create_model(back_type, **create_dict):
         return None
     back_type = int(back_type)
     if back_type == USER_BACK_TYPE_WA:
-        model = WaUserQrRecord(*create_dict)
+        model = WaUserQrRecord(**create_dict)
     elif back_type == USER_BACK_TYPE_WA2:
-        model = WaUserQrRecord2(*create_dict)
+        model = WaUserQrRecord2(**create_dict)
     elif back_type == USER_BACK_TYPE_WA3:
-        model = WaUserQrRecord3(*create_dict)
+        model = WaUserQrRecord3(**create_dict)
     elif back_type == USER_BACK_TYPE_WA4:
-        model = WaUserQrRecord4(*create_dict)
+        model = WaUserQrRecord4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
-        model = WaUserQrRecord5(*create_dict)
+        model = WaUserQrRecord5(**create_dict)
 
     return model
 
@@ -273,7 +273,7 @@ def dispatcher_aid(queryset: QuerySet, back_type: int, record_queryset: QuerySet
             'create_time': time_utils.get_now_bj_time_str(),
             'update_time': time_utils.get_now_bj_time_str()
         }
-        model = wa_id_create_model(back_type, **create_dict)
+        model = wa_id_record_create_model(back_type, **create_dict)
         if model:
             bat_aid_record_list.append(model)
 
@@ -336,7 +336,7 @@ def dispatcher_aqr(queryset: QuerySet, back_type: int, record_queryset: QuerySet
             'create_time': time_utils.get_now_bj_time_str(),
             'update_time': time_utils.get_now_bj_time_str()
         }
-        model = wa_qr_create_model(back_type, **create_dict)
+        model = wa_qr_record_create_model(back_type, **create_dict)
         if model:
             bat_aid_record_list.append(model)
 
