@@ -291,6 +291,7 @@ def dispatcher_aid(queryset: QuerySet, back_type: int, record_queryset: QuerySet
         record_queryset.bulk_create(bat_aid_record_list)
         logging.info(f"{back_type}#开始处理用户当天数据数量")
         dispatch.handle_user_record(u_record_map, record_type)
+        a_ids = list(map(lambda x: x.account_id, bat_aid_record_list))
         logging.info(f"{back_type}#将数据 bind 设置为True ids = %s", a_ids)
         queryset.filter(id__in=a_ids).update(is_bind=True)
 
@@ -351,7 +352,8 @@ def dispatcher_aqr(queryset: QuerySet, back_type: int, record_queryset: QuerySet
         record_queryset.bulk_create(bat_aid_record_list)
         logging.info(f"{back_type}#开始处理用户当天数据数量")
         dispatch.handle_user_record(u_record_map, record_type)
-        logging.info(f"{back_type}#将数据 bind 设置为True")
+        data_ids = list(map(lambda x: x.account_id, bat_aid_record_list))
+        logging.info(f"{back_type}#将数据 bind 设置为True ids = %s", data_ids)
         queryset.filter(id__in=data_ids).update(is_bind=True)
 
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"

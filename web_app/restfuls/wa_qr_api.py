@@ -598,8 +598,7 @@ def handle_used_state(request: HttpRequest):
     user = user_dao.get_user(request)
     if not user:
         return RestResponse.failure("分发错误，未登录")
-    user_id = user.id
-    back_type = request.POST['back_type'] or user.back_type
+    back_type = request.POST['back_type']
     queryset = wa_service.wa_qr_queryset(back_type)
     record_queryset = wa_service.wa_qr_record_queryset(back_type)
     if not queryset or not record_queryset:

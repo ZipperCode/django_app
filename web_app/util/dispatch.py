@@ -146,7 +146,7 @@ def dispatcher_user3(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
         return
     len_ids = len(ids)
     div_num, mod_num = get_dispatcher_num(len_ids, len_u_ids)
-    logging.info("dispatcher3#填充完毕，开始进行平均分配，剩余数量 = %s, div_num = %s, mod_num = ^s",
+    logging.info("dispatcher3#填充完毕，开始进行平均分配，剩余数量 = %s, div_num = %s, mod_num = %s",
                  len_ids, div_num, mod_num)
     logging.info("dispatcher3#开始进行分配，当前剩余可分配id列表 = %s", ids)
 
