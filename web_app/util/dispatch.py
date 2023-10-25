@@ -159,10 +159,10 @@ def dispatcher_user3(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
                 _id = ids.pop()
                 func(u_id, _id)
 
-    logging.info("dispatcher3#平分完毕，继续分配非平均部分 数量 = %s", mod_num)
+    logging.info("dispatcher3#平分完毕，继续分配非平均部分 数量 = %s ids = %s", mod_num, ids)
 
     if mod_num > 0:
-        for index in range(0, div_num):
+        for index in range(0, mod_num):
             for u_id in u_ids:
                 if len(ids) <= 0:
                     continue

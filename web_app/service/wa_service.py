@@ -276,10 +276,12 @@ def dispatcher_aid(queryset: QuerySet, back_type: int, record_queryset: QuerySet
         model = wa_id_record_create_model(back_type, **create_dict)
         if model:
             bat_aid_record_list.append(model)
+        else:
+            logging.info(f"{back_type}#add_record_id 失败，创建model为空")
 
     logging.info(f"{back_type}#处理数据分发用户")
     dispatch.dispatcher_user3(a_ids, u_ids, u_record_map.copy(), max_num, add_record)
-    logging.info(f"{back_type}#开始处理AccountIdRecord数据批量插入")
+    logging.info(f"{back_type}#开始处理AccountIdRecord数据批量插入 记录 len = %s", len(bat_aid_record_list))
 
     if len(bat_aid_record_list) == 0:
         return -1, "分配失败，原因:len = 0"
