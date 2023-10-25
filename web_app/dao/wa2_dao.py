@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import List, Tuple
 
 from django.db import transaction
@@ -18,6 +19,7 @@ logging.basicConfig(
 
 
 def search_account_id_page(body, start_row, end_row, user: User):
+    warnings.warn("deprecated", DeprecationWarning)
     query = rest_list_util.search_account_common_field(WaAccountId2.objects, body)
     account_id = body.get("account_id")
     if not utils.str_is_null(account_id):
@@ -38,6 +40,7 @@ def search_account_id_page(body, start_row, end_row, user: User):
 
 @log_func
 def search_account_qr_page(body, start_row, end_row, user: User):
+    warnings.warn("deprecated", DeprecationWarning)
     query = rest_list_util.search_account_common_field(WaAccountQr2.objects, body)
     qr_content = body.get("qr_content")
     if not utils.str_is_null(qr_content):
@@ -57,6 +60,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
 
 
 def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
+    warnings.warn("deprecated", DeprecationWarning)
     logging.info("WaAccountId2#处理id数据分发")
     # 用户表id列表和长度
     u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_WA2)
@@ -121,6 +125,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
 
 def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
+    warnings.warn("deprecated", DeprecationWarning)
     logging.info("WaAccountQr2#处理二维码数据分发 is_all = %s", is_all)
     # 用户表id列表和长度
     u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_WA2)

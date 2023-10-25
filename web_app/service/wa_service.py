@@ -278,8 +278,7 @@ def dispatcher_aid(queryset: QuerySet, back_type: int, record_queryset: QuerySet
             bat_aid_record_list.append(model)
 
     logging.info(f"{back_type}#处理数据分发用户")
-    # dispatch.dispatcher_user(a_ids, u_ids, div_num, mod_num, add_record)
-    dispatch.dispatcher_user2(a_ids, u_ids, u_record_map.copy(), max_num, add_record)
+    dispatch.dispatcher_user3(a_ids, u_ids, u_record_map.copy(), max_num, add_record)
     logging.info(f"{back_type}#开始处理AccountIdRecord数据批量插入")
 
     if len(bat_aid_record_list) == 0:
@@ -342,7 +341,7 @@ def dispatcher_aqr(queryset: QuerySet, back_type: int, record_queryset: QuerySet
 
     logging.info(f"{back_type}#处理数据分发用户")
     # dispatch.dispatcher_user(data_ids, u_ids, div_num, mod_num, add_record)
-    dispatch.dispatcher_user2(data_ids, u_ids, u_record_map.copy(), max_num, add_record)
+    dispatch.dispatcher_user3(data_ids, u_ids, u_record_map.copy(), max_num, add_record)
     if len(bat_aid_record_list) == 0:
         return -1, "分配失败，原因:len = 0"
     logging.info(f"{back_type}#开始处理 二维码-用户-记录 数据批量插入")

@@ -119,6 +119,59 @@ def dispatcher_user2(ids: List[int], u_ids: List[int], user_num_map: Dict[int, i
             i += 1
 
 
+def dispatcher_user3(ids: List[int], u_ids: List[int], user_num_map: Dict[int, int], max_num: int, func):
+    logging.info("dispatcher3#分发处理， ids = %s", ids)
+    logging.info("dispatcher3#分发处理， u_ids = %s", u_ids)
+    logging.info("dispatcher3#分发处理， user_num_map = %s", user_num_map)
+    logging.info("dispatcher3#分发处理， max_num = %s", max_num)
+
+    len_u_ids = len(u_ids)
+    min_num = max_num
+    # 最小的数量
+    for k, v in user_num_map.items():
+        if v < min_num:
+            min_num = v
+    # 最大 - 最小 = 填充次数
+    logging.info("dispatcher3#开始填充用户不满足的数量, 填充次数 = %s，最大 = %s, 最小 = %s", (max_num - min_num),
+                 max_num, min_num)
+
+    for i in range(0, max_num - min_num):
+        for user_id, data_num in user_num_map.items():
+            if data_num < max_num and len(ids) > 0:
+                _id = ids.pop()
+                func(user_id, _id)
+
+    if len(ids) <= 0:
+        logging.info("dispatcher3#可分配id不足，退出分配")
+        return
+    len_ids = len(ids)
+    div_num, mod_num = get_dispatcher_num(len_ids, len_u_ids)
+    logging.info("dispatcher3#填充完毕，开始进行平均分配，剩余数量 = %s, div_num = %s, mod_num = ^s",
+                 len_ids, div_num, mod_num)
+    logging.info("dispatcher3#开始进行分配，当前剩余可分配id列表 = %s", ids)
+
+    if div_num > 0:
+        logging.info("dispatcher3#可平分数量 = %s", div_num)
+        for index in range(0, div_num):
+            for u_id in u_ids:
+                if len(ids) <= 0:
+                    continue
+                _id = ids.pop()
+                func(u_id, _id)
+
+    logging.info("dispatcher3#平分完毕，继续分配非平均部分 数量 = %s", mod_num)
+
+    if mod_num > 0:
+        for index in range(0, div_num):
+            for u_id in u_ids:
+                if len(ids) <= 0:
+                    continue
+                _id = ids.pop()
+                func(u_id, _id)
+
+    logging.info("dispatcher3#全部分配完毕")
+
+
 def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
     logging.info("保存数量值#recordMap = %s", u_record_map)
     start_t, end_t = time_utils.get_cur_day_time_range()
@@ -134,36 +187,6 @@ def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
                 create_time=time_utils.get_now_bj_time_str(),
                 update_time=time_utils.get_now_bj_time_str()
             )
-
-
-@log_func
-def user_num_record(t: int) -> Tuple[Dict[int, int], int]:
-    """
-    用户当天的数据数量
-    @return 用户数量Map和最大数量元组
-    """
-    start_t, end_t = time_utils.get_cur_day_time_range()
-    business_u_ids = list(map(lambda x: int(x.get("id")), User.objects.filter(role=USER_ROLE_BUSINESS).values('id')))
-    user_map: Dict[int, int] = dict()
-    for u in business_u_ids:
-        user_map[u] = 0
-    u_a_rec = list(
-        UserAccountRecord.objects.filter(
-            create_time__gte=start_t, create_time__lt=end_t, user_id__in=business_u_ids, type=t
-        ).values('user_id', 'data_num')
-    )
-    logging.info("user_num_record#用户数量 = %s, 记录 = %s", len(business_u_ids), u_a_rec)
-    max_count = 0
-
-    for r in u_a_rec:
-        u_id = r.get('user_id')
-        n = r.get('data_num')
-        user_map[u_id] = n
-        if max_count < n:
-            max_count = n
-
-    logging.info("user_num_record#最大用户拥有的数据数量 %s, max_count = %s", user_map, max_count)
-    return user_map, max_count
 
 
 @log_func
