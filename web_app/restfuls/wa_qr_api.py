@@ -312,9 +312,12 @@ def wa_qr_upload(request: HttpRequest):
         if not parsed:
             return RestResponse.failure("上传失败，无法解析二维码")
 
-        query = queryset.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
-        if query.exists():
+        if wa_service.check_qr(str(parsed).strip()):
             return RestResponse.failure("上传失败，二维码已经存在")
+
+        # query = queryset.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
+        # if query.exists():
+        #     return RestResponse.failure("上传失败，二维码已经存在")
         f.name = str(uuid.uuid1()) + ext
         queryset.create(
             qr_content=str(parsed).strip(),

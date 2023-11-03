@@ -298,6 +298,9 @@ def wa_id_upload(request: HttpRequest):
     if user is None or not isinstance(user, User):
         return RestResponse.failure("添加失败，未获取到登录用户信息")
 
+    if wa_service.check_id(a_id):
+        return RestResponse.failure("添加失败，该Id已经存在")
+
     user_id = user.id
     back_type = body.get('back_type') or user.back_type
     queryset = wa_service.wa_id_query_set(back_type)
@@ -367,16 +370,19 @@ def wa_id_batch_upload(request: HttpRequest):
     if not queryset or not record_query:
         return RestResponse.failure("添加失败，用户状态错误")
 
-    exists_query = queryset.filter(account_id__in=data_list)
-
-    exists_list = []
-    for query in exists_query:
-        i = data_list.index(query.account_id)
-        if i >= 0:
-            data_list.pop(i)
-            exists_list.append(query.account_id)
-    if len(data_list) == 0:
+    if wa_service.check_id_list(data_list):
         return RestResponse.failure("上传失败，ID均已存在，无法上传")
+
+    # exists_query = queryset.filter(account_id__in=data_list)
+    #
+    # exists_list = []
+    # for query in exists_query:
+    #     i = data_list.index(query.account_id)
+    #     if i >= 0:
+    #         data_list.pop(i)
+    #         exists_list.append(query.account_id)
+    # if len(data_list) == 0:
+    #     return RestResponse.failure("上传失败，ID均已存在，无法上传")
     logging.info("account_id_batch_upload#data_list 2 = %s", len(data_list))
     db_data_list = []
     for data in data_list:
@@ -392,7 +398,6 @@ def wa_id_batch_upload(request: HttpRequest):
 
     queryset.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={
-        'exists_ids': exists_list,
         'success_ids': data_list
     })
 

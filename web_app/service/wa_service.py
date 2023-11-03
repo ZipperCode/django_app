@@ -9,7 +9,7 @@ from web_app.decorators.admin_decorator import log_func
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_UPLOADER, USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, USER_BACK_TYPE_WA3, \
     USER_BACK_TYPE_WA4, USER_BACK_TYPE_WA5, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_ID2, RECORD_TYPE_WA_ID3, \
-    RECORD_TYPE_WA_ID4, RECORD_TYPE_WA_ID5
+    RECORD_TYPE_WA_ID4, RECORD_TYPE_WA_ID5, WA_TYPES
 from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord, WaAccountQr, WaUserQrRecord
 from web_app.model.wa_accounts2 import WaAccountId2, WaUserIdRecord2, WaAccountQr2, WaUserQrRecord2
 from web_app.model.wa_accounts3 import WaAccountId3, WaUserIdRecord3, WaAccountQr3, WaUserQrRecord3
@@ -40,6 +40,29 @@ def wa_id_query_set(back_type) -> Optional[QuerySet]:
     elif back_type == USER_BACK_TYPE_WA5:
         queryset = WaAccountId5.objects
     return queryset
+
+
+def check_id(a_id) -> bool:
+    for t in WA_TYPES:
+        if wa_id_query_set(t).filter(account_id=a_id).exists():
+            logging.info("check_id#%s#id = %s", t, a_id)
+            return True
+    return False
+
+
+def check_id_list(ids):
+    ids = list(ids)
+    for t in WA_TYPES:
+        queryset = wa_qr_queryset(t)
+        exists_query = queryset.filter(account_id__in=ids)
+        for query in exists_query:
+            i = ids.index(query.account_id)
+            if i >= 0:
+                ids.pop(i)
+            if len(ids) == 0:
+                return True
+
+    return False
 
 
 def wa_id_record_queryset(back_type) -> Optional[QuerySet]:
@@ -77,6 +100,15 @@ def wa_qr_queryset(back_type) -> Optional[QuerySet]:
     elif back_type == USER_BACK_TYPE_WA5:
         queryset = WaAccountQr5.objects
     return queryset
+
+
+def check_qr(qr_content) -> bool:
+    for t in WA_TYPES:
+        if wa_qr_queryset(t).filter(qr_content=qr_content, op_user__isnull=False).exists():
+            logging.info("check_qr#%s#qr_content = %s", t, qr_content)
+            return True
+
+    return False
 
 
 def wa_qr_record_queryset(back_type) -> Optional[QuerySet]:
