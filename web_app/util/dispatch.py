@@ -193,7 +193,7 @@ def handle_user_record(u_record_map, t: int = RECORD_TYPE_NONE):
 def user_num_record2(objects: QuerySet, business_u_ids: list, t: int) -> Tuple[Dict[int, int], int]:
     """
     用户当天的数据数量
-    @return 用户数量Map和最大数量元组
+    @return 用户数量Map和最大数量元组 key: userid value = num
     """
     start_t, end_t = time_utils.get_cur_day_time_range()
     user_map: Dict[int, int] = dict()

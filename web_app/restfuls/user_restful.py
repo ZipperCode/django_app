@@ -10,8 +10,7 @@ from util import utils, http_utils, time_utils
 from util.restful import RestResponse
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, op_admin, api_op_user
-from web_app.model.users import User, USER_TYPES, USER_BACK_TYPE_LINE, USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, \
-    USER_BACK_TYPE_WA3, USER_BACK_TYPE_WA4, USER_BACK_TYPE_WA5
+from web_app.model.users import *
 from web_app.settings import BASE_DIR
 
 logging.basicConfig(
@@ -367,5 +366,14 @@ def back_type_list(request: HttpRequest):
         {
             "title": "WhatsApp5",
             "value": USER_BACK_TYPE_WA5,
+        },
+
+        {
+            "title": "WhatsApp6",
+            "value": USER_BACK_TYPE_WA6,
+        },
+        {
+            "title": "WhatsApp7",
+            "value": USER_BACK_TYPE_WA7,
         },
     ])

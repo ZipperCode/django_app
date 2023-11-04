@@ -1,5 +1,4 @@
-from web_app.model.users import USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, USER_BACK_TYPE_WA3, USER_BACK_TYPE_WA4, \
-    USER_BACK_TYPE_WA5
+from web_app.model.users import *
 
 MENU_MAP = {
     USER_BACK_TYPE_WA: {
@@ -95,6 +94,44 @@ MENU_MAP = {
         "wa_qr_rec": {
             "path": f"/view/auth/wa/qr_record/list?back_type={USER_BACK_TYPE_WA5}",
             "name": "WA5 二维码分配数据"
+        },
+    },
+    USER_BACK_TYPE_WA6: {
+        'title': "WhatsApp6管理",
+        "wa_id": {
+            "path": f"/view/auth/wa/account_id/list?back_type={USER_BACK_TYPE_WA6}",
+            "name": "WA5 ID管理"
+        },
+        "wa_id_rec": {
+            "path": f"/view/auth/wa/aid_record/list?back_type={USER_BACK_TYPE_WA6}",
+            "name": "WA5 ID分配数据"
+        },
+        "wa_qr": {
+            "path": f"/view/auth/wa/account_qr/list?back_type={USER_BACK_TYPE_WA6}",
+            "name": "WA5 二维码管理"
+        },
+        "wa_qr_rec": {
+            "path": f"/view/auth/wa/qr_record/list?back_type={USER_BACK_TYPE_WA6}",
+            "name": "WA5 二维码分配数据"
+        },
+    },
+    USER_BACK_TYPE_WA7: {
+        'title': "WhatsApp7管理",
+        "wa_id": {
+            "path": f"/view/auth/wa/account_id/list?back_type={USER_BACK_TYPE_WA7}",
+            "name": "WA7 ID管理"
+        },
+        "wa_id_rec": {
+            "path": f"/view/auth/wa/aid_record/list?back_type={USER_BACK_TYPE_WA7}",
+            "name": "WA7 ID分配数据"
+        },
+        "wa_qr": {
+            "path": f"/view/auth/wa/account_qr/list?back_type={USER_BACK_TYPE_WA7}",
+            "name": "WA7 二维码管理"
+        },
+        "wa_qr_rec": {
+            "path": f"/view/auth/wa/qr_record/list?back_type={USER_BACK_TYPE_WA7}",
+            "name": "WA7 二维码分配数据"
         },
     }
 }

@@ -9,15 +9,15 @@ from util import utils, time_utils
 from util.utils import md5_encode
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_UPLOADER, USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, USER_BACK_TYPE_WA3, \
-    USER_BACK_TYPE_WA4, USER_BACK_TYPE_WA5, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_ID2, RECORD_TYPE_WA_ID3, \
-    RECORD_TYPE_WA_ID4, RECORD_TYPE_WA_ID5, WA_TYPES
+from web_app.model.users import *
 from web_app.model.wa import WaIdHash, WaQrHash
-from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord, WaAccountQr, WaUserQrRecord
-from web_app.model.wa_accounts2 import WaAccountId2, WaUserIdRecord2, WaAccountQr2, WaUserQrRecord2
-from web_app.model.wa_accounts3 import WaAccountId3, WaUserIdRecord3, WaAccountQr3, WaUserQrRecord3
-from web_app.model.wa_accounts4 import WaUserQrRecord4, WaAccountQr4, WaUserIdRecord4, WaAccountId4
-from web_app.model.wa_accounts5 import WaUserQrRecord5, WaAccountQr5, WaUserIdRecord5, WaAccountId5
+from web_app.model.wa_accounts import *
+from web_app.model.wa_accounts2 import *
+from web_app.model.wa_accounts3 import *
+from web_app.model.wa_accounts4 import *
+from web_app.model.wa_accounts5 import *
+from web_app.model.wa_accounts6 import *
+from web_app.model.wa_accounts7 import *
 from web_app.util import rest_list_util, dispatch
 
 logging.basicConfig(
@@ -42,6 +42,10 @@ def wa_id_query_set(back_type) -> Optional[QuerySet]:
         queryset = WaAccountId4.objects
     elif back_type == USER_BACK_TYPE_WA5:
         queryset = WaAccountId5.objects
+    elif back_type == USER_BACK_TYPE_WA6:
+        queryset = WaAccountId6.objects
+    elif back_type == USER_BACK_TYPE_WA7:
+        queryset = WaAccountId7.objects
     return queryset
 
 
@@ -80,6 +84,10 @@ def wa_id_record_queryset(back_type) -> Optional[QuerySet]:
         record_query = WaUserIdRecord4.objects
     elif back_type == USER_BACK_TYPE_WA5:
         record_query = WaUserIdRecord5.objects
+    elif back_type == USER_BACK_TYPE_WA6:
+        record_query = WaUserIdRecord6.objects
+    elif back_type == USER_BACK_TYPE_WA7:
+        record_query = WaUserIdRecord7.objects
 
     return record_query
 
@@ -99,6 +107,10 @@ def wa_qr_queryset(back_type) -> Optional[QuerySet]:
         queryset = WaAccountQr4.objects
     elif back_type == USER_BACK_TYPE_WA5:
         queryset = WaAccountQr5.objects
+    elif back_type == USER_BACK_TYPE_WA6:
+        queryset = WaAccountQr6.objects
+    elif back_type == USER_BACK_TYPE_WA7:
+        queryset = WaAccountQr7.objects
     return queryset
 
 
@@ -121,6 +133,10 @@ def wa_qr_record_queryset(back_type) -> Optional[QuerySet]:
         record_query = WaUserQrRecord4.objects
     elif back_type == USER_BACK_TYPE_WA5:
         record_query = WaUserQrRecord5.objects
+    elif back_type == USER_BACK_TYPE_WA6:
+        record_query = WaUserQrRecord6.objects
+    elif back_type == USER_BACK_TYPE_WA7:
+        record_query = WaUserQrRecord7.objects
 
     return record_query
 
@@ -140,6 +156,10 @@ def wa_id_create_model(back_type, **create_dict):
         model = WaAccountId4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
         model = WaAccountId5(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA6:
+        model = WaAccountId6(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA7:
+        model = WaAccountId7(**create_dict)
 
     return model
 
@@ -159,6 +179,10 @@ def wa_id_record_create_model(back_type, **create_dict):
         model = WaUserIdRecord4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
         model = WaUserIdRecord5(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA6:
+        model = WaUserIdRecord6(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA7:
+        model = WaUserIdRecord7(**create_dict)
 
     return model
 
@@ -178,6 +202,10 @@ def wa_qr_create_model(back_type, **create_dict):
         model = WaAccountQr4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
         model = WaAccountQr5(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA6:
+        model = WaAccountQr6(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA7:
+        model = WaAccountQr7(**create_dict)
 
     return model
 
@@ -197,6 +225,10 @@ def get_record_type(back_type) -> int:
         record_type = RECORD_TYPE_WA_ID4
     elif back_type == USER_BACK_TYPE_WA5:
         record_type = RECORD_TYPE_WA_ID5
+    elif back_type == USER_BACK_TYPE_WA6:
+        record_type = RECORD_TYPE_WA_ID6
+    elif back_type == USER_BACK_TYPE_WA7:
+        record_type = RECORD_TYPE_WA_ID7
 
     return record_type
 
@@ -216,6 +248,10 @@ def wa_qr_record_create_model(back_type, **create_dict):
         model = WaUserQrRecord4(**create_dict)
     elif back_type == USER_BACK_TYPE_WA5:
         model = WaUserQrRecord5(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA6:
+        model = WaUserQrRecord6(**create_dict)
+    elif back_type == USER_BACK_TYPE_WA7:
+        model = WaUserQrRecord7(**create_dict)
 
     return model
 
