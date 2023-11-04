@@ -77,7 +77,26 @@ def login_view(request: HttpRequest):
         pass
 
     if request.session.get('user') is not None:
-        return render(request, 'index.html')
+        context = {}
+        user = request.session.get('user')
+        if user.get('role') != 0:
+            back_type = user.get('back_type')
+            wa_menu_list = []
+            # menu_list = UserMenu.objects.filter(user_id=user.id).all()
+            # if len(menu_list) > 0:
+            #     menu_types = map(lambda x: x.menu_type, menu_list)
+            #     for menu_type in menu_types:
+            #         d = MENU_MAP.get(menu_type)
+            #         if d:
+            #             wa_menu_list.append(d)
+            wa_dict = MENU_MAP.get(back_type)
+            if wa_dict:
+                wa_menu_list.append(wa_dict)
+            context['wa_menu_list'] = wa_menu_list
+
+        else:
+            context['wa_menu_list'] = list(MENU_MAP.values())
+        return render(request, 'index.html', context)
 
     return render(request, 'login.html')
 

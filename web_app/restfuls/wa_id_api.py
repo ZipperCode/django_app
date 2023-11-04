@@ -124,7 +124,8 @@ def wa_dispatch_record_list(request: HttpRequest):
     record_list = []
     count = 0
     if record_query:
-        record_query.filter(user__isnull=False, account__isnull=False)
+        logging.info("查找id分配记录是，删除用户或者accountId为空的数据")
+        record_query.filter(Q(user__isnull=True) or Q(account__isnull=True)).delete()
         account_id = body.get('account_id')
         # 输入的account_id进行查询，非数据库主键
         if not utils.str_is_null(account_id):
@@ -170,8 +171,18 @@ def wa_id_add(request: HttpRequest):
     if not queryset:
         return RestResponse.failure("添加失败，用户状态错误")
 
-    if queryset.filter(account_id=account_id, op_user__isnull=False).exists():
+    logging.info("添加WaId时，删除空映射的数据")
+    with transaction.atomic():
+        no_user_query = queryset.filter(op_user__isnull=True)
+        del_ids = list(no_user_query.values_list("account_id", flat=True))
+        wa_service.del_aid_with_hash(del_ids)
+        no_user_query.delete()
+
+    if wa_service.check_aid_with_hash(account_id):
+        logging.info("添加Id#%s#%s#已经存在", back_type, account_id)
         return RestResponse.failure("添加失败，该id已经存在")
+
+    wa_service.add_aid_hash(account_id, back_type, user_id)
 
     queryset.create(
         account_id=account_id, country=country, age=age,
@@ -238,16 +249,17 @@ def wa_id_update(request: HttpRequest):
                 if _status == UsedStatus.Used:
                     # 修改is_bind=True，分发的时候就过滤这个了
                     upd_field['is_bind'] = True
-                    logging.info("管理员编辑为已使用，同步更新记录状态")
 
-                _q = record_query.filter(account_id=account_id)
+                _q = record_query.filter(account_id=a_id)
                 if _q.exists():
+                    logging.info("管理员编辑为%s，同步更新记录状态", _status)
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
-                _q = record_query.filter(user_id=user_id, account_id=account_id)
+                _q = record_query.filter(user_id=user_id, account_id=a_id)
                 if _q.exists():
+                    logging.info("业务员编辑为%s，同步更新记录状态", _status)
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
 
         logging.info("要跟新的字段 = %s", upd_field)
@@ -277,8 +289,12 @@ def wa_id_del(request: HttpRequest):
     logging.info("wa_account_id2_del#a_id = %s", account_id)
     if utils.str_is_null(account_id):
         return RestResponse.failure("删除失败，id不能为空")
-    record_query.filter(account__account_id=account_id).delete()
-    queryset.filter(account_id=account_id).delete()
+
+    with transaction.atomic():
+        wa_service.del_aid_with_hash([account_id])
+        record_query.filter(account__account_id=account_id).delete()
+        queryset.filter(account_id=account_id).delete()
+
     return RestResponse.success("删除成功")
 
 
@@ -308,14 +324,22 @@ def wa_id_upload(request: HttpRequest):
     if not queryset:
         return RestResponse.failure("添加失败，用户状态错误")
 
-    query, created = queryset.get_or_create(
-        account_id=a_id,
-        defaults={
-            'op_user_id': int(user_id),
-            "create_time": time_utils.get_now_bj_time_str(),
-            "update_time": time_utils.get_now_bj_time_str()
-        }
-    )
+    logging.info("添加WaId时，删除空映射的数据")
+    with transaction.atomic():
+        no_user_query = queryset.filter(op_user__isnull=True)
+        del_ids = list(no_user_query.values_list("account_id", flat=True))
+        wa_service.del_aid_with_hash(del_ids)
+        no_user_query.delete()
+
+        wa_service.add_aid_hash(a_id, back_type, user_id)
+        query, created = queryset.get_or_create(
+            account_id=a_id,
+            defaults={
+                'op_user_id': int(user_id),
+                "create_time": time_utils.get_now_bj_time_str(),
+                "update_time": time_utils.get_now_bj_time_str()
+            }
+        )
     if not created:
         logging.info("account_wa2_id_upload#已经存在")
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
@@ -385,6 +409,7 @@ def wa_id_batch_upload(request: HttpRequest):
     #     return RestResponse.failure("上传失败，ID均已存在，无法上传")
     logging.info("account_id_batch_upload#data_list 2 = %s", len(data_list))
     db_data_list = []
+    ids = []
     for data in data_list:
         create_dict = {
             "account_id": data, 'op_user_id': int(user_id),
@@ -395,8 +420,15 @@ def wa_id_batch_upload(request: HttpRequest):
 
         if model:
             db_data_list.append(model)
-
-    queryset.bulk_create(db_data_list)
+            ids.append(data)
+    with transaction.atomic():
+        no_user_query = queryset.filter(op_user__isnull=True)
+        del_ids = list(no_user_query.values_list("account_id", flat=True))
+        wa_service.del_aid_with_hash(del_ids)
+        no_user_query.delete()
+        for _id in ids:
+            wa_service.add_aid_hash(_id, back_type, user_id)
+        queryset.bulk_create(db_data_list)
     return RestResponse.success("上传成功", data={
         'success_ids': data_list
     })
@@ -504,3 +536,22 @@ def handle_used_state(request: HttpRequest):
     except BaseException as e:
         logging.info("批量修改使用状态失败 %s => %s", str(e), traceback.format_exc())
         return RestResponse.failure("批量修改失败")
+
+
+@log_func
+def sync_id_hash(request):
+    wa_service.sync_id_hash()
+    return RestResponse.success("成功")
+
+
+@log_func
+def sync_qr_hash(request):
+    wa_service.sync_qr_hash()
+    return RestResponse.success("成功")
+
+
+@log_func
+def sync_used(request: HttpRequest):
+    wa_service.sync_used_id()
+    wa_service.sync_used_qr()
+    return RestResponse.success("成功")

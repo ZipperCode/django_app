@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from typing import Tuple, Optional
 
@@ -5,11 +6,13 @@ from django.db import transaction
 from django.db.models import QuerySet, Model
 
 from util import utils, time_utils
+from util.utils import md5_encode
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_UPLOADER, USER_BACK_TYPE_WA, USER_BACK_TYPE_WA2, USER_BACK_TYPE_WA3, \
     USER_BACK_TYPE_WA4, USER_BACK_TYPE_WA5, RECORD_TYPE_WA_ID, RECORD_TYPE_WA_ID2, RECORD_TYPE_WA_ID3, \
     RECORD_TYPE_WA_ID4, RECORD_TYPE_WA_ID5, WA_TYPES
+from web_app.model.wa import WaIdHash, WaQrHash
 from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord, WaAccountQr, WaUserQrRecord
 from web_app.model.wa_accounts2 import WaAccountId2, WaUserIdRecord2, WaAccountQr2, WaUserQrRecord2
 from web_app.model.wa_accounts3 import WaAccountId3, WaUserIdRecord3, WaAccountQr3, WaUserQrRecord3
@@ -43,24 +46,21 @@ def wa_id_query_set(back_type) -> Optional[QuerySet]:
 
 
 def check_id(a_id) -> bool:
-    for t in WA_TYPES:
-        if wa_id_query_set(t).filter(account_id=a_id).exists():
-            logging.info("check_id#%s#id = %s", t, a_id)
-            return True
-    return False
+    return WaIdHash.objects.filter(id_hash=md5_encode(a_id)).exists()
 
 
 def check_id_list(ids):
-    ids = list(ids)
-    for t in WA_TYPES:
-        queryset = wa_qr_queryset(t)
-        exists_query = queryset.filter(account_id__in=ids)
-        for query in exists_query:
-            i = ids.index(query.account_id)
-            if i >= 0:
-                ids.pop(i)
-            if len(ids) == 0:
-                return True
+    origin_ids = list(ids)
+    ids = list(map(lambda x: md5_encode(str(x).strip()), ids))
+    exists_hash_list = WaIdHash.objects.filter(id_hash__in=ids).values_list("id_hash", flat=True)
+    for h in exists_hash_list:
+        i = ids.index(h)
+        if i > 0:
+            origin_ids.pop(i)
+            ids.pop(i)
+
+        if len(ids) == 0:
+            return True
 
     return False
 
@@ -103,12 +103,7 @@ def wa_qr_queryset(back_type) -> Optional[QuerySet]:
 
 
 def check_qr(qr_content) -> bool:
-    for t in WA_TYPES:
-        if wa_qr_queryset(t).filter(qr_content=qr_content, op_user__isnull=False).exists():
-            logging.info("check_qr#%s#qr_content = %s", t, qr_content)
-            return True
-
-    return False
+    return WaQrHash.objects.filter(id_hash=md5_encode(qr_content)).exists()
 
 
 def wa_qr_record_queryset(back_type) -> Optional[QuerySet]:
@@ -391,3 +386,165 @@ def dispatcher_aqr(queryset: QuerySet, back_type: int, record_queryset: QuerySet
         queryset.filter(id__in=data_ids).update(is_bind=True)
 
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
+
+
+def sync_used_id():
+    for t in WA_TYPES:
+        ids = wa_id_query_set(t).filter(used=UsedStatus.Used).values_list("id", flat=True)
+        ids = list(ids)
+        if len(ids) == 0:
+            continue
+
+        logging.info("WaId#%s#同步使用状态 ids = %s", t, ids)
+        wa_id_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
+
+
+def sync_used_qr():
+    for t in WA_TYPES:
+        ids = wa_qr_queryset(t).filter(used=UsedStatus.Used, op_user__isnull=False).values_list("id", flat=True)
+        ids = list(ids)
+        if len(ids) == 0:
+            continue
+        logging.info("WaQr#%s#同步使用状态 ids = %s", t, ids)
+        wa_qr_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
+
+
+def check_aid_with_hash(account_id) -> bool:
+    return WaIdHash.objects.filter(id_hash=md5_encode(str(account_id).strip())).exists()
+
+
+def del_aid_with_hash(ids):
+    if len(ids) == 0:
+        return
+    logging.info("要删除的WaId列表 = %s", ids)
+    id_hash_list = list(map(lambda x: md5_encode(str(x)), ids))
+    logging.info("要删除的WaIdHash列表 = %s", id_hash_list)
+    WaIdHash.objects.filter(id_hash__in=id_hash_list).delete()
+
+
+def add_aid_hash(account_id, back_type, op_user_id):
+    try:
+        id_hash = md5_encode(str(account_id).strip())
+        WaIdHash.objects.create(
+            id_hash=id_hash,
+            account_id=account_id,
+            back_type=back_type,
+            op_user_id=op_user_id,
+            create_time=time_utils.get_now_bj_time_str()
+        )
+    except:
+        logging.warning("%s#处理WaIdHash数据失败", back_type)
+
+
+def sync_id_hash():
+    logging.info("将所有组的id分配到WaIdHash表中")
+    all_ids_hash = []
+    wa_ids = list(WaIdHash.objects.values_list("id_hash", flat=True))
+    logging.info("WaIdHash#wa_ids = %s", wa_ids)
+    if len(wa_ids) == 0:
+        return
+    with transaction.atomic():
+        for t in WA_TYPES:
+            a_id_tuples = list(
+                wa_id_query_set(t)
+                .filter(op_user__isnull=False)
+                .values_list("account_id", "op_user_id", flat=False)
+            )
+            if len(a_id_tuples) == 0:
+                continue
+
+            wa_ids_hash = list(map(lambda x: md5_encode(str(x[0]).strip()), a_id_tuples))
+            no_exists_ids = [x for x in wa_ids_hash if x not in wa_ids]
+            logging.info("%s#不存在的hash = %s", t, no_exists_ids)
+            for a_id_tuple in a_id_tuples:
+                account_id = a_id_tuple[0]
+                op_user_id = a_id_tuple[1]
+                id_hash = md5_encode(str(account_id).strip())
+                if id_hash not in no_exists_ids:
+                    continue
+
+                if id_hash in all_ids_hash:
+                    continue
+                all_ids_hash.append(id_hash)
+
+                try:
+                    logging.info("WaIdHash# aid = %s, id_hash = %s, back_type = %s", account_id, id_hash, t)
+                    WaIdHash.objects.create(
+                        id_hash=id_hash,
+                        account_id=account_id,
+                        back_type=t,
+                        op_user_id=op_user_id,
+                        create_time=time_utils.get_now_bj_time_str()
+                    )
+                except:
+                    logging.warning("%s#处理WaIdHash数据失败", t)
+                    pass
+
+
+def check_aqr_with_hash(qr_content) -> bool:
+    return WaQrHash.objects.filter(id_hash=md5_encode(str(qr_content).strip())).exists()
+
+
+def del_aqr_with_hash(qr_content_list):
+    if len(qr_content_list) == 0:
+        return
+    logging.info("要删除的WaQR列表 = %s", qr_content_list)
+    id_hash_list = list(map(lambda x: md5_encode(str(x)), qr_content_list))
+    logging.info("要删除的WaQrHash列表 = %s", id_hash_list)
+    WaQrHash.objects.filter(id_hash__in=id_hash_list).delete()
+
+
+def add_aqr_hash(qr_content, back_type, op_user_id):
+    try:
+        id_hash = md5_encode(str(qr_content).strip())
+        WaQrHash.objects.create(
+            id_hash=id_hash,
+            account_qr=qr_content,
+            back_type=back_type,
+            op_user_id=op_user_id,
+            create_time=time_utils.get_now_bj_time_str()
+        )
+    except:
+        logging.warning("%s#处理WaQrHash数据失败", back_type)
+
+
+def sync_qr_hash():
+    logging.info("将所有组的Qr分配到WaQrHash表中")
+    all_ids_hash = []
+    wa_ids = list(WaQrHash.objects.values_list("id_hash", flat=True))
+    if len(wa_ids) == 0:
+        return
+    with transaction.atomic():
+        for t in WA_TYPES:
+            a_qr_tuples = list(
+                wa_qr_queryset(t)
+                .filter(op_user__isnull=False)
+                .values_list("qr_content", "op_user_id", flat=False)
+            )
+            if len(a_qr_tuples) == 0:
+                continue
+            wa_ids_hash = list(map(lambda x: md5_encode(str(x[0]).strip()), a_qr_tuples))
+            no_exists_ids = [x for x in wa_ids_hash if x not in wa_ids]
+            logging.info("%s#不存在的hash = %s", t, no_exists_ids)
+            for a_qr_tuple in a_qr_tuples:
+                qr_content = a_qr_tuple[0]
+                op_user_id = a_qr_tuple[1]
+                id_hash = md5_encode(str(qr_content).strip())
+                if id_hash not in no_exists_ids:
+                    continue
+
+                if id_hash in all_ids_hash:
+                    continue
+                all_ids_hash.append(id_hash)
+
+                try:
+                    WaQrHash.objects.create(
+                        id_hash=id_hash,
+                        account_qr=qr_content,
+                        back_type=t,
+                        op_user_id=op_user_id,
+                        create_time=time_utils.get_now_bj_time_str()
+                    )
+                except:
+                    logging.warning("%s#处理WaQrHash数据失败", t)
+                    pass

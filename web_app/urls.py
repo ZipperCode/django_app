@@ -166,6 +166,10 @@ urlpatterns = [
                   path('api/wa_qr/dispatcher', wa_qr_api.wa_qr_handle_dispatcher),
                   path('api/wa_qr/record/list', wa_qr_api.wa_dispatch_record_list),
                   path('api/wa_qr/bat_used_update', wa_qr_api.handle_used_state),
+                  # sync
+                  path('api/wa/sync_id_hash', wa_id_api.sync_id_hash),
+                  path('api/wa/sync_qr_hash', wa_id_api.sync_qr_hash),
+                  path('api/wa/sync_used', wa_id_api.sync_used),
 
                   re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
               ] + static(settings.MEDIA_URL, serve, document_root=settings.MEDIA_ROOT)

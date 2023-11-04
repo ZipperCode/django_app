@@ -158,11 +158,23 @@ def wa_qr_add(request: HttpRequest):
         logging.info("backType错误，%s", back_type)
         return RestResponse.failure(f"添加失败backType错误 {back_type}")
 
-    queryset.create(
-        qr_content=qr_content, qr_path=qr, country=country, age=age,
-        work=work, money=money, mark=mark,
-        op_user_id=user.id
-    )
+    if wa_service.check_aqr_with_hash(qr_content):
+        logging.info("添加Qr#%s#%s#已经存在", back_type, qr_content)
+        return RestResponse.failure("添加失败，该Qr已经存在")
+
+    logging.info("添加WaQr时，删除空映射的数据")
+    with transaction.atomic():
+        no_user_query = queryset.filter(op_user__isnull=True)
+        del_qr_contents = list(no_user_query.values_list("qr_content", flat=True))
+        wa_service.del_aqr_with_hash(del_qr_contents)
+        no_user_query.delete()
+        wa_service.add_aqr_hash(qr_content, back_type, user.id)
+
+        queryset.create(
+            qr_content=qr_content, qr_path=qr, country=country, age=age,
+            work=work, money=money, mark=mark,
+            op_user_id=user.id
+        )
 
     return RestResponse.success("添加成功")
 
@@ -252,8 +264,6 @@ def wa_qr_del(request: HttpRequest):
     if not queryset or not record_queryset:
         return RestResponse.failure(f"失败，用户类型错误 {back_type}")
 
-    record_queryset.filter(account_id=id_).delete()
-
     queryset = queryset.filter(id=id_)
     if queryset.exists():
         try:
@@ -263,7 +273,12 @@ def wa_qr_del(request: HttpRequest):
         except BaseException:
             logging.info("WaQrDel#删除记录同时删除上传图片失败，trace %s", traceback.format_exc())
         finally:
-            queryset.delete()
+            with transaction.atomic():
+                if queryset.exists():
+                    qr_content = queryset.first().qr_conent
+                    wa_service.del_aqr_with_hash([qr_content])
+                record_queryset.filter(account_id=id_).delete()
+                queryset.delete()
     return RestResponse.success("删除成功")
 
 
@@ -314,16 +329,20 @@ def wa_qr_upload(request: HttpRequest):
 
         if wa_service.check_qr(str(parsed).strip()):
             return RestResponse.failure("上传失败，二维码已经存在")
-
-        # query = queryset.filter(qr_content=str(parsed).strip(), op_user__isnull=False)
-        # if query.exists():
-        #     return RestResponse.failure("上传失败，二维码已经存在")
         f.name = str(uuid.uuid1()) + ext
-        queryset.create(
-            qr_content=str(parsed).strip(),
-            qr_path=f,
-            op_user_id=user_id
-        )
+
+        with transaction.atomic():
+            no_user_query = queryset.filter(op_user__isnull=True)
+            del_ids = list(no_user_query.values_list("qr_content", flat=True))
+            wa_service.del_aqr_with_hash(del_ids)
+            no_user_query.delete()
+
+            wa_service.add_aqr_hash(parsed, back_type, user_id)
+            queryset.create(
+                qr_content=str(parsed).strip(),
+                qr_path=f,
+                op_user_id=user_id
+            )
         return RestResponse.success("上传成功")
     finally:
         if temp_path is not None and os.path.exists(temp_path) and os.path.isfile(temp_path):
@@ -447,9 +466,13 @@ def wa_qr_batch_upload(request: HttpRequest):
             shutil.rmtree(zip_dir)
         return RestResponse.failure("上传失败，数据已经存在")
 
+    db_qr_keys = list(c_qr.keys())
     db_qr_list = list(c_qr.values())
     try:
-        queryset.bulk_create(db_qr_list)
+        with transaction.atomic():
+            for k in db_qr_keys:
+                wa_service.add_aqr_hash(k, back_type, user_id)
+            queryset.bulk_create(db_qr_list)
     except Exception:
         if os.path.exists(zip_dir):
             shutil.rmtree(zip_dir)

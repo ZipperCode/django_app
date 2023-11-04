@@ -47,7 +47,6 @@ class WaAccountQr(models.Model):
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
-
     @property
     def op_username(self):
         return self.op_user.username

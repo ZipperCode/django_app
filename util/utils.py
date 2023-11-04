@@ -35,7 +35,7 @@ def check_and_create_dir(path, is_dir: bool = False):
 def md5_encode(text) -> str:
     if text is None:
         return ""
-    text = str(text)
+    text = str(text).strip()
     hl = hashlib.md5()
     hl.update(text.encode(encoding='utf-8'))
     return hl.hexdigest()
