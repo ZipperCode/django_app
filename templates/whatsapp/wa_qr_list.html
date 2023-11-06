@@ -311,6 +311,30 @@
         </form>
     </div>
 </div>
+<div class="layui-row" id="exportDataWithType" style="display: none;">
+    <div class="layui-col-md12">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px"
+              lay-filter="exportDataWithType">
+            <div class="layui-inline">
+                <label class="layui-form-label">导出数据状态</label>
+                <div class="layui-input-inline">
+                    <select name="exportType">
+                        <option value="0">全部</option>
+                        <option value="1">已使用</option>
+                        <option value="2">未使用</option>
+                        <option value="3">无效</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="handleExport">确认导出
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -800,6 +824,50 @@
                 }
                 // 发送ajax请求
                 xhr.send();
+            }
+
+            function exportDataWithType() {
+                layer.open({
+                    type: 1,
+                    title: "请选择",
+                    area: ['400px', '300px'],
+                    content: $("#exportDataWithType")
+                });
+                form.val("exportDataWithType", {
+                    exportType: "0"
+                });
+
+                form.on('submit(usedSubmit)', function (massage) {
+                    let exportType = massage.field.exportType
+                    console.log("导出数据选择类型 = " + massage.field.exportType)
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('get', "/api/wa_qr/export?back_type={{ back_type }}&export_type=" + exportType, true);
+                    xhr.responseType = "blob"; // 返回类型blob
+                    // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
+                    xhr.onload = function (e) {
+                        // 请求完成
+                        if (this.status === 200) {
+                            // 返回200
+                            const blob = new Blob([this.response], {
+                                type: "application/vnd.ms-excel"
+                            });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            $("body").append(a); // 修复firefox中无法触发click
+                            a.click();
+                            $(a).remove();
+                        } else if (this.status === 404 || this.status === 500) {
+                            console.log("404 response = ", this.response)
+                            layer.msg("导出失败，" + this.status, {icon: 5})
+                        }
+                    };
+                    xhr.timeout = 1000 * 60 * 60; //将超时时间设置为1天
+                    xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
+                        layer.msg("导出失败，请求超时", {icon: 5})
+                    }
+                    // 发送ajax请求
+                    xhr.send();
+                });
             }
 
             function handleDispatch(isAll = false) {

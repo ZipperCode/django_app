@@ -23,7 +23,7 @@ from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR, MEDIA_ROOT
-from web_app.util import rest_list_util
+from web_app.util import rest_list_util, wa_util
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -522,6 +522,15 @@ def wa_qr_export_with_id(request: HttpRequest):
     queryset = wa_service.wa_qr_queryset(back_type)
     if not queryset:
         return HttpResponse(status=404, content=f"失败，用户类型错误 {back_type}")
+
+    export_type = request.GET['export_type'] | request.POST['export_type']
+
+    _status = wa_util.get_export_type(export_type)
+    if _status:
+        filter_field = {
+            "used": _status
+        }
+        queryset = queryset.filter(**filter_field)
 
     query_list = queryset.filter(id__in=ids, op_user_id=user_id).all()
     return handle_export(query_list)

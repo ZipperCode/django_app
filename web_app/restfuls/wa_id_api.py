@@ -20,7 +20,7 @@ from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_TYPES
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR
-from web_app.util import rest_list_util
+from web_app.util import rest_list_util, wa_util
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -447,9 +447,16 @@ def wa_id_export(request):
 
     back_type = body.get('back_type') or user.back_type
     queryset = wa_service.wa_id_query_set(back_type)
-
+    export_type = body.get("export_type")
     if not queryset:
         return RestResponse.failure("失败，用户状态错误")
+
+    _status = wa_util.get_export_type(export_type)
+    if _status:
+        filter_field = {
+            "used": _status
+        }
+        queryset = queryset.filter(**filter_field)
 
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         logging.info("管理员导出全部数据")
