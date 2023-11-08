@@ -61,7 +61,8 @@ def wa_qr_business_list(request: HttpRequest):
 
     # 查询记录
     start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(create_time__gte=start_t, create_time__lt=end_t)
+    q = (Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
+         | Q(create_time__gte=start_t, create_time__lt=end_t) & Q(used=UsedStatus.Used))
     back_type = body.get('back_type') or user.back_type
     queryset = wa_service.wa_qr_queryset(back_type)
     record_queryset = wa_service.wa_qr_record_queryset(back_type)
