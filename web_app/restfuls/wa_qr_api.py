@@ -90,7 +90,7 @@ def wa_qr_business_list(request: HttpRequest):
     query = query.filter(id__in=record_ids)
     res = list(
         query.values(
-            'id', 'qr_content', 'qr_path', 'country', 'age', 'work', 'money', 'mark', 'used',
+            'id', 'qr_content', 'qr_path', 'country', 'age', 'work', 'money', 'mark', 'link_mark', 'used',
             'op_user__username', 'create_time', 'update_time'
         )[start_row: end_row]
     )
@@ -142,6 +142,7 @@ def wa_qr_add(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    link_mark = body.get('link_mark', "")
 
     user = request.session.get('user')
     logging.info("account_id_upload#user = %s", user.username)
@@ -173,7 +174,7 @@ def wa_qr_add(request: HttpRequest):
 
         queryset.create(
             qr_content=qr_content, qr_path=qr, country=country, age=age,
-            work=work, money=money, mark=mark,
+            work=work, money=money, mark=mark, link_mark=link_mark,
             op_user_id=user.id
         )
 
@@ -191,6 +192,7 @@ def wa_qr_update(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    link_mark = body.get('link_mark', "")
     used = body.get('used')
     if utils.str_is_null(db_id) or not utils.is_int(db_id):
         return RestResponse.failure("修改失败，id不能为空或只能数字")
@@ -214,7 +216,7 @@ def wa_qr_update(request: HttpRequest):
     is_admin = role == USER_ROLE_ADMIN
     upd_field = {
         "country": country, "age": age,
-        "work": work, "money": money, "mark": mark,
+        "work": work, "money": money, "mark": mark, "link_mark": link_mark,
         "update_time": time_utils.get_now_bj_time_str()
     }
     with transaction.atomic():
@@ -573,6 +575,7 @@ def handle_export(query_list):
                 age=query.age,
                 work=query.work,
                 mark=query.mark,
+                link_mark=query.link_mark,
                 money=query.money,
                 op_user=query.op_username,
                 upload_time=time_utils.fmt_datetime(query.create_time)

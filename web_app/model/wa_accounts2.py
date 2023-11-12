@@ -14,6 +14,7 @@ class WaAccountId2(models.Model):
     # 最大10位，保留两位小数
     money = models.DecimalField("收入", default=0.0, max_digits=10, decimal_places=2)
     mark = models.TextField("备注", null=True)
+    link_mark = models.TextField("Link备注", null=True)
     op_user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     is_bind = models.BooleanField("是否绑定用户", default=False)
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
@@ -40,6 +41,7 @@ class WaAccountQr2(models.Model):
     # 最大10位，保留两位小数
     money = models.DecimalField("收入", default=0.0, max_digits=10, decimal_places=2)
     mark = models.TextField("备注", null=True)
+    link_mark = models.TextField("Link备注", null=True)
     op_user = models.ForeignKey("User", null=True, on_delete=models.SET_NULL)
     is_bind = models.BooleanField("是否绑定用户", default=False)
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)

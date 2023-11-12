@@ -230,7 +230,14 @@
                                   class="layui-textarea"></textarea>
                 </div>
             </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">链接备注</label>
+                <div class="layui-input-block">
+                    <input type="text" placeholder="请输入" name="link_mark" autocomplete="off"
+                           class="layui-input"/>
+                </div>
 
+            </div>
             <div class="layui-form-item" style="margin-top:40px">
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="editSubmit">确认修改
@@ -551,6 +558,7 @@
                 money: data.money,
                 used: data.used + "",
                 mark: data.mark,
+                link_mark: data.link_mark,
             });
 
             form.on('submit(editSubmit)', function (massage) {

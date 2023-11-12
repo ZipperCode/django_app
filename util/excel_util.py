@@ -22,6 +22,7 @@ class ExcelBean:
     age: int = 0
     work: Optional[str] = None
     mark: Optional[str] = None
+    link_mark: Optional[str] = None
     money: float = 0.0
     op_user: str = "None"
     upload_time: str = "2023-1-1"
@@ -37,7 +38,7 @@ def create_excel(in_data_list: List[ExcelBean], out_dir):
         now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
         filename = os.path.join(out_dir, "ID表_" + now + ".xlsx")
         for d in in_data_list:
-            row = [d.id, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+            row = [d.id, d.country, d.age, d.work, d.money, d.mark, d.link_mark, d.op_user, d.upload_time]
             sheet.append(row)
         book.save(filename)
     except BaseException:
@@ -54,6 +55,7 @@ excel2_header_options = [
     {'title': '工作', 'col_width': 10, },
     {'title': '收入', 'col_width': 10, },
     {'title': '备注', 'col_width': 30, },
+    {'title': '链接备注', 'col_width': 30, },
     {'title': '上传人', 'col_width': 10, },
     {'title': '上传时间', 'col_width': 10, },
 ]

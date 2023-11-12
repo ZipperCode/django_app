@@ -98,7 +98,7 @@ def wa_id_business_list(request: HttpRequest):
         queryset = queryset.filter(id__in=record_ids)
         res = list(
             queryset.values(
-                'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used',
+                'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'link_mark', 'used',
                 'op_user__username', 'create_time'
             )[start_row: end_row]
         )
@@ -162,6 +162,7 @@ def wa_id_add(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    link_mark = body.get('link_mark', "")
 
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
@@ -187,7 +188,7 @@ def wa_id_add(request: HttpRequest):
 
     queryset.create(
         account_id=account_id, country=country, age=age,
-        work=work, money=money, mark=mark,
+        work=work, money=money, mark=mark, link_mark=link_mark,
         op_user_id=user_id,
         create_time=time_utils.get_now_bj_time_str(),
         update_time=time_utils.get_now_bj_time_str()
@@ -218,6 +219,7 @@ def wa_id_update(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    link_mark = body.get('link_mark', "")
     used = body.get('used')
 
     back_type = body.get('back_type') or user.back_type
@@ -236,7 +238,7 @@ def wa_id_update(request: HttpRequest):
     is_admin = role == USER_ROLE_ADMIN
     upd_field = {
         "account_id": account_id, "country": country, "age": age,
-        "work": work, "money": money, "mark": mark,
+        "work": work, "money": money, "mark": mark, "link_mark": link_mark,
         "update_time": time_utils.get_now_bj_time_str()
     }
 
@@ -479,6 +481,7 @@ def wa_id_export(request):
             age=data.age,
             work=data.work,
             mark=data.mark,
+            link_mark=data.link_mark,
             money=data.money,
             op_user=data.op_user_name,
             upload_time=time_utils.fmt_datetime(data.create_time),
