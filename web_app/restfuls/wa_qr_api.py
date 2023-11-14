@@ -53,23 +53,20 @@ def wa_qr_list(request: HttpRequest):
 
 @log_func
 def wa_qr_business_list(request: HttpRequest):
-    user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.success_list(count=0, data=[])
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
 
     # 查询记录
-    start_t, end_t = time_utils.get_cur_day_time_range()
-    q = (Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
-         | Q(create_time__gte=start_t, create_time__lt=end_t) & Q(used=UsedStatus.Used))
-    back_type = body.get('back_type') or user.back_type
+    q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
+    back_type = body.get('back_type')
     queryset = wa_service.wa_qr_queryset(back_type)
     record_queryset = wa_service.wa_qr_record_queryset(back_type)
     if not queryset or not record_queryset:
         logging.info("backType错误，%s", back_type)
         return RestResponse.success_list(count=0, data=[])
-
+    user = user_dao.get_user(request)
+    if user is None or not isinstance(user, User):
+        return RestResponse.failure("user is none")
     record_ids = list(
         map(
             lambda x: x.get('account_id'),

@@ -33,11 +33,9 @@ TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
 @log_func
 def wa_id_list(request: HttpRequest):
     user = user_dao.get_user(request)
-    if user is None or not isinstance(user, User):
-        return RestResponse.success_list(count=0, data=[])
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
-    back_type = body.get('back_type') or user.back_type
+    back_type = body.get('back_type')
     queryset = wa_service.wa_id_query_set(back_type)
 
     if queryset:
@@ -54,14 +52,12 @@ def wa_id_list(request: HttpRequest):
 def wa_id_business_list(request: HttpRequest):
     user = user_dao.get_user(request)
     if user is None or not isinstance(user, User):
-        return RestResponse.success_list(count=0, data=[])
+        return RestResponse.failure("user is none")
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
 
     # 查询记录
-    start_t, end_t = time_utils.get_cur_day_time_range()
-    q = (Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
-         | Q(create_time__gte=start_t, create_time__lt=end_t) & Q(used=UsedStatus.Used))
+    q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
 
     back_type = body.get('back_type') or user.back_type
 

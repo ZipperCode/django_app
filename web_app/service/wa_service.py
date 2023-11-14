@@ -261,7 +261,7 @@ def search_aid_page(body, start_row, end_row, user: User, queryset: QuerySet):
     account_id = body.get("account_id")
     if not utils.str_is_null(account_id):
         query = query.filter(account_id__contains=account_id)
-    if user.role == USER_ROLE_UPLOADER:
+    if user and user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
         query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
