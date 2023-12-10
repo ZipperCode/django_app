@@ -363,7 +363,7 @@
 
             lay('.test-item').each(function () {
                 const date = new Date()
-                const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+                const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
                 laydate.render({
                     elem: this,
                    type: 'datetime',
