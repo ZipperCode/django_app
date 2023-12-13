@@ -58,8 +58,7 @@ def business_list(request: HttpRequest):
     body = utils.request_body(request)
 
     # 查询记录
-    start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
+    q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
 
     record_ids = list(
         map(
