@@ -199,12 +199,32 @@ def account_id_update(request: HttpRequest):
                 _q = LineUserAccountIdRecord.objects.filter(account__account_id=account_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
+                elif _status == UsedStatus.Used:
+                    return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
+                # else:
+                #     LineUserAccountIdRecord.objects.create(
+                #         user_id=user_id,
+                #         account_id=account_id,
+                #         used=UsedStatus.Default,
+                #         create_time=time_utils.get_now_bj_time_str(),
+                #         update_time=time_utils.get_now_bj_time_str()
+                #     )
+
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
                 _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account__account_id=account_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
+                else:
+                    return RestResponse.failure("修改失败，记录不存在")
+                    # LineUserAccountIdRecord.objects.create(
+                    #     user_id=user_id,
+                    #     account_id=account_id,
+                    #     used=UsedStatus.Default,
+                    #     create_time=time_utils.get_now_bj_time_str(),
+                    #     update_time=time_utils.get_now_bj_time_str()
+                    # )
 
         logging.info("要跟新的字段 = %s", upd_field)
         query.update(**upd_field)

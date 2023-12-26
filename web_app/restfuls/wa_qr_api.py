@@ -230,13 +230,33 @@ def wa_qr_update(request: HttpRequest):
                 _q = record_queryset.filter(account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
+                elif _status == UsedStatus.Used:
+                    return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
+                # else:
+                #     create_dict = {
+                #         'user_id': user_id,
+                #         'account_id': db_id,
+                #         'used': UsedStatus.Default,
+                #         'create_time': time_utils.get_now_bj_time_str(),
+                #         'update_time': time_utils.get_now_bj_time_str()
+                #     }
+                #     wa_service.wa_qr_record_create_model(back_type, **create_dict)
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
                 _q = record_queryset.filter(user_id=user_id, account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
-
+                else:
+                    return RestResponse.failure("修改失败，记录不存在")
+                    # create_dict = {
+                    #     'user_id': user_id,
+                    #     'account_id': db_id,
+                    #     'used': UsedStatus.Default,
+                    #     'create_time': time_utils.get_now_bj_time_str(),
+                    #     'update_time': time_utils.get_now_bj_time_str()
+                    # }
+                    # wa_service.wa_qr_record_create_model(back_type, **create_dict)
         queryset.update(**upd_field)
 
     return RestResponse.success("更新成功")
