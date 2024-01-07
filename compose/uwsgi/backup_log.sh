@@ -1,6 +1,7 @@
 #!/bin/bash
 
 backup_suffix=$1
+echo "backup_suffix = $backup_suffix"
 if [ -z "$backup_suffix" ]; then
     echo "backup_suffix not found"
     exit 1
@@ -10,7 +11,7 @@ if [ ! -f "${log_file_name}" ]; then
     exit 1
 fi
 
-cp "$log_file_name" backup_${backup_suffix}.log
+cp "$log_file_name" "backup_${backup_suffix}.log"
 
 > web_log.log
 
