@@ -366,7 +366,7 @@
                 const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
                 laydate.render({
                     elem: this,
-                   type: 'datetime',
+                    type: 'datetime',
                     min: '2023-1-1 00:00:00',
                     max: max
                     , trigger: 'click'
@@ -741,31 +741,32 @@
                     $.ajax({
                         url: "/api/wa_qr/del?back_type={{ back_type }}",
                         data: {
-                            id: obj.data.id, account_id: obj.data.account_id, back_type:{{back_type}},
-                            type: "post",
-                            headers: headers,
-                            dataType: "JSON",
-                            success: function (msg) {
-                                if (msg.code === 0) {
-                                    layer.msg(msg.msg, {icon: 6});
-                                    setTimeout(function () {
-                                        layer.closeAll();//关闭所有的弹出层2
-                                        table.reload("list", {
-                                            page: {
-                                                curr: globalCurrentPage
-                                            }
-                                        });//修改成功修改表格数据不进行跳转
-                                    }, 1000);
-                                    return;
-                                }
-                                layer.msg(msg.msg, {icon: 5});
-                            },
-                            error: function () {
-                                layer.msg("请求失败", {icon: 5})
-                            },
-                            complete() {
-                                layer.close(index2);
+                            id: obj.data.id, account_id: obj.data.account_id, back_type:{{back_type}}
+                        },
+                        type: "post",
+                        headers: headers,
+                        dataType: "JSON",
+                        success: function (msg) {
+                            if (msg.code === 0) {
+                                layer.msg(msg.msg, {icon: 6});
+                                setTimeout(function () {
+                                    layer.closeAll();//关闭所有的弹出层2
+                                    table.reload("list", {
+                                        page: {
+                                            curr: globalCurrentPage
+                                        }
+                                    });//修改成功修改表格数据不进行跳转
+                                }, 1000);
+                                return;
                             }
+                            layer.msg(msg.msg, {icon: 5});
+                        },
+                        error: function () {
+                            layer.closeAll();
+                            layer.msg("请求失败", {icon: 5})
+                        },
+                        complete() {
+                            layer.close(index2);
                         }
                     });
                 });

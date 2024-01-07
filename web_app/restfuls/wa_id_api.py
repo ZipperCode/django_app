@@ -122,7 +122,7 @@ def wa_dispatch_record_list(request: HttpRequest):
     count = 0
     if record_query:
         logging.info("查找id分配记录是，删除用户或者accountId为空的数据")
-        record_query.filter(Q(user__isnull=True) or Q(account__isnull=True)).delete()
+        record_query.filter(Q(user__isnull=True) or Q(account__isnull=True) or Q(account_id__isnull=True)).delete()
         account_id = body.get('account_id')
         # 输入的account_id进行查询，非数据库主键
         if not utils.str_is_null(account_id):

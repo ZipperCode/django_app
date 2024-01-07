@@ -295,7 +295,7 @@ def wa_qr_del(request: HttpRequest):
         finally:
             with transaction.atomic():
                 if queryset.exists():
-                    qr_content = queryset.first().qr_conent
+                    qr_content = queryset.first().qr_content
                     wa_service.del_aqr_with_hash([qr_content])
                 record_queryset.filter(account_id=id_).delete()
                 queryset.delete()
