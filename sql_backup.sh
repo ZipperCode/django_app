@@ -10,7 +10,7 @@ echo "开始备份数据库";
 ## mysqldump -h106.14.XX.XXX -uusername -p"password123"  demand_database| gzip > /data/mysqlbackup/databaseName`date +%Y-%m-%d_%H%M%S`.sql.gz;
 
 # 最近转投docker怀抱，本地不安装mysql时，采用docker的mysql备份，备份语句修改为**
-docker exec mysql sh -c 'exec mysqldump --all-databases -utemegram -p949389 --all-databases' > /home/backup/database_`date +%Y-%m-%d_%H%M%S`.sql;
+docker exec a045d0bf962f sh -c 'exec mysqldump --all-databases -utemegram -p949389 --all-databases' > /home/backup/database_`date +%Y-%m-%d_%H%M%S`.sql;
 
 # mysql 替换为对应的容器名
 # 删除 3 天前的备份文件
