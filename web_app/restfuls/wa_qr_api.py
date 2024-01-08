@@ -21,6 +21,7 @@ from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
+from web_app.model.wa_accounts import WaAccountQr
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util, wa_util
@@ -552,7 +553,11 @@ def wa_qr_export_with_id(request: HttpRequest):
         }
         queryset = queryset.filter(**filter_field)
 
-    query_list = queryset.filter(id__in=ids, op_user_id=user_id).all()
+    query_list = queryset.filter(id__in=ids, op_user_id=user_id).values(
+        "qr_content", 'qr_path', 'country', 'age', 'work', 'mark', 'link_mark',
+        'money', "op_user__username", 'op_user__name', 'create_time'
+    )
+
     return handle_export(query_list)
 
 
@@ -563,7 +568,7 @@ def wa_qr_export(request: HttpRequest):
     if not user:
         return HttpResponse(status=404, content="下载失败，需要登录")
     user_id = user.id
-    back_type = request.POST['back_type'] or user.back_type
+    back_type = request.GET.get('back_type') or user.back_type
     queryset = wa_service.wa_qr_queryset(back_type)
     if not queryset:
         return HttpResponse(status=404, content=f"失败，用户类型错误 {back_type}")
@@ -571,48 +576,71 @@ def wa_qr_export(request: HttpRequest):
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         # 管理员导出全部数据
         logging.info("管理员导出全部数据")
-        query_list = queryset.all()
+        query_list = queryset.values(
+            "qr_content", 'qr_path', 'country', 'age', 'work', 'mark', 'link_mark',
+            'money', "op_user__username", 'op_user__name', 'create_time'
+        )
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
         # 非管理员导出当天数据
-        query_list = queryset.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+        query_list = queryset.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).values(
+            "qr_content", 'qr_path', 'country', 'age', 'work', 'mark', 'link_mark',
+            'money', "op_user__username", 'op_user__name', 'create_time'
+        )
     return handle_export(query_list)
 
 
 def handle_export(query_list):
-    excel_bean_list: List[ExcelBean] = list()
-    for query in query_list:
-        abs_path = os.path.join(MEDIA_ROOT, query.qr_path.path)
-        excel_bean_list.append(
-            ExcelBean(
-                qr_content=query.qr_content,
-                qr_code_abs_path=abs_path,
-                country=query.country,
-                age=query.age,
-                work=query.work,
-                mark=query.mark,
-                link_mark=query.link_mark,
-                money=query.money,
-                op_user=query.op_username,
-                upload_time=time_utils.fmt_datetime(query.create_time)
+    data_size = len(query_list)
+    if data_size <= 0:
+        return HttpResponse(status=404, content="下载失败，没有数据")
+    limit = 1000
+    count = int(data_size / limit) + 1
+    logging.info("handle_export # 数据大小 = %s, count = %s", data_size, count)
+    file_path = None
+
+    for index in range(0, count):
+        offset = index * limit
+        _next = offset + limit
+        data_list = query_list[offset:_next]
+        logging.info("offset = %s, next = %s size = %s", offset, _next, len(data_list))
+        if len(data_list) == 0:
+            break
+        excel_list: List[ExcelBean] = list()
+        for data in data_list:
+            name = data.get('op_user__name') or data.get('op_user__username') or ""
+            abs_path = os.path.join(MEDIA_ROOT, data.get('qr_path'))
+            excel_list.append(
+                ExcelBean(
+                    qr_content=data.get('qr_content'),
+                    qr_code_abs_path=abs_path,
+                    country=data.get('country'),
+                    age=data.get('age'),
+                    work=data.get('work'),
+                    mark=data.get('mark'),
+                    link_mark=data.get('link_mark'),
+                    money=data.get('money'),
+                    op_user=name,
+                    upload_time=time_utils.fmt_datetime(data.get('create_time'))
+                )
             )
-        )
+        logging.info("handle_export# index = %s 转换ExcelBean成功 = %s", index, len(excel_list))
+        if len(excel_list) <= 0:
+            continue
+        if not file_path:
+            temp_path = os.path.join(TEMP_DIR, "excel")
+            if not os.path.exists(temp_path):
+                os.mkdir(temp_path)
+            logging.info("handle_export#开始生成excel文件，目录 = %s", temp_path)
+            file_path = excel_util.create_excel2(excel_list, temp_path)
+            if not file_path:
+                return HttpResponse(status=404, content="下载失败，创建excel失败")
+        else:
+            logging.info("handle_export# index = %s追加生成excel文件，文件 = %s", index, file_path)
+            excel_util.append_excel2(excel_list, file_path)
 
-    logging.info("导出内容，创建excelBean len = %s", len(excel_bean_list))
-    if len(excel_bean_list) == 0:
-        logging.info("export id 失败，没有对应数据")
-        return HttpResponse(status=404, content="下载失败，没有对应数据")
-
-    temp_path = os.path.join(TEMP_DIR, "excel")
-    if not os.path.exists(temp_path):
-        os.mkdir(temp_path)
-    file_path = excel_util.create_excel2(excel_bean_list, temp_path)
-    logging.info("export_qr#生成excel文件，文件 = %s", file_path)
-    if not file_path:
-        logging.info("export id 失败，创建excel失败")
-        return HttpResponse(status=404, content="下载失败，创建excel失败")
-    logging.info('export qr#path = %s', file_path)
+    logging.info("handle_export#数据填充完毕，最终文件 = %s", file_path)
     file = open(file_path, 'rb')
     file_name = os.path.basename(file_path)
     response = FileResponse(file)

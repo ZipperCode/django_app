@@ -18,6 +18,7 @@ from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_TYPES
+from web_app.model.wa_accounts import WaAccountId
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util, wa_util
@@ -481,37 +482,65 @@ def wa_id_export(request):
     if request.session['user'].get('role') == USER_ROLE_ADMIN:
         logging.info("管理员导出全部数据")
         # 管理员导出全部数据
-        query_list = list(queryset.all())
+        WaAccountId.objects.values("account_id")
+        query_list = list(queryset.values(
+            "account_id", "country", "age", "work", "mark", 'link_mark', "money",
+            "op_user__username", 'op_user__name', 'create_time'
+        ))
     else:
         logging.info("非管理员导出自身当天全部数据")
         start, end = time_utils.get_cur_day_time_range()
         # 非管理员导出当天数据
         query_list = list(
-            queryset.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).all()
+            queryset.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).values(
+                "account_id", "country", "age", "work", "mark", 'link_mark', "money",
+                "op_user__username", 'op_user__name', 'create_time'
+            )
         )
-    logging.info("wa_account_id2_export# 数据大小 = %s", len(query_list))
-    excel_list: List[ExcelBean] = list()
-    for data in query_list:
-        excel_list.append(ExcelBean(
-            id=data.account_id,
-            country=data.country,
-            age=data.age,
-            work=data.work,
-            mark=data.mark,
-            link_mark=data.link_mark,
-            money=data.money,
-            op_user=data.op_user_name,
-            upload_time=time_utils.fmt_datetime(data.create_time),
-        ))
-    logging.info("wa_account_id2_export# 转换ExcelBean成功 = %s", len(excel_list))
-    temp_path = os.path.join(TEMP_DIR, "excel")
-    if not os.path.exists(temp_path):
-        os.makedirs(temp_path)
-    logging.info("wa_account_id2_export#开始生成excel文件，目录 = %s", temp_path)
-    file_path = excel_util.create_excel(excel_list, temp_path)
-    logging.info("wa_account_id2_export#生成临时Excel文件成功，文件 = %s", file_path)
-    if not file_path:
-        return HttpResponse(status=404, content="下载失败，创建excel失败")
+    data_size = len(query_list)
+    if data_size <= 0:
+        return HttpResponse(status=404, content="下载失败，没有数据")
+    limit = 1000
+    count = int(data_size / limit) + 1
+    logging.info("wa_account_id2_export id # 数据大小 = %s, count = %s", data_size, count)
+    file_path = None
+    for index in range(0, count):
+        offset = index * limit
+        _next = offset + limit
+        data_list = query_list[offset:_next]
+        logging.info("offset = %s, next = %s size = %s", offset, _next, len(data_list))
+        if len(data_list) == 0:
+            break
+        excel_list: List[ExcelBean] = list()
+        for data in data_list:
+            name = data.get('op_user__name') or data.get('op_user__username') or ""
+            excel_list.append(ExcelBean(
+                id=data.get('account_id'),
+                country=data.get('country'),
+                age=data.get('age'),
+                work=data.get('work'),
+                mark=data.get('mark'),
+                link_mark=data.get('link_mark'),
+                money=data.get('money'),
+                op_user=name,
+                upload_time=time_utils.fmt_datetime(data.get('create_time')),
+            ))
+        logging.info("wa_account_id2_export# index = %s 转换ExcelBean成功 = %s", index, len(excel_list))
+        if len(excel_list) <= 0:
+            continue
+        if not file_path:
+            temp_path = os.path.join(TEMP_DIR, "excel")
+            if not os.path.exists(temp_path):
+                os.mkdir(temp_path)
+            logging.info("wa_account_id2_export#开始生成excel文件，目录 = %s", temp_path)
+            file_path = excel_util.create_excel(excel_list, temp_path)
+            if not file_path:
+                return HttpResponse(status=404, content="下载失败，创建excel失败")
+        else:
+            logging.info("wa_account_id2_export# index = %s追加生成excel文件，文件 = %s", index, file_path)
+            excel_util.append_excel(excel_list, file_path)
+
+    logging.info("wa_account_id2_export#数据填充完毕，最终文件 = %s", file_path)
 
     file = open(file_path, 'rb')
     file_name = os.path.basename(file_path)

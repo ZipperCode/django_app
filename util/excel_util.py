@@ -1,9 +1,11 @@
 import logging
+import traceback
 from dataclasses import dataclass
 import os.path
 import time
 from typing import List, Optional
 
+import openpyxl
 from openpyxl.drawing.image import Image
 from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor
 from openpyxl.styles import Font, Alignment
@@ -32,7 +34,7 @@ def create_excel(in_data_list: List[ExcelBean], out_dir):
     try:
         book = Workbook()
         sheet: Optional[Worksheet] = book.active
-        sheet.append(['ID', '城市', '年龄', '工作', '收入', '备注', '上传人', '上传时间'])
+        sheet.append(['ID', '城市', '年龄', '工作', '收入', '备注', 'LinkMark', '上传人', '上传时间'])
         r = sheet.row_dimensions[1]
         r.font = Font(bold=True)
         now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
@@ -46,6 +48,18 @@ def create_excel(in_data_list: List[ExcelBean], out_dir):
         return None
     return filename
 
+
+def append_excel(in_data_list: List[ExcelBean], path: str):
+    try:
+        book = openpyxl.load_workbook(filename=path)
+        sheet: Optional[Worksheet] = book.active
+        for d in in_data_list:
+            row = [d.id, d.country, d.age, d.work, d.money, d.mark, d.link_mark, d.op_user, d.upload_time]
+            sheet.append(row)
+        book.save(filename=path)
+    except BaseException:
+        logging.info("append excel fail = %s", traceback.format_exc())
+    return path
 
 excel2_header_options = [
     {'title': '二维码', 'col_width': 20, },
@@ -80,22 +94,25 @@ def create_excel2(in_data_list: List[ExcelBean], out_dir):
             sheet.cell(1, index + 1).value = t
 
         for index, d in enumerate(in_data_list):
-            img = Image(d.qr_code_abs_path)  # 缩放图片
-            img.width, img.height = (100, 100)
-            _from = AnchorMarker(0, 0, index + 1, 0)
-            to = AnchorMarker(1, 0, index + 2, 0)
-            img.anchor = TwoCellAnchor('twoCell', _from, to)
-            sheet.add_image(img)
+            try:
+                img = Image(d.qr_code_abs_path)  # 缩放图片
+                img.width, img.height = (100, 100)
+                _from = AnchorMarker(0, 0, index + 1, 0)
+                to = AnchorMarker(1, 0, index + 2, 0)
+                img.anchor = TwoCellAnchor('twoCell', _from, to)
+                sheet.add_image(img)
 
-            rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
 
-            for r_index, value in enumerate(rows):
-                c = sheet.cell(index + 2, r_index + 2)
-                c.value = value
-                c.alignment = Alignment(horizontal='center', vertical='center', wrapText=True)
+                for r_index, value in enumerate(rows):
+                    c = sheet.cell(index + 2, r_index + 2)
+                    c.value = value
+                    c.alignment = Alignment(horizontal='center', vertical='center', wrapText=True)
 
-            sheet.row_dimensions[index + 2].height = 100
-            sheet.row_dimensions[index + 2].width = 100
+                sheet.row_dimensions[index + 2].height = 100
+                sheet.row_dimensions[index + 2].width = 100
+            except BaseException as e:
+                print(' e = ', e)
         book.save(filename)
     except BaseException as e:
         logging.info("create_excel fail")
@@ -103,6 +120,45 @@ def create_excel2(in_data_list: List[ExcelBean], out_dir):
         return None
     return filename
 
+
+def append_excel2(in_data_list: List[ExcelBean], path):
+    try:
+        book = openpyxl.load_workbook(filename=path)
+        sheet: Optional[Worksheet] = book.active
+        for index, head in enumerate(excel2_header_options):
+            t = head.get("title")
+            w = head.get("col_width")
+            col_name = get_column_letter(index + 1)
+            col = sheet.column_dimensions[col_name]
+            col.alignment = Alignment(horizontal='center', vertical='center', wrapText=True)
+            col.auto_size = True
+            col.width = w
+            sheet.cell(1, index + 1).value = t
+
+        for index, d in enumerate(in_data_list):
+            try:
+                img = Image(d.qr_code_abs_path)  # 缩放图片
+                img.width, img.height = (100, 100)
+                _from = AnchorMarker(0, 0, index + 1, 0)
+                to = AnchorMarker(1, 0, index + 2, 0)
+                img.anchor = TwoCellAnchor('twoCell', _from, to)
+                sheet.add_image(img)
+
+                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+
+                for r_index, value in enumerate(rows):
+                    c = sheet.cell(index + 2, r_index + 2)
+                    c.value = value
+                    c.alignment = Alignment(horizontal='center', vertical='center', wrapText=True)
+
+                sheet.row_dimensions[index + 2].height = 100
+                sheet.row_dimensions[index + 2].width = 100
+            except BaseException as e:
+                print(' e = ', e)
+        book.save(filename=path)
+    except BaseException:
+        logging.info("append excel fail = %s", traceback.format_exc())
+    return path
 
 def adjust(ws):
     column_widths = []

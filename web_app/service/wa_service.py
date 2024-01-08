@@ -431,7 +431,7 @@ def sync_used_id():
         if len(ids) == 0:
             continue
 
-        logging.info("WaId#%s#同步使用状态 ids = %s", t, ids)
+        #logging.info("WaId#%s#同步使用状态 ids = %s", t, ids)
         wa_id_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
 
 
@@ -441,7 +441,7 @@ def sync_used_qr():
         ids = list(ids)
         if len(ids) == 0:
             continue
-        logging.info("WaQr#%s#同步使用状态 ids = %s", t, ids)
+        #logging.info("WaQr#%s#同步使用状态 ids = %s", t, ids)
         wa_qr_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
 
 
@@ -491,7 +491,7 @@ def sync_id_hash():
 
             wa_ids_hash = list(map(lambda x: md5_encode(str(x[0]).strip()), a_id_tuples))
             no_exists_ids = [x for x in wa_ids_hash if x not in wa_ids]
-            logging.info("%s#不存在的hash = %s", t, no_exists_ids)
+            #logging.info("%s#不存在的hash = %s", t, no_exists_ids)
             for a_id_tuple in a_id_tuples:
                 account_id = a_id_tuple[0]
                 op_user_id = a_id_tuple[1]
@@ -561,7 +561,7 @@ def sync_qr_hash():
                 continue
             wa_ids_hash = list(map(lambda x: md5_encode(str(x[0]).strip()), a_qr_tuples))
             no_exists_ids = [x for x in wa_ids_hash if x not in wa_ids]
-            logging.info("%s#不存在的hash = %s", t, no_exists_ids)
+            # logging.info("%s#不存在的hash = %s", t, no_exists_ids)
             for a_qr_tuple in a_qr_tuples:
                 qr_content = a_qr_tuple[0]
                 op_user_id = a_qr_tuple[1]

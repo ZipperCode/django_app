@@ -23,6 +23,8 @@ class AccountId(models.Model):
     @property
     def op_user_name(self):
         op_u = self.op_user
+        if not op_u:
+            return ""
         op_name = op_u.username
         if not utils.str_is_null(op_u.name):
             op_name = op_u.name
