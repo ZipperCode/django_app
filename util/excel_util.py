@@ -102,7 +102,7 @@ def create_excel2(in_data_list: List[ExcelBean], out_dir):
                 img.anchor = TwoCellAnchor('twoCell', _from, to)
                 sheet.add_image(img)
 
-                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.link_mark, d.op_user, d.upload_time]
 
                 for r_index, value in enumerate(rows):
                     c = sheet.cell(index + 2, r_index + 2)
@@ -144,7 +144,7 @@ def append_excel2(in_data_list: List[ExcelBean], path):
                 img.anchor = TwoCellAnchor('twoCell', _from, to)
                 sheet.add_image(img)
 
-                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.op_user, d.upload_time]
+                rows = [d.qr_content, d.country, d.age, d.work, d.money, d.mark, d.link_mark, d.op_user, d.upload_time]
 
                 for r_index, value in enumerate(rows):
                     c = sheet.cell(index + 2, r_index + 2)
