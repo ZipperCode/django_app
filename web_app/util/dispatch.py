@@ -7,6 +7,7 @@ from django.db.models import QuerySet
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.accounts import LineUserAccountIdRecord
+from web_app.model.const import UsedStatus
 from web_app.model.users import USER_ROLE_BUSINESS, User, UserAccountRecord, RECORD_TYPE_LINE_ID, RECORD_TYPE_NONE
 
 
@@ -23,7 +24,8 @@ def get_business_user_ids2(back_type: int) -> Tuple[list, int]:
 def get_account_list(objects, is_all: bool = False) -> Tuple[list, int]:
     cur_start_t, cur_end_t = time_utils.get_cur_day_time_range()
     filter_filed = {
-        'is_bind': False
+        'is_bind': False,
+        'used': UsedStatus.Default
     }
     if not is_all:
         logging.info("is_all = False, 分配当天")
