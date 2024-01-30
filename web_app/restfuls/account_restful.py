@@ -103,18 +103,8 @@ def dispatch_record_list(request: HttpRequest):
     if not utils.str_is_null(account_id):
         query = query.filter(account__account_id__contains=account_id)
     query = rest_list_util.search_record_common(query, body)
-    record_list = query.all()[start_row: end_row]
-    result_list = []
-    for record in record_list:
-        result_list.append({
-            'id': record.id,
-            'username': record.username,
-            'account_id': record.account_id_val,
-            'used': record.used,
-            'create_time': record.create_time
-        })
-
-    return RestResponse.success_list(count=query.count(), data=result_list)
+    record_list = query.values("id", 'user__username', "account_id", 'account__used', "create_time")[start_row: end_row]
+    return RestResponse.success_list(count=query.count(), data=list(record_list))
 
 
 @log_func

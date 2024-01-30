@@ -38,8 +38,8 @@ def search_account_common_field(query: QuerySet, body) -> QuerySet:
     date_end = body.get('date_end')
     op_user_id = body.get("op_user_select")
     op_username = body.get('op_username')
-    used = body.get('used')
     query.filter(op_user__isnull=False)
+    used = body.get('used')
     # 过滤使用状态
     if not utils.str_is_null(used):
         query = query.filter(used=utils.get_status(used))

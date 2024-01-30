@@ -77,6 +77,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects, u_ids, RECORD_TYPE_LINE_ID)
     add_u_ids = set()
+    add_a_ids = set()
 
     def add_record(_u_id, _a_id):
         _num = u_record_map.get(_u_id)
@@ -86,6 +87,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
             _num += 1
         add_u_ids.add(_u_id)
         u_record_map[_u_id] = _num
+        add_a_ids.add(_a_id)
         bat_aid_record_list.append(
             LineUserAccountIdRecord(
                 user_id=_u_id,
@@ -111,8 +113,8 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
         LineUserAccountIdRecord.objects.bulk_create(bat_aid_record_list)
         logging.info("lineAccountId#开始处理用户当天数据数量")
         dispatch.handle_user_record(u_record_map, RECORD_TYPE_LINE_ID)
-        logging.info("lineAccountId#将数据 bind 设置为True ids = %s", a_ids)
-        AccountId.objects.filter(id__in=a_ids).update(is_bind=True)
+        logging.info("lineAccountId#将数据 bind 设置为True ids = %s", add_a_ids)
+        AccountId.objects.filter(id__in=add_a_ids).update(is_bind=True)
 
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
 
@@ -134,6 +136,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
 
     u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects, u_ids, RECORD_TYPE_LINE_QR)
     add_u_ids = set()
+    add_a_ids = set()
 
     def add_record(_u_id, _a_id):
         logging.info("add_record = uid = %s, id = %s", _u_id, _a_id)
@@ -144,6 +147,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
             _num += 1
         u_record_map[_u_id] = _num
         add_u_ids.add(_u_id)
+        add_a_ids.add(_a_id)
         bat_aid_record_list.append(
             LineUserAccountQrRecord(
                 user_id=_u_id,
@@ -166,6 +170,6 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
         logging.info("lineAccountQr#开始处理用户当天数据数量")
         dispatch.handle_user_record(u_record_map, RECORD_TYPE_LINE_QR)
         logging.info("lineAccountQr#将数据 bind 设置为True")
-        AccountQr.objects.filter(id__in=data_ids).update(is_bind=True)
+        AccountQr.objects.filter(id__in=add_a_ids).update(is_bind=True)
 
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
