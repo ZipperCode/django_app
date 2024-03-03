@@ -20,11 +20,13 @@ from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS, USER_TYPES
 from web_app.model.wa_accounts import WaAccountQr
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util, wa_util
+
+from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -58,6 +60,9 @@ def wa_qr_business_list(request: HttpRequest):
     body = utils.request_body(request)
 
     # 查询记录
+    start_t, end_t = time_utils.get_cur_over_7day_time_range()
+    logging.info("当前时间 = %s", start_t)
+    logging.info("七天前时间 = %s", end_t)
     q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
     back_type = body.get('back_type')
     queryset = wa_service.wa_qr_queryset(back_type)
@@ -72,7 +77,9 @@ def wa_qr_business_list(request: HttpRequest):
         map(
             lambda x: x.get('account_id'),
             list(
-                record_queryset.filter(user_id=user.id).filter(q).distinct()
+                record_queryset.filter(user_id=user.id).filter(
+                    Q(create_time__gte=start_t, create_time__lt=end_t)
+                ).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -673,6 +680,107 @@ def wa_qr_handle_dispatcher(request: HttpRequest):
     except BaseException as e:
         logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
         return RestResponse.failure("分发错误，请联系管理员")
+
+
+@log_func
+def unused_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    dispatch_id = body.get("dispatchId")
+    back_type = body.get('back_type')
+    filter_args = {
+        'used': UsedStatus.Default
+    }
+    if not utils.str_is_null(dispatch_id):
+        filter_args['qr_content__contains'] = dispatch_id
+
+    queryset = wa_service.wa_qr_queryset(back_type)
+    if not queryset:
+        return RestResponse.success(data=[])
+    query = queryset.filter(**filter_args)
+    res = query.values(
+        "id", 'qr_content', 'op_user__username', 'is_bind', 'create_time'
+    )[start_row:end_row]
+    return RestResponse.success_list(count=query.count(), data=list(res))
+
+
+def dispatch(request: HttpRequest):
+    body = utils.request_body(request)
+    back_type = body.get('back_type')
+    if not back_type or int(back_type) not in USER_TYPES:
+        return RestResponse.failure("分发错误，backType类型错误")
+
+    user_id = body.get("user_id", "")
+    aids_str = body.get("aids", "")
+    aids = list(set(str(aids_str).split(",")))
+    aids = [int(x.strip()) for x in aids if x.strip() != '']
+
+    if utils.str_is_null(user_id):
+        raise BusinessException.msg("参数错误，必须要有用户id")
+    if utils.str_is_null(aids_str) or len(aids) == 0:
+        raise BusinessException.msg("参数错误，必须要有账号数据")
+
+    if not User.objects.filter(id=user_id).exists():
+        raise BusinessException.msg("分配用户不存在")
+    logging.info("WhatsApp#Qr分配#user_id = %s, aids = %s", user_id, str(aids))
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_query = wa_service.wa_qr_record_queryset(back_type)
+
+    bat_record_list = []
+
+    with transaction.atomic():
+        record_query.filter(account__id__in=aids).delete()
+
+        for qr_id in aids:
+            create_dict = {
+                'user_id': user_id,
+                'account_id': qr_id,
+                'used': UsedStatus.Default,
+                'create_time': time_utils.get_now_bj_time_str(),
+                'update_time': time_utils.get_now_bj_time_str()
+            }
+            model = wa_service.wa_qr_record_create_model(back_type, **create_dict)
+            if model:
+                bat_record_list.append(model)
+            else:
+                logging.info(f"{back_type}#add_record_id 失败，创建model为空")
+
+        record_query.bulk_create(bat_record_list)
+
+        ids = list(map(lambda x: x.account_id, bat_record_list))
+        logging.info(f"{back_type}#将数据 bind 设置为True ids = %s", ids)
+        queryset.filter(id__in=ids).update(is_bind=True)
+
+    return RestResponse.success(msg="分配完成")
+
+
+@log_func
+def update_bind(request: HttpRequest):
+    body = utils.request_body(request)
+    aid = body.get("id")
+    bind = body.get("bind")
+    back_type = body.get('back_type')
+    if not back_type or int(back_type) not in USER_TYPES:
+        raise BusinessException.msg("分发错误，backType类型错误")
+    if utils.str_is_null(aid):
+        raise BusinessException.msg("修改失败，id错误")
+    if not utils.is_bool(bind):
+        raise BusinessException.msg("修改失败，状态异常")
+    queryset = wa_service.wa_qr_queryset(back_type)
+    record_query = wa_service.wa_qr_record_queryset(back_type)
+
+    if not queryset or not record_query:
+        raise BusinessException.msg("修改失败，查询错误")
+
+    bind_val = utils.is_bool_val(bind)
+
+    with transaction.atomic():
+        logging.info("waqr#修改绑定状态为%s", bind_val)
+        queryset.filter(id=aid).update(is_bind=bind_val)
+        if not bind_val:
+            logging.info("waqr#修改绑定状态为false，删除绑定记录")
+            record_query.filter(account_id=aid).delete()
+        return RestResponse.success("修改成功", data=bind_val)
 
 
 @log_func

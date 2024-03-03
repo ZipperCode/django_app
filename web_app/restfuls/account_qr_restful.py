@@ -27,6 +27,7 @@ from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util
+from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -34,7 +35,6 @@ logging.basicConfig(
 )
 
 TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
-
 
 @log_func
 @api_op_user
@@ -57,14 +57,18 @@ def business_list(request: HttpRequest):
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
 
+    start_t, end_t = time_utils.get_cur_over_7day_time_range()
+    logging.info("当前时间 = %s", start_t)
+    logging.info("七天前时间 = %s", end_t)
     # 查询记录
     q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
-
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
             list(
-                LineUserAccountQrRecord.objects.filter(user_id=user.id).filter(q).distinct()
+                LineUserAccountQrRecord.objects.filter(user_id=user.id).filter(
+                    Q(create_time__gte=start_t, create_time__lt=end_t)
+                ).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -528,6 +532,81 @@ def handle_dispatcher(request: HttpRequest):
     except BaseException as e:
         logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
         return RestResponse.failure("分发错误，请联系管理员")
+
+
+@log_func
+def unused_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    dispatch_id = body.get("dispatchId")
+    filter_args = {
+        'used': UsedStatus.Default
+    }
+    if not utils.str_is_null(dispatch_id):
+        filter_args['qr_content__contains'] = dispatch_id
+
+    query = AccountQr.objects.filter(**filter_args)
+    res = query.values(
+        "id", 'qr_content', 'op_user__username', 'is_bind', 'create_time'
+    )[start_row:end_row]
+    return RestResponse.success_list(count=query.count(), data=list(res))
+
+
+@log_func
+def dispatch(request: HttpRequest):
+    body = utils.request_body(request)
+    user_id = body.get("user_id", "")
+    aids_str = body.get("aids", "")
+    aids = list(set(str(aids_str).split(",")))
+    aids = [int(x.strip()) for x in aids if x.strip() != '']
+    if utils.str_is_null(user_id):
+        raise BusinessException.msg("参数错误，必须要有用户id")
+    if utils.str_is_null(aids_str) or len(aids) == 0:
+        raise BusinessException.msg("参数错误，必须要有账号数据")
+
+    if not User.objects.filter(id=user_id).exists():
+        raise BusinessException.msg("用户不存在")
+
+    logging.info("Line#QR分配#user_id = %s, aids = %s", user_id, str(aids))
+    with transaction.atomic():
+        bat_record_list = []
+        LineUserAccountQrRecord.objects.filter(account__id__in=aids).delete()
+        for a_id in aids:
+            create_dict = {
+                'user_id': user_id,
+                'account_id': a_id,
+                'used': UsedStatus.Default,
+                'create_time': time_utils.get_now_bj_time_str(),
+                'update_time': time_utils.get_now_bj_time_str()
+            }
+
+            model = LineUserAccountQrRecord(**create_dict)
+            bat_record_list.append(model)
+        LineUserAccountQrRecord.objects.bulk_create(bat_record_list)
+        logging.info("#将数据 bind 设置为True ids = %s", aids)
+        AccountQr.objects.filter(id__in=aids).update(is_bind=True)
+
+    return RestResponse.success()
+
+
+@log_func
+def update_bind(request: HttpRequest):
+    body = utils.request_body(request)
+    aid = body.get("id")
+    bind = body.get("bind")
+    if utils.str_is_null(aid):
+        raise BusinessException.msg("修改失败，id错误")
+
+    if not utils.is_bool(bind):
+        raise BusinessException.msg("修改失败，状态异常")
+    bind_val = utils.is_bool_val(bind)
+    with transaction.atomic():
+        logging.info("lineQr#修改绑定状态为%s", bind_val)
+        AccountQr.objects.filter(id=aid).update(is_bind=bind_val)
+        if not bind_val:
+            logging.info("lineQr#修改绑定状态为false，删除绑定记录")
+            LineUserAccountQrRecord.objects.filter(account_id=aid).delete()
+        return RestResponse.success("修改成功", data=bind)
 
 
 @log_func

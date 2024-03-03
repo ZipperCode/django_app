@@ -266,6 +266,11 @@
         </form>
     </div>
 </div>
+<script type="text/html" id="bindTpl">
+    <!-- 这里的 checked 的状态只是演示 -->
+    <input type="checkbox" name="is_bind" value="{% verbatim %}{{ d.id }}{% endverbatim %}" title="绑定"
+           lay-filter="bindCheckbox" {% verbatim %}{{ d.is_bind ? 'checked' : ''  }}{% endverbatim %} >
+</script>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">

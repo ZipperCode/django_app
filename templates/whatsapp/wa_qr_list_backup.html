@@ -17,8 +17,22 @@
         }
 
         .layui-table-cell {
-            height: 50px;
-            line-height: 50px;
+            overflow: visible !important;
+        }
+
+        .layui-table-box {
+            overflow: visible;
+        }
+
+        .layui-table-body {
+            overflow: visible;
+        }
+
+        /* 使得下拉框与单元格刚好合适 */
+        td .layui-form-select {
+            margin-top: -10px;
+            margin-left: -15px;
+            margin-right: -15px;
         }
     </style>
 </head>
@@ -45,7 +59,14 @@
                         </select>
                     </div>
                 </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">二维码内容</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="二维码内容" name="qr_content" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
 
+                </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">备注</label>
                     <div class="layui-input-inline">
@@ -90,6 +111,7 @@
                             <option value="">请选择</option>
                             <option value="0">未使用</option>
                             <option value="1">已使用</option>
+                            <option value="2">无效</option>
                         </select>
                     </div>
                 </div>
@@ -119,8 +141,11 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-    {#    <a class="layui-btn layui-btn-sm" href="/api/wa_qr/export?back_type={{ back_type }}">全部批量导出（当日）</a>#}
+    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配数据</a>
+    {#    <a class="layui-btn layui-btn-sm" href="/api/wa_qr/export?back_type={{ back_type }}">全部批量导出</a>#}
     {#    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>#}
+    {#    <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>#}
+    <a class="layui-btn layui-btn-sm" lay-event="batch_used_state">批量修改状态</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -129,6 +154,13 @@
     {% if request.session.user.role == 0 %}
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     {% endif %}
+</script>
+
+<script type="text/html" id="bindTpl">
+    <select id="bindSelect" lay-filter="bindSelect">
+        <option value="false">未绑定</option>
+        <option value="true">已绑定</option>
+    </select>
 </script>
 
 <script type="text/html" id="qr_image">
@@ -253,8 +285,9 @@
                 <label class="layui-form-label">状态</label>
                 <div class="layui-input-inline">
                     <select name="used">
-                        <option value="0">未使用</option>
-                        <option value="1">已使用</option>
+                        <option value="">不设置</option>
+                        <option value="false">未使用</option>
+                        <option value="true">已使用</option>
                     </select>
                 </div>
             </div>
@@ -266,7 +299,14 @@
                                   class="layui-textarea"></textarea>
                 </div>
             </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">链接备注</label>
+                <div class="layui-input-block">
+                    <input type="text" placeholder="请输入" name="link_mark" autocomplete="off"
+                           class="layui-input"/>
+                </div>
 
+            </div>
             <div class="layui-form-item" style="margin-top:40px">
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="editSubmit">确认修改
@@ -287,6 +327,7 @@
                         <option value="">不设置</option>
                         <option value="0">未使用</option>
                         <option value="1">已使用</option>
+                        <option value="2">无效</option>
                     </select>
                 </div>
             </div>
@@ -299,6 +340,70 @@
         </form>
     </div>
 </div>
+<div class="layui-row" id="exportDataWithType" style="display: none;">
+    <div class="layui-col-md12">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px"
+              lay-filter="exportDataWithType">
+            <div class="layui-inline">
+                <label class="layui-form-label">导出数据状态</label>
+                <div class="layui-input-inline">
+                    <select name="exportType">
+                        <option value="0">全部</option>
+                        <option value="1">已使用</option>
+                        <option value="2">未使用</option>
+                        <option value="3">无效</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="handleExport">确认导出
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="dispatchDialog" style="display: none">
+    <div class="layui-row" style="margin-top: 30px">
+        <div style="margin-left: 50px;margin-right: 50px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">搜索账号</label>
+                <div class="layui-input-inline">
+                    <input class="layui-input" name="dispatchId" id="dispatchReload" autocomplete="off"
+                           placeholder="请输入账号进行模糊搜索">
+                </div>
+                <div class="layui-form-mid" style="padding: 0!important;">
+                    <button class="layui-btn" data-type="reload" id="dispatchSearch">搜索</button>
+                </div>
+            </div>
+            <table id="dispatchList" lay-filter="dispatchList" style="width: 100%"></table>
+
+            <div style="margin-top: 20px">
+                <form class="layui-form layui-form-pane" action="" lay-filter="dispatchForm">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户选择</label>
+                        <div class="layui-input-block">
+                            <select name="dispatchUser" lay-verify="required" lay-search>
+                                <option value="">直接选择或搜索选择</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-input-block" style="margin-left: 300px">
+                            <button type="submit" class="layui-btn" lay-submit lay-filter="dispatchForm">提交分配
+                            </button>
+                            <button type="reset" id="dispatchReset" class="layui-btn layui-btn-primary">重置</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -330,6 +435,10 @@
                 });
             });
             var globalCurrentPage = 1;
+            let op_col_width = 120
+            {% if request.session.user.role == 0 %}
+                op_col_width = 180
+            {% endif %}
             /*表格渲染*/
             table.render({
                 id: 'list',
@@ -340,7 +449,7 @@
                 cellMinWidth: 80,
                 cols: [[
                     {type: 'checkbox', fixed: 'left'},
-                    {field: 'id', title: '编号', width: 70, align: 'center', fixed: 'left'},
+                    {field: 'id', title: '编号', width: 70, align: 'center'},
                     {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 340},
                     {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
                     {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},
@@ -349,25 +458,36 @@
                     {% if request.session.user.role == 0 %}
                         {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
                     {% endif %}
-                    {field: 'mark', title: '备注', align: 'center', minWidth: 220},
                     {
                         field: 'is_bind',
                         title: '绑定状态',
                         align: 'center',
                         sort: true,
-                        templet: bindTemplate,
-                        minWidth: 110
+                        templet: '#bindTpl',
+                        minWidth: 110,
                     },
+                    {field: 'mark', title: '备注', align: 'center', minWidth: 220},
                     {field: 'age', title: '年龄', align: 'center', sort: true, minWidth: 80},
                     {field: 'work', title: '工作', align: 'center'},
                     {field: 'money', title: '收入', align: 'center', sort: true},
                     {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                     {field: 'update_time', title: '更新时间', minWidth: 160, align: 'center', sort: true},
-                    {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: 130}
+                    {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', minWidth: op_col_width}
                 ]],
-                defaultToolbar: ['filter',],
+                defaultToolbar: ['filter',
+                    //    {
+                    //       title: '导出' //标题
+                    //      , layEvent: 'custom_export' //事件名，用于 toolbar 事件中使用
+                    //     , icon: 'layui-icon-export' //图标类名
+                    // },
+                ],
                 done: function (res, curr, count) {
-                    globalCurrentPage = curr
+                    globalCurrentPage = curr;
+                    count || this.elem.next('.layui-table-view').find('.layui-table-header').css('overflow', 'auto');
+                    layui.each($('select'), function (index, item) {
+                        const elem = $(item);
+                        elem.val(elem.data('value')).parents('div.layui-table-cell').css('overflow', 'visible');
+                    });
                 }
             });
 
@@ -393,7 +513,13 @@
                     }
                     exportByIds(ids)
                 } else if (layEvent === 'dispatch') {
-                    handleDispatch();
+                    {#handleDispatch();#}
+                    showDispatchDialog();
+                } else if (layEvent === 'dispatch_all') {
+                    handleDispatch(true);
+                } else if (layEvent === 'batch_used_state') {
+                    let checkStatus = table.checkStatus(obj.config.id);
+                    handleBatchUsedState(checkStatus)
                 }
             });
 
@@ -426,6 +552,8 @@
                     layer.msg("复制成功，内容为：" + text, {icon: 6});
                 } else if (layEvent === 'preview') {
                     previewImg(obj);
+                } else if (layEvent === 'unbind') {
+                    cancelBind(obj);
                 } else {
                     console.log(layEvent)
                 }
@@ -451,11 +579,12 @@
                     console.log(massage)
                     layer.load();
                     $.ajax({
-                        url: '/api/wa_qr/upload?back_type={{ back_type }}',
+                        url: '/api/wa_qr/upload',
                         type: 'POST',
                         headers: headers,
                         data: {
-                            ...massage.field, back_type:{{back_type}}
+                            ...massage.field,
+                            "back_type":{{ back_type }}
                         },
                         success: function (res) {
                             if (res.code >= 0) {
@@ -620,37 +749,6 @@
                 });
             }
 
-            function handleDispatch() {
-                layer.confirm('确定分发数据到用户吗？', function (index) {
-                    layer.close(index);
-                    const index2 = layer.load(0);
-                    $.ajax({
-                        url: "/api/wa_qr/dispatcher?back_type={{ back_type }}",
-                        type: "post",
-                        headers: headers,
-                        dataType: "JSON",
-                        data: {
-                            "back_type":{{ back_type }}
-                        },
-                        success: function (msg) {
-                            if (msg.code === 0) {
-                                layer.msg(msg.msg, {icon: 6});
-                                setTimeout(function () {
-                                    layer.close(index2);
-                                }, 1000);
-                                return;
-                            }
-                            layer.msg(msg.msg, {icon: 5});
-                        },
-                        error: function () {
-                            layer.msg("请求失败", {icon: 5})
-                        },
-                        complete() {
-                            layer.close(index2);
-                        }
-                    });
-                });
-            }
 
             function initEditForm(obj) {
                 const data = obj.data;
@@ -665,6 +763,7 @@
                     money: data.money,
                     used: data.used + "",
                     mark: data.mark,
+                    link_mark: data.link_mark,
                 });
 
                 form.on('submit(editSubmit)', function (massage) {
@@ -677,7 +776,7 @@
                         data: {
                             id: data.id,
                             ...massage.field,
-                            back_type:{{ back_type }}
+                            "back_type": {{ back_type }}
                         },
                         success: function (res) {
                             if (res.code >= 0) {
@@ -710,8 +809,10 @@
                     layer.close(index);
                     const index2 = layer.load(0);
                     $.ajax({
-                        url: "/api/wa2/account_qr/del",
-                        data: {id: obj.data.id, account_id: obj.data.account_id},
+                        url: "/api/wa_qr/del?back_type={{ back_type }}",
+                        data: {
+                            id: obj.data.id, account_id: obj.data.account_id, back_type:{{back_type}}
+                        },
                         type: "post",
                         headers: headers,
                         dataType: "JSON",
@@ -731,6 +832,7 @@
                             layer.msg(msg.msg, {icon: 5});
                         },
                         error: function () {
+                            layer.closeAll();
                             layer.msg("请求失败", {icon: 5})
                         },
                         complete() {
@@ -743,7 +845,7 @@
             function exportByIds(ids) {
                 console.log("exportByIds#ids = ", ids);
                 const xhr = new XMLHttpRequest();
-                xhr.open('get', "/api/wa_qr/export_select?back_type={{ back_type }}&ids=" + ids, true); // 也可以使用POST方式，根据接口
+                xhr.open('get', "/api/wa2/account_qr/export_select?ids=" + ids, true); // 也可以使用POST方式，根据接口
                 xhr.responseType = "blob"; // 返回类型blob
                 // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
                 xhr.onload = function (e) {
@@ -803,6 +905,88 @@
                 xhr.send();
             }
 
+            function exportDataWithType() {
+                layer.open({
+                    type: 1,
+                    title: "请选择",
+                    area: ['400px', '300px'],
+                    content: $("#exportDataWithType")
+                });
+                form.val("exportDataWithType", {
+                    exportType: "0"
+                });
+
+                form.on('submit(usedSubmit)', function (massage) {
+                    let exportType = massage.field.exportType
+                    console.log("导出数据选择类型 = " + massage.field.exportType)
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('get', "/api/wa_qr/export?back_type={{ back_type }}&export_type=" + exportType, true);
+                    xhr.responseType = "blob"; // 返回类型blob
+                    // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
+                    xhr.onload = function (e) {
+                        // 请求完成
+                        if (this.status === 200) {
+                            // 返回200
+                            const blob = new Blob([this.response], {
+                                type: "application/vnd.ms-excel"
+                            });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            $("body").append(a); // 修复firefox中无法触发click
+                            a.click();
+                            $(a).remove();
+                        } else if (this.status === 404 || this.status === 500) {
+                            console.log("404 response = ", this.response)
+                            layer.msg("导出失败，" + this.status, {icon: 5})
+                        }
+                    };
+                    xhr.timeout = 1000 * 60 * 60; //将超时时间设置为1天
+                    xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
+                        layer.msg("导出失败，请求超时", {icon: 5})
+                    }
+                    // 发送ajax请求
+                    xhr.send();
+                });
+            }
+
+            function handleDispatch(isAll = false) {
+                layer.confirm('确定分发数据到用户吗？', function (index) {
+                    layer.close(index);
+                    const index2 = layer.load(0);
+                    $.ajax({
+                        url: "/api/wa_qr/dispatcher?back_type={{ back_type }}",
+                        type: "post",
+                        data: {
+                            'isAll': isAll,
+                            "back_type":{{ back_type }}
+                        },
+                        headers: headers,
+                        dataType: "JSON",
+                        success: function (msg) {
+                            if (msg.code === 0) {
+                                layer.msg(msg.msg, {icon: 6});
+                                setTimeout(function () {
+                                    layer.close(index2);
+                                    table.reload("list", {
+                                        page: {
+                                            curr: 1
+                                        }
+                                    });
+                                }, 1000);
+                                return;
+                            }
+                            layer.msg(msg.msg, {icon: 5});
+                        },
+                        error: function () {
+                            layer.msg("请求失败", {icon: 5})
+                        },
+                        complete() {
+                            layer.close(index2);
+                        }
+                    });
+                });
+            }
+
             function previewImg(obj) {
                 const img = new Image();
                 let src = `/media/${obj.data.qr_path}`;
@@ -827,6 +1011,69 @@
                 });
             }
 
+            function handleBatchUsedState(checkStatus) {
+                if (checkStatus.data.length === 0) {
+                    layer.msg("请至少选择一个列表项", {icon: 5});
+                    return
+                }
+                console.log("checkStatus = " + JSON.stringify(checkStatus))
+                let ids = checkStatus.data.map((data) => data.id)
+                layer.open({
+                    type: 1,
+                    title: "请选择状态",
+                    area: ['400px', '300px'],
+                    content: $("#batchUpdateUsedStateForm")
+                });
+                form.val("batchUpdateUsedStateForm", {
+                    used: ""
+                });
+
+                form.verify({
+                    used: function (value, item) {
+                        if (value === "" || value === undefined) {
+                            $(item).focus();
+                            return "请选择一个状态"
+                        }
+                    }
+                });
+                form.on('submit(usedSubmit)', function (massage) {
+                    console.log("updatw = massage", massage)
+                    layer.load(1);
+                    let formData = {
+                        "used": massage.field.used,
+                        "ids": ids.join(","),
+                        "back_type": {{ back_type }}
+                    }
+
+                    $.ajax({
+                        url: '/api/wa_qr/bat_used_update?back_type={{ back_type }}',
+                        type: 'POST',
+                        headers: headers,
+                        data: formData,
+                        success: function (res) {
+                            if (res.code >= 0) {
+                                console.log("修改成功")
+                                layer.closeAll('loading');
+                                layer.load(2);
+                                layer.msg("修改成功", {icon: 6});
+                                setTimeout(function () {
+                                    layer.closeAll();//关闭所有的弹出层
+                                    table.reload("list", {
+                                        page: {
+                                            curr: globalCurrentPage
+                                        }
+                                    });//修改成功修改表格数据不进行跳转
+                                }, 1000);
+                            } else {
+                                layer.msg("修改失败", {icon: 5});
+                            }
+                        }
+                    });
+                    return false
+                });
+            }
+
+
             function usedTemplate(res) {
                 if (res.used === 1) {
                     return `<span class="layui-badge layui-bg-green">已使用</span>`
@@ -838,7 +1085,6 @@
             }
 
             function bindTemplate(res) {
-
                 if (res.is_bind) {
                     return `<span class="layui-badge layui-bg-blue">已绑定</span>`
                 } else {
@@ -872,7 +1118,183 @@
             //滚动条
             jQuery(".page-main").scrollbar();
 
+            form.on('select(bindSelect)', function (data) {
+                console.log("bind select data = ", JSON.stringify(data))
+                //获取行tr对象
+                var elem = data.othis.parents('tr');
+                //获取第一列的值，第一列为ID列，
+                var id = elem.first().find('td').eq(1).text();
+                //选择的select对象值；
+                var selectValue = data.value;
+                //处理字段更新的逻辑
+            });
 
+            function cancelBind(obj) {
+                const data = obj.data
+                if (data.is_bind !== '1') {
+                    layer.msg("失败，数据未绑定", {icon: 5})
+                    return
+                }
+                layer.confirm('确定解除绑定吗？(解除绑定后将删除用户绑定数据)', function (index) {
+                    layer.close(index);
+                    const index2 = layer.load(0);
+                    $.ajax({
+                        url: "/api/wa_qr/cancel_bind?back_type={{ back_type }}",
+                        method: 'post',
+                        headers: headers,
+                        dataType: "JSON",
+                        data: {
+                            id: data.id,
+                            "back_type":{{ back_type }}
+                        },
+                        success: function (res) {
+                            console.log("res = ", res);
+                            if (res.code === 0) {
+                                layer.msg(res.msg, {icon: 6});
+                                setTimeout(function () {
+                                    layer.close(index2);
+                                    table.reload("list", {
+                                        page: {
+                                            curr: globalCurrentPage
+                                        }
+                                    });
+                                }, 1000);
+                                return;
+                            }
+                            layer.msg(res.msg, {icon: 5});
+                        }, error: function () {
+                            layer.msg("请求失败", {icon: 5})
+                        },
+                        complete() {
+                            layer.close(index2);
+                            layer.closeAll();
+                        }
+                    });
+
+                });
+            }
+
+            const dispatchCols = [[
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'qr_content', title: '账号内容', align: 'center', minWidth: 200},
+                {field: 'is_bind', title: '绑定状态', align: 'center', sort: true, templet: bindTemplate, minWidth: 110},
+                {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
+                {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
+            ]]
+            let dispatchListCurPage = 1
+            table.render({
+                id: 'dispatchList',
+                elem: "#dispatchList",
+                url: '/api/wa_qr/unusedList?back_type={{ back_type }}',
+                height: 360,
+                page: true,
+                cols: dispatchCols,
+                limit: 20,
+                limits: [20, 30, 50],
+                done: function (res, curr) {
+                    dispatchListCurPage = curr
+                }
+            });
+
+            function showDispatchDialog() {
+                table.reload("dispatchList");
+                $("#dispatchSearch").on('click', function () {
+                    const dispatchId = $("#dispatchReload").val()
+                    table.reload('dispatchList', {
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        },
+                        where: {
+                            "dispatchId": dispatchId
+                        }
+                    });
+                });
+
+                $.ajax({
+                    url: "/api/user_simple_list2?back_type={{ back_type }}",
+                    type: 'get',
+                    success: function (res) {
+                        if (res.code < 0) {
+                            console.error("获取用户列表出错", res.msg)
+                            return
+                        }
+                        // {id: id, username:username}
+                        const userDataList = res.data;
+                        let selectElements = $("select[name='dispatchUser']");
+
+                        for (let j = 0; j < selectElements.length; j++) {
+                            for (let i = 0; i < userDataList.length; i++) {
+                                let item = userDataList[i];
+                                selectElements.eq(j).append(
+                                    `<option value="${item.id}">${item.username}</option>`
+                                );
+                            }
+                        }
+                        form.render('select');
+                    }
+                })
+
+                let selectIds = []
+
+                table.on("checkbox(dispatchList)", function (obj) {
+                    console.log("选中数据 = " + JSON.stringify(obj.data));
+                    selectIds.push(obj.data.id)
+                })
+                form.val("dispatchForm", {
+                    dispatchUser: ""
+                });
+
+                $("#dispatchReset").on("click", function () {
+                    console.log("重置")
+                    table.reload("dispatchList");
+                })
+
+                form.on("submit(dispatchForm)", function (data) {
+                    let field = data.field;
+                    let userid = field.dispatchUser;
+                    console.log("表单提交, userid = ", userid, " 选中数据 = ", JSON.stringify(selectIds));
+                    if (!userid || userid === '') {
+                        layer.msg("分配失败，请选择一个用户", {icon: 5})
+                        return false
+                    }
+                    const loadingIndex = layer.load(0);
+                    $.ajax({
+                        url: "/api/wa_qr/dispatch?back_type={{ back_type }}",
+                        type: 'post',
+                        headers: headers,
+                        dataType: "JSON",
+                        data: {
+                            "user_id": userid,
+                            'aids': Array.from(new Set(selectIds)).join(","),
+                            "back_type":{{ back_type }}
+                        },
+                        success: function (res) {
+                            if (res.code < 0) {
+                                layer.msg("分配失败，" + res.msg, {icon: 5})
+                                return
+                            }
+                            layer.closeAll();//关闭所有的弹出层2
+                            layer.msg(res.msg, {icon: 1});
+                            table.reload("dispatchList");
+                            table.reload("list");
+                        },
+                        complete: function () {
+                            layer.close(loadingIndex)
+                        }
+                    })
+
+                    return false
+                });
+
+                layer.open({
+                    type: 1,
+                    title: "未使用账号数据",
+                    area: ['900px', '640px'],
+                    content: $("#dispatchDialog")
+                });
+
+            }
         }
     )
     ;

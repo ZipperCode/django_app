@@ -61,6 +61,7 @@ urlpatterns = [
                   path('api/admin/modify_pwd', user_restful.modify_password_admin),
                   path('api/user_list', user_restful.user_list),
                   path('api/user_simple_list', user_restful.user_simple_list),
+                  path('api/user_simple_list2', user_restful.user_sample_list2),
                   path('api/back_type_list', user_restful.back_type_list),
                   path('api/user_add', user_restful.user_add),
                   path('api/user_update', user_restful.user_update),
@@ -76,6 +77,9 @@ urlpatterns = [
                   path('api/account_id/bat_upload', account_restful.account_id_batch_upload),
                   path('api/account_id/export', account_restful.account_id_export),
                   path('api/account_id/dispatcher', account_restful.handle_dispatcher),
+                  path('api/account_id/unusedList', account_restful.unused_list),
+                  path('api/account_id/dispatch', account_restful.dispatch),
+                  path('api/account_id/update_bind', account_restful.update_bind),
                   path('api/account_id/bat_used_update', account_restful.handle_used_state),
 
                   path('api/account_qr/list', account_qr_restful.account_qr_list),
@@ -87,6 +91,9 @@ urlpatterns = [
                   path('api/account_qr/export_select', account_qr_restful.account_qr_export_with_id),
                   path('api/account_qr/export', account_qr_restful.account_qr_export),
                   path('api/account_qr/dispatcher', account_qr_restful.handle_dispatcher),
+                  path('api/account_qr/unusedList', account_qr_restful.unused_list),
+                  path('api/account_qr/dispatch', account_qr_restful.dispatch),
+                  path('api/account_qr/update_bind', account_qr_restful.update_bind),
                   path('api/account_qr/bat_used_update', account_qr_restful.handle_used_state),
 
                   # 分配记录
@@ -152,6 +159,9 @@ urlpatterns = [
                   path('api/wa_id/bat_upload', wa_id_api.wa_id_batch_upload),
                   path('api/wa_id/export', wa_id_api.wa_id_export),
                   path('api/wa_id/dispatcher', wa_id_api.wa_handle_dispatcher),
+                  path('api/wa_id/unusedList', wa_id_api.unused_list),
+                  path('api/wa_id/dispatch', wa_id_api.dispatch),
+                  path('api/wa_id/update_bind', wa_id_api.update_bind),
                   path('api/wa_id/record/list', wa_id_api.wa_dispatch_record_list),
                   path('api/wa_id/bat_used_update', wa_id_api.handle_used_state),
                   # WhatsApp Qr
@@ -164,6 +174,9 @@ urlpatterns = [
                   path('api/wa_qr/export_select', wa_qr_api.wa_qr_export_with_id),
                   path('api/wa_qr/export', wa_qr_api.wa_qr_export),
                   path('api/wa_qr/dispatcher', wa_qr_api.wa_qr_handle_dispatcher),
+                  path('api/wa_qr/unusedList', wa_qr_api.unused_list),
+                  path('api/wa_qr/dispatch', wa_qr_api.dispatch),
+                  path('api/wa_qr/update_bind', wa_qr_api.update_bind),
                   path('api/wa_qr/record/list', wa_qr_api.wa_dispatch_record_list),
                   path('api/wa_qr/bat_used_update', wa_qr_api.handle_used_state),
                   # sync

@@ -121,7 +121,7 @@
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
 {#    <a class="layui-btn layui-btn-sm" href="/api/account_qr/export">全部批量导出（当日）</a>#}
-    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>
+{#    <a class="layui-btn layui-btn-sm" lay-event="dispatch">分配当日新增数据</a>#}
 </script>
 
 <script type="text/html" id="table_control">
@@ -342,7 +342,7 @@
             cellMinWidth: 80,
             cols: [[
                 {type: 'checkbox', fixed: 'left'},
-                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'id', title: '编号', width: 70, align: 'center', fixed: 'left'},
                 {field: 'qr_content', title: '二维码内容', align: 'center', minWidth: 240},
                 {field: 'qr_path', title: '二维码', align: 'center', templet: '#qr_image', event: 'preview'},
                 {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},

@@ -21,6 +21,7 @@ from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util
+from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -50,8 +51,10 @@ def account_id_business_list(request: HttpRequest):
     body = utils.request_body(request)
 
     # 查询记录
-    start_t, end_t = time_utils.get_cur_day_time_range()
-    q = Q(create_time__gte=start_t, create_time__lt=end_t) | Q(used=UsedStatus.Default)
+    start_t, end_t = time_utils.get_cur_over_7day_time_range()
+    logging.info("当前时间 = %s", start_t)
+    logging.info("七天前时间 = %s", end_t)
+    q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
     record_query = LineUserAccountIdRecord.objects
     account_id = body.get("account_id", "")
     if not utils.str_is_null(account_id):
@@ -61,7 +64,9 @@ def account_id_business_list(request: HttpRequest):
         map(
             lambda x: x.get('account_id'),
             list(
-                record_query.filter(user_id=user.id).filter(q).distinct()
+                record_query.filter(user_id=user.id).filter(
+                    Q(create_time__gte=start_t, create_time__lt=end_t)
+                ).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
             )
         )
@@ -103,7 +108,8 @@ def dispatch_record_list(request: HttpRequest):
     if not utils.str_is_null(account_id):
         query = query.filter(account__account_id__contains=account_id)
     query = rest_list_util.search_record_common(query, body)
-    record_list = query.values("id", 'user__username', "account_id", 'account__used', "create_time")[start_row: end_row]
+    record_list = query.values("id", 'user__username', "account_id", "account__account_id", 'account__used',
+                               "create_time")[start_row: end_row]
     return RestResponse.success_list(count=query.count(), data=list(record_list))
 
 
@@ -182,12 +188,13 @@ def account_id_update(request: HttpRequest):
             if is_admin:
                 upd_field['used'] = _status
                 logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
-                if _status == UsedStatus.Used:
-                    # 修改is_bind=True，分发的时候就过滤这个了
-                    upd_field['is_bind'] = True
-                    logging.info("管理员编辑为已使用，同步更新记录状态")
+                # if _status == UsedStatus.Used:
+                # 修改is_bind=True，分发的时候就过滤这个了
+                # upd_field['is_bind'] = True
+                logging.info("管理员编辑为已使用，同步更新记录状态 account_id  = %s", account_id)
                 _q = LineUserAccountIdRecord.objects.filter(account__account_id=account_id)
                 if _q.exists():
+                    logging.info("管理员编辑为已使用，记录存在同步更新记录")
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 elif _status == UsedStatus.Used:
                     return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
@@ -355,7 +362,8 @@ def account_id_export(request):
         # 非管理员导出当天数据
         query_list = list(
             AccountId.objects.filter(op_user_id=user_id, create_time__gte=start, create_time__lt=end).values(
-                "account_id", "country", "age", "work", "mark", "money", "op_user__username", 'op_user__name', 'create_time'
+                "account_id", "country", "age", "work", "mark", "money", "op_user__username", 'op_user__name',
+                'create_time'
             ))
     data_size = len(query_list)
     if data_size <= 0:
@@ -422,6 +430,81 @@ def handle_dispatcher(request: HttpRequest):
     except BaseException as e:
         logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
         return RestResponse.failure("分发错误，请联系管理员")
+
+
+@log_func
+def unused_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    dispatch_id = body.get("dispatchId")
+    filter_args = {
+        'used': UsedStatus.Default
+    }
+    if not utils.str_is_null(dispatch_id):
+        filter_args['account_id__contains'] = dispatch_id
+
+    query = AccountId.objects.filter(**filter_args)
+    res = query.values(
+        "id", 'account_id', 'op_user__username', 'is_bind', 'create_time'
+    )[start_row:end_row]
+    return RestResponse.success_list(count=query.count(), data=list(res))
+
+
+@log_func
+def dispatch(request: HttpRequest):
+    body = utils.request_body(request)
+    user_id = body.get("user_id", "")
+    aids_str = body.get("aids", "")
+    aids = list(set(str(aids_str).split(",")))
+    aids = [int(x.strip()) for x in aids if x.strip() != '']
+    if utils.str_is_null(user_id):
+        raise BusinessException.msg("参数错误，必须要有用户id")
+    if utils.str_is_null(aids_str) or len(aids) == 0:
+        raise BusinessException.msg("参数错误，必须要有账号数据")
+
+    if not User.objects.filter(id=user_id).exists():
+        raise BusinessException.msg("用户不存在")
+
+    logging.info("ID分配#user_id = %s, aids = %s", user_id, str(aids))
+    with transaction.atomic():
+        bat_record_list = []
+        LineUserAccountIdRecord.objects.filter(account__id__in=aids).delete()
+        for a_id in aids:
+            create_dict = {
+                'user_id': user_id,
+                'account_id': a_id,
+                'used': UsedStatus.Default,
+                'create_time': time_utils.get_now_bj_time_str(),
+                'update_time': time_utils.get_now_bj_time_str()
+            }
+
+            model = LineUserAccountIdRecord(**create_dict)
+            bat_record_list.append(model)
+        LineUserAccountIdRecord.objects.bulk_create(bat_record_list)
+        logging.info("#将数据 bind 设置为True ids = %s", aids)
+        AccountId.objects.filter(id__in=aids).update(is_bind=True)
+
+    return RestResponse.success()
+
+
+@log_func
+def update_bind(request: HttpRequest):
+    body = utils.request_body(request)
+    aid = body.get("id")
+    bind = body.get("bind")
+    if utils.str_is_null(aid):
+        raise BusinessException.msg("修改失败，id错误")
+
+    if not utils.is_bool(bind):
+        raise BusinessException.msg("修改失败，状态异常")
+    bind_val = utils.is_bool_val(bind)
+    with transaction.atomic():
+        logging.info("LineId#修改绑定状态为%s", bind_val)
+        AccountId.objects.filter(id=aid).update(is_bind=bind_val)
+        if not bind_val:
+            logging.info("LineId#修改绑定状态为false，删除绑定记录")
+            LineUserAccountIdRecord.objects.filter(account_id=aid).delete()
+        return RestResponse.success("修改成功", data=bind)
 
 
 @log_func

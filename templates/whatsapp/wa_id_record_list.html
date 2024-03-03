@@ -93,7 +93,7 @@
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
-         const laydate = layui.laydate;
+        const laydate = layui.laydate;
         lay('.test-item').each(function () {
             const date = new Date()
             const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
@@ -111,13 +111,16 @@
             elem: '#list',
             url: '/api/wa_id/record/list?back_type={{ back_type }}',
             page: true,
-            cellMinWidth: 80,
             cols: [[
                 {field: 'id', title: '编号', width: 70, align: 'center'},
-                {field: 'username', title: '客服账号', align: 'center', sort: true},
-                {field: 'account_id', title: '绑定ID', align: 'center', sort: true},
-                {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
-                {field: 'create_time', title: '创建时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'user__username', title: '客服账号', align: 'center', sort: true},
+                {#{field: 'account_id', title: '绑定ID', align: 'center', sort: true},#}
+                {field: 'account__account_id', title: '绑定账号', align: 'center', sort: true},
+                {
+                    field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,
+                    width: 200, unresize: true
+                },
+                {field: 'create_time', title: '创建时间', align: 'center', sort: true, width: 200, unresize: true},
             ]],
             defaultToolbar: ['filter']
         });
@@ -149,11 +152,11 @@
         initSearchForm();
 
         function usedTemplate(res) {
-            if (res.used === 1) {
+            if (res.account__used === 1) {
                 return `<span class="layui-badge layui-bg-green">已使用</span>`
-            } else if (res.used === 2){
+            } else if (res.account__used === 2) {
                 return `<span class="layui-badge">无效</span>`
-            }else {
+            } else {
                 return `<span class="layui-badge layui-bg-orange">未使用</span>`
             }
         }

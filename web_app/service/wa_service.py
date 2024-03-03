@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 from django.db import transaction
 from django.db.models import QuerySet, Model
@@ -363,6 +363,20 @@ def dispatcher_aid(queryset: QuerySet, back_type: int, record_queryset: QuerySet
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
 
 
+def dispatch_id(queryset: QuerySet, back_type: int, record_queryset: QuerySet,
+                record_type: int, user_ids: List[str], num: int):
+    logging.info("%s#处理id数据分发", back_type)
+    u_ids = user_ids
+    len_u_ids = len(user_ids)
+    a_ids = dispatch.get_account_list2(queryset)
+    len_ids = len(a_ids)
+    logging.info("%s#a_ids= %s, len = %s", back_type, a_ids, len_ids)
+    if len_ids == 0:
+        raise ValueError("未找到可分配的数据")
+    # 存在记录的
+    record_ids = dispatch.get_record_list(record_queryset, a_ids)
+
+
 def dispatcher_aqr(queryset: QuerySet, back_type: int, record_queryset: QuerySet,
                    record_type: int, is_all: bool) -> Tuple[int, str]:
     logging.info(f"{back_type}#处理二维码数据分发 is_all = %s", is_all)
@@ -431,7 +445,7 @@ def sync_used_id():
         if len(ids) == 0:
             continue
 
-        #logging.info("WaId#%s#同步使用状态 ids = %s", t, ids)
+        # logging.info("WaId#%s#同步使用状态 ids = %s", t, ids)
         wa_id_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
 
 
@@ -441,7 +455,7 @@ def sync_used_qr():
         ids = list(ids)
         if len(ids) == 0:
             continue
-        #logging.info("WaQr#%s#同步使用状态 ids = %s", t, ids)
+        # logging.info("WaQr#%s#同步使用状态 ids = %s", t, ids)
         wa_qr_record_queryset(t).filter(account_id__in=ids).update(used=UsedStatus.Used)
 
 
@@ -452,9 +466,9 @@ def check_aid_with_hash(account_id) -> bool:
 def del_aid_with_hash(ids):
     if len(ids) == 0:
         return
-    logging.info("要删除的WaId列表 = %s", ids)
+    # logging.info("要删除的WaId列表 = %s", ids)
     id_hash_list = list(map(lambda x: md5_encode(str(x)), ids))
-    logging.info("要删除的WaIdHash列表 = %s", id_hash_list)
+    # logging.info("要删除的WaIdHash列表 = %s", id_hash_list)
     WaIdHash.objects.filter(id_hash__in=id_hash_list).delete()
 
 
@@ -476,7 +490,7 @@ def sync_id_hash():
     logging.info("将所有组的id分配到WaIdHash表中")
     all_ids_hash = []
     wa_ids = list(WaIdHash.objects.values_list("id_hash", flat=True))
-    logging.info("WaIdHash#wa_ids = %s", wa_ids)
+    # logging.info("WaIdHash#wa_ids = %s", wa_ids)
     if len(wa_ids) == 0:
         return
     with transaction.atomic():
@@ -491,7 +505,7 @@ def sync_id_hash():
 
             wa_ids_hash = list(map(lambda x: md5_encode(str(x[0]).strip()), a_id_tuples))
             no_exists_ids = [x for x in wa_ids_hash if x not in wa_ids]
-            #logging.info("%s#不存在的hash = %s", t, no_exists_ids)
+            # logging.info("%s#不存在的hash = %s", t, no_exists_ids)
             for a_id_tuple in a_id_tuples:
                 account_id = a_id_tuple[0]
                 op_user_id = a_id_tuple[1]
@@ -524,9 +538,9 @@ def check_aqr_with_hash(qr_content) -> bool:
 def del_aqr_with_hash(qr_content_list):
     if len(qr_content_list) == 0:
         return
-    logging.info("要删除的WaQR列表 = %s", qr_content_list)
+    # logging.info("要删除的WaQR列表 = %s", qr_content_list)
     id_hash_list = list(map(lambda x: md5_encode(str(x)), qr_content_list))
-    logging.info("要删除的WaQrHash列表 = %s", id_hash_list)
+    # logging.info("要删除的WaQrHash列表 = %s", id_hash_list)
     WaQrHash.objects.filter(id_hash__in=id_hash_list).delete()
 
 

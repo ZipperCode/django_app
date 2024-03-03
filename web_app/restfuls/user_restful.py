@@ -179,6 +179,22 @@ def user_simple_list(request: HttpRequest):
 
 
 @log_func
+def user_sample_list2(request: HttpRequest):
+    body = utils.request_body(request)
+    back_type = body.get('back_type')
+    if utils.str_is_null(back_type) or not utils.is_int(back_type):
+        return RestResponse.success(msg="backType类型错误", data=[])
+
+    back_type = int(back_type)
+    logging.info("user_sample_list2#back_type = %s", back_type)
+    if back_type not in USER_TYPES:
+        return RestResponse.failure("参数错误，后台类型选择错误，未知类型:" + str(back_type))
+
+    res_list = User.objects.filter(back_type=back_type).values('id', 'username')
+    return RestResponse.success(data=list(res_list))
+
+
+@log_func
 @api_op_user
 @op_admin
 def user_add(request: HttpRequest):

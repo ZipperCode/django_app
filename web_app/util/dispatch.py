@@ -6,7 +6,7 @@ from django.db.models import QuerySet
 
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
-from web_app.model.accounts import LineUserAccountIdRecord
+from web_app.model.accounts import LineUserAccountIdRecord, AccountId
 from web_app.model.const import UsedStatus
 from web_app.model.users import USER_ROLE_BUSINESS, User, UserAccountRecord, RECORD_TYPE_LINE_ID, RECORD_TYPE_NONE
 
@@ -37,6 +37,16 @@ def get_account_list(objects, is_all: bool = False) -> Tuple[list, int]:
     )
     return list(map(lambda x: int(x.id), query_list)), len(query_list)
 
+
+def get_account_list2(objects) -> List[int]:
+    filter_filed = {
+        'used': UsedStatus.Default
+    }
+    return objects.filter(**filter_filed).values_list("id", flat=True)
+
+
+def get_record_list(objects, ids):
+    return objects.filter(account__account_id=ids).values_list("id", flat=True)
 
 def get_dispatcher_num(len_: int, len_u: int) -> Tuple[int, int]:
     return int(len_ / len_u), int(len_ % len_u)

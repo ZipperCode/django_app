@@ -18,10 +18,11 @@ from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.const import UsedStatus
 from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_TYPES
-from web_app.model.wa_accounts import WaAccountId
+from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util, wa_util
+from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -58,6 +59,9 @@ def wa_id_business_list(request: HttpRequest):
     body = utils.request_body(request)
 
     # 查询记录
+    start_t, end_t = time_utils.get_cur_over_7day_time_range()
+    logging.info("当前时间 = %s", start_t)
+    logging.info("七天前时间 = %s", end_t)
     q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
 
     back_type = body.get('back_type') or user.back_type
@@ -74,7 +78,9 @@ def wa_id_business_list(request: HttpRequest):
             map(
                 lambda x: x.get('account_id'),
                 list(
-                    record_query.filter(user_id=user.id).filter(q).distinct()
+                    record_query.filter(user_id=user.id).filter(
+                        Q(create_time__gte=start_t, create_time__lt=end_t)
+                    ).filter(q).distinct()
                     .order_by('user_id', 'account_id').values('account_id')
                 )
             )
@@ -118,9 +124,8 @@ def wa_dispatch_record_list(request: HttpRequest):
 
     back_type = body.get('back_type') or user.back_type
     record_query = wa_service.wa_id_record_queryset(back_type)
-
-    record_list = []
     count = 0
+    result_list = []
     if record_query:
         logging.info("查找id分配记录是，删除用户或者accountId为空的数据")
         record_query.filter(Q(user__isnull=True) or Q(account__isnull=True) or Q(account_id__isnull=True)).delete()
@@ -128,19 +133,14 @@ def wa_dispatch_record_list(request: HttpRequest):
         # 输入的account_id进行查询，非数据库主键
         if not utils.str_is_null(account_id):
             record_query = record_query.filter(account__account_id__contains=account_id)
-        record_query = rest_list_util.search_record_common(record_query, body)
-        record_list = record_query.all()[start_row: end_row]
-        count = record_query.count()
 
-    result_list = []
-    for record in record_list:
-        result_list.append({
-            'id': record.id,
-            'username': record.username,
-            'account_id': record.account_id_val,
-            'used': record.used,
-            'create_time': record.create_time
-        })
+        record_query = rest_list_util.search_record_common(record_query, body)
+        result_list = list(
+            record_query.values(
+                "id", "user__username", "account_id", 'account__account_id', 'account__used', 'create_time'
+            )[start_row: end_row]
+        )
+        count = record_query.count()
 
     return RestResponse.success_list(count=count, data=result_list)
 
@@ -571,6 +571,115 @@ def wa_handle_dispatcher(request: HttpRequest):
     except BaseException as e:
         logging.info("handle_dispatcher# e = %s trace = %s", str(e), traceback.format_exc())
         return RestResponse.failure("分发错误，请联系管理员")
+
+
+def used_list(request: HttpRequest):
+    body = utils.request_body(request)
+    back_type = body.get('back_type')
+    queryset = wa_service.wa_id_query_set(back_type)
+    filter_filed = {
+        'used': UsedStatus.Default
+    }
+    return RestResponse.success_list(data=queryset.filter(**filter_filed).values("id", "account_id"))
+
+
+@log_func
+def unused_list(request: HttpRequest):
+    start_row, end_row = utils.page_query(request)
+    body = utils.request_body(request)
+    dispatch_id = body.get("dispatchId")
+    back_type = body.get('back_type')
+    filter_args = {
+        'used': UsedStatus.Default
+    }
+    if not utils.str_is_null(dispatch_id):
+        filter_args['account_id__contains'] = dispatch_id
+
+    queryset = wa_service.wa_id_query_set(back_type)
+    if not queryset:
+        return RestResponse.success(data=[])
+    query = queryset.filter(**filter_args)
+    res = query.values(
+        "id", 'account_id', 'op_user__username', 'is_bind', 'create_time'
+    )[start_row:end_row]
+    return RestResponse.success_list(count=query.count(), data=list(res))
+
+
+def dispatch(request: HttpRequest):
+    body = utils.request_body(request)
+    back_type = body.get('back_type')
+    if not back_type or int(back_type) not in USER_TYPES:
+        return RestResponse.failure("分发错误，backType类型错误")
+
+    user_id = body.get("user_id", "")
+    aids_str = body.get("aids", "")
+    aids = list(set(str(aids_str).split(",")))
+    aids = [int(x.strip()) for x in aids if x.strip() != '']
+
+    if utils.str_is_null(user_id):
+        raise BusinessException.msg("参数错误，必须要有用户id")
+    if utils.str_is_null(aids_str) or len(aids) == 0:
+        raise BusinessException.msg("参数错误，必须要有账号数据")
+
+    if not User.objects.filter(id=user_id).exists():
+        raise BusinessException.msg("用户不存在")
+    logging.info("WhatsApp#ID分配#user_id = %s, aids = %s", user_id, str(aids))
+    queryset = wa_service.wa_id_query_set(back_type)
+    record_query = wa_service.wa_id_record_queryset(back_type)
+    record_type = wa_service.get_record_type(back_type)
+
+    bat_aid_record_list = []
+
+    with transaction.atomic():
+        record_query.filter(account__id__in=aids).delete()
+
+        for a_id in aids:
+            create_dict = {
+                'user_id': user_id,
+                'account_id': a_id,
+                'used': UsedStatus.Default,
+                'create_time': time_utils.get_now_bj_time_str(),
+                'update_time': time_utils.get_now_bj_time_str()
+            }
+            model = wa_service.wa_id_record_create_model(back_type, **create_dict)
+            if model:
+                bat_aid_record_list.append(model)
+            else:
+                logging.info(f"{back_type}#add_record_id 失败，创建model为空")
+
+        record_query.bulk_create(bat_aid_record_list)
+
+        a_ids = list(map(lambda x: x.account_id, bat_aid_record_list))
+        logging.info(f"{back_type}#将数据 bind 设置为True ids = %s", a_ids)
+        queryset.filter(id__in=a_ids).update(is_bind=True)
+    return RestResponse.success(msg="分配完成")
+
+
+@log_func
+def update_bind(request: HttpRequest):
+    body = utils.request_body(request)
+    aid = body.get("id")
+    bind = body.get("bind")
+    back_type = body.get('back_type')
+    if not back_type or int(back_type) not in USER_TYPES:
+        raise BusinessException.msg("分发错误，backType类型错误")
+    if utils.str_is_null(aid):
+        raise BusinessException.msg("修改失败，id错误")
+    if not utils.is_bool(bind):
+        raise BusinessException.msg("修改失败，状态异常")
+    queryset = wa_service.wa_id_query_set(back_type)
+    record_query = wa_service.wa_id_record_queryset(back_type)
+
+    if not queryset or not record_query:
+        raise BusinessException.msg("修改失败，查询错误")
+    bind_val = utils.is_bool_val(bind)
+    with transaction.atomic():
+        logging.info("waid#修改绑定状态为%s", bind_val)
+        queryset.filter(id=aid).update(is_bind=bind_val)
+        if not bind_val:
+            logging.info("waid#修改绑定状态为false，删除绑定记录")
+            record_query.filter(account_id=aid).delete()
+        return RestResponse.success("修改成功", data=bind)
 
 
 @log_func

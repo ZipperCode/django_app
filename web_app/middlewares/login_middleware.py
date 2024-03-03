@@ -4,10 +4,11 @@ from django.http import HttpResponseRedirect, HttpRequest, HttpResponse
 from django.shortcuts import render
 
 from util.restful import RestResponse
+from util.exception import CommonException
 from web_app import views
 
 try:
-    from django.utils.deprecation import MiddlewareMixin  # Django 1.10.x
+    from django.utils.deprecation import MiddlewareMixin
 except ImportError:
     MiddlewareMixin = object
 
@@ -46,6 +47,9 @@ class LoginMiddleware(MiddlewareMixin):
         logging.info("login拦截器，view => path = %s", p)
         if p.find('/media/') != -1:
             return None
+
+        if p.find('/api/') != -1:
+            return None
         # 非登录接口，且需要跳转到授权接口
         if p.find("/view/login") == -1 and p.find("/view/auth/") != -1:
             logging.info("拦截器，当前路径需要判断用户 user = %s", request.session.get('user'))
@@ -53,10 +57,6 @@ class LoginMiddleware(MiddlewareMixin):
                 return views.login_view(request)
 
         return view_func(request)
-
-    def process_exception(self, request, exception):
-        logging.info("拦截器, exception => ")
-        return RestResponse.failure("发生错误, " + str(exception))
 
     def process_template_response(self, request):
         logging.info("login拦截器, template => 404")
