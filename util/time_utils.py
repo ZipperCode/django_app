@@ -53,8 +53,7 @@ def get_cur_day_time_range() -> tuple:
 def get_cur_over_7day_time_range() -> tuple:
     bj_t = get_now_bj_datetime()
     before7 = bj_t - timedelta(days=7)
-    return fmt_utc2sydney_time(bj_t), fmt_utc2sydney_time(before7)
-
+    return bj_t, before7.astimezone(TIME_ZONE_ASIA_SHANG_HAI)
 
 def fmt_utc2sydney_time(t):
     if t is None:
@@ -131,5 +130,5 @@ def get_now_utc():
 
 
 if __name__ == '__main__':
-    print(get_now_bj_time_str())
+    print(get_cur_over_7day_time_range())
     pass
