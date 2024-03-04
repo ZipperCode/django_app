@@ -59,9 +59,6 @@ def wa_id_business_list(request: HttpRequest):
     body = utils.request_body(request)
 
     # 查询记录
-    start_t, end_t = time_utils.get_cur_over_7day_time_range()
-    logging.info("当前时间 = %s", start_t)
-    logging.info("七天前时间 = %s", end_t)
     q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
 
     back_type = body.get('back_type') or user.back_type
@@ -78,9 +75,7 @@ def wa_id_business_list(request: HttpRequest):
             map(
                 lambda x: x.get('account_id'),
                 list(
-                    record_query.filter(user_id=user.id).filter(
-                        Q(create_time__gte=start_t, create_time__lt=end_t)
-                    ).filter(q).distinct()
+                    record_query.filter(user_id=user.id).filter(q).distinct()
                     .order_by('user_id', 'account_id').values('account_id')
                 )
             )

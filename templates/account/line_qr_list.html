@@ -1078,6 +1078,7 @@
             {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
         ]]
         let dispatchListCurPage = 1
+        var allDataIds = [];
         table.render({
             id: 'dispatchList',
             elem: "#dispatchList",
@@ -1089,6 +1090,7 @@
             limits: [20, 30, 50],
             done: function (res, curr) {
                 dispatchListCurPage = curr
+                allDataIds = res.data.map((item) => item.id)
             }
         });
 
@@ -1132,11 +1134,26 @@
                 }
             })
 
-            let selectIds = []
+            let checkIds = new Set()
 
             table.on("checkbox(dispatchList)", function (obj) {
-                console.log("选中数据 = " + JSON.stringify(obj.data));
-                selectIds.push(obj.data.id)
+                if (obj.type === 'all') {
+                    if (obj.checked) {
+                        allDataIds.forEach((item) => {
+                            checkIds.add(item)
+                        })
+                    } else {
+                        checkIds.clear()
+                    }
+                    console.log("全选数据 = ", Array.from(checkIds))
+                    return
+                }
+                if (obj.checked) {
+                    checkIds.add(obj.data.id)
+                } else {
+                    checkIds.delete(obj.data.id)
+                }
+                console.log("checkIds = ", checkIds)
             })
             form.val("dispatchForm", {
                 dispatchUser: ""
@@ -1155,6 +1172,11 @@
                     layer.msg("分配失败，请选择一个用户", {icon: 5})
                     return false
                 }
+                if (checkIds.size === 0) {
+                    layer.msg("分配失败，请至少选择一个数据", {icon: 5})
+                    return false
+                }
+
                 const loadingIndex = layer.load(0);
                 $.ajax({
                     url: "/api/account_qr/dispatch",
@@ -1163,7 +1185,7 @@
                     dataType: "JSON",
                     data: {
                         "user_id": userid,
-                        'aids': Array.from(new Set(selectIds)).join(",")
+                        'aids': Array.from(checkIds).join(",")
                     },
                     success: function (res) {
                         if (res.code < 0) {
