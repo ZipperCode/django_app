@@ -31,10 +31,14 @@ urlpatterns = [
                   path('view/auth/user_add_view', views.user_add_view),
                   path('view/auth/user_edit_view', views.user_edit_view),
                   path('view/auth/account_id/list', views.account_id_list_view),
+                  path('view/auth/lid/list', views.lid_list_view),
                   path('view/auth/account_qr/list', views.account_qr_list_view),
+                  path('view/auth/lqr/list', views.lqr_list_view),
                   # line 分配记录
                   path('view/auth/aid_record/list', views.lines_aid_record_list_view),
+                  path('view/auth/lid_record/list', views.lid_record_list_view),
                   path('view/auth/qr_record/list', views.lines_qr_record_list_view),
+                  path('view/auth/lqr_record/list', views.lqr_record_list_view),
                   # Whatsapp
                   path('view/auth/whatsapp/account_id/list', views.whatsapp_account_id_list_view),
                   path('view/auth/whatsapp/account_qr/list', views.whatsapp_account_qr_list_view),

@@ -56,6 +56,10 @@ def business_list(request: HttpRequest):
         return RestResponse.success_list(count=0, data=[])
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
 
     start_t, end_t = time_utils.get_cur_over_7day_time_range()
     logging.info("当前时间 = %s", start_t)
@@ -66,7 +70,7 @@ def business_list(request: HttpRequest):
         map(
             lambda x: x.get('account_id'),
             list(
-                LineUserAccountQrRecord.objects.filter(user_id=user.id).filter(
+                LineUserAccountQrRecord.objects.filter(user_id=user.id, classify=int(classify)).filter(
                     Q(create_time__gte=start_t, create_time__lt=end_t)
                 ).filter(q).distinct()
                 .order_by('user_id', 'account_id').values('account_id')
@@ -80,7 +84,7 @@ def business_list(request: HttpRequest):
 
     logging.info("当前用户所分配的ids = %s", record_ids)
 
-    query = rest_list_util.search_account_common_field(AccountQr.objects, body)
+    query = rest_list_util.search_account_common_field(AccountQr.objects.filter(classify=int(classify)), body)
     query = query.filter(id__in=record_ids)
     res = list(
         query.values(
@@ -103,8 +107,12 @@ def dispatch_record_list(request: HttpRequest):
     start_row, end_row = utils.page_query(request)
     body = utils.request_body(request)
     logging.info("二维码分配记录搜索 用户 = %s, body = %s", user.username, body)
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
     # 记录列表
-    query = LineUserAccountQrRecord.objects.filter(user__isnull=False, account__isnull=False)
+    query = LineUserAccountQrRecord.objects.filter(user__isnull=False, account__isnull=False, classify=int(classify))
     query = rest_list_util.search_record_common(query, body)
     record_list = list(query.all()[start_row: end_row])
 
@@ -140,9 +148,14 @@ def account_qr_add(request: HttpRequest):
     if utils.str_is_null(qr_content):
         return RestResponse.failure("添加失败，解析二维码失败")
 
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
+
     AccountQr.objects.create(
         qr_content=qr_content, qr_path=qr, country=country, age=age,
-        work=work, money=money, mark=mark,
+        work=work, money=money, mark=mark, classify=int(classify),
         op_user_id=user.id
     )
 
@@ -266,6 +279,11 @@ def account_qr_upload(request: HttpRequest):
         if not user_id or utils.str_is_null(user_id):
             return RestResponse.failure("上传失败，未获取到登录用户信息")
 
+        classify = request.GET['line_classify'] or request.POST['line_classify']
+        if not utils.check_line_classify(str(classify)):
+            logging.info("不存在分类, classify = %s", classify)
+            return RestResponse.failure("失败，请刷新页面后重试")
+
         logging.info("account_qr_upload# f = %s", type(f))
         logging.info("account_qr_upload#name = %s", filename)
         ext = str(os.path.splitext(filename)[-1])
@@ -292,7 +310,7 @@ def account_qr_upload(request: HttpRequest):
 
         AccountQr.objects.create(
             qr_content=str(parsed).strip(),
-            qr_path=f,
+            qr_path=f,classify=int(str(classify)),
             op_user_id=user_id
         )
         return RestResponse.success("上传成功")
@@ -313,6 +331,12 @@ def account_qr_batch_upload(request: HttpRequest):
     user_id = request.session.get('user_id')
     if not user_id or utils.str_is_null(user_id):
         return RestResponse.failure("上传失败，未获取到登录用户信息")
+
+    classify = request.GET['line_classify'] or request.POST['line_classify']
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
+
     ext = str(os.path.splitext(f.name)[-1])
     logging.info("account_qr_batch_upload#ext = %s", ext)
     f_name = str(uuid.uuid1())
@@ -385,7 +409,7 @@ def account_qr_batch_upload(request: HttpRequest):
         db_path = t_dir + str(uuid.uuid4()) + str(os.path.splitext(name)[-1])
         logging.info("生成数据库保持的文件路径 path = %s", db_path)
         c_qr_image[parsed] = (i_path, db_path)
-        c_qr[parsed] = AccountQr(qr_content=str(parsed).strip(), qr_path=db_path, op_user_id=user_id)
+        c_qr[parsed] = AccountQr(qr_content=str(parsed).strip(), qr_path=db_path, op_user_id=user_id, classify=int(str(classify)))
 
     if len(c_qr) == 0:
         if os.path.exists(zip_dir):
@@ -525,7 +549,11 @@ def handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
     try:
-        code, msg = line_account_dao.dispatcher_account_qr(is_all)
+        classify = body.get("line_classify")
+        if not utils.check_line_classify(str(classify)):
+            logging.info("不存在分类, classify = %s", classify)
+            return RestResponse.failure("失败，请刷新页面后重试")
+        code, msg = line_account_dao.dispatcher_account_qr(int(classify), is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)
@@ -544,7 +572,11 @@ def unused_list(request: HttpRequest):
     }
     if not utils.str_is_null(dispatch_id):
         filter_args['qr_content__contains'] = dispatch_id
-
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
+    filter_args['classify'] = int(classify)
     query = AccountQr.objects.filter(**filter_args)
     res = query.values(
         "id", 'qr_content', 'op_user__username', 'is_bind', 'create_time'
@@ -566,7 +598,10 @@ def dispatch(request: HttpRequest):
 
     if not User.objects.filter(id=user_id).exists():
         raise BusinessException.msg("用户不存在")
-
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
     logging.info("Line#QR分配#user_id = %s, aids = %s", user_id, str(aids))
     with transaction.atomic():
         bat_record_list = []
@@ -576,6 +611,7 @@ def dispatch(request: HttpRequest):
                 'user_id': user_id,
                 'account_id': a_id,
                 'used': UsedStatus.Default,
+                'classify': int(classify),
                 'create_time': time_utils.get_now_bj_time_str(),
                 'update_time': time_utils.get_now_bj_time_str()
             }

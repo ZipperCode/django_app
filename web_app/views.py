@@ -210,6 +210,29 @@ def account_id_list_view(request: HttpRequest):
         "msg": "请先登录"
     })
 
+@log_func
+def lid_list_view(request: HttpRequest):
+    logging.info(request)
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+    classify = request.GET['classify']
+    context = {
+        "classify": classify
+    }
+
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'line/line_id_list.html', context)
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'line/line_id_uploader_list.html', context)
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'line/line_id_business_list.html', context)
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })
+
 
 @log_func
 def account_qr_list_view(request: HttpRequest):
@@ -229,6 +252,27 @@ def account_qr_list_view(request: HttpRequest):
         "msg": "请先登录"
     })
 
+@log_func
+def lqr_list_view(request:HttpRequest):
+    user = request.session['user']
+    if user is None:
+        return render(request, 'login.html', {
+            "msg": "请先登录"
+        })
+    classify = request.GET['classify']
+    context = {
+        "classify": classify
+    }
+    if user.get('role') == USER_ROLE_ADMIN:
+        return render(request, 'line/line_qr_list.html', context)
+    elif user.get("role") == USER_ROLE_UPLOADER:
+        return render(request, 'line/line_qr_uploader_list.html', context)
+    elif user.get('role') == USER_ROLE_BUSINESS:
+        return render(request, 'line/line_qr_business_list.html', context)
+    return render(request, 'login.html', {
+        "msg": "请先登录"
+    })
+
 
 @log_func
 def lines_aid_record_list_view(request):
@@ -238,6 +282,24 @@ def lines_aid_record_list_view(request):
 @log_func
 def lines_qr_record_list_view(request):
     return render(request, 'account/line_qr_record_list.html')
+
+
+@log_func
+def lid_record_list_view(request):
+    classify = request.GET['classify']
+    context = {
+        "classify": classify
+    }
+    return render(request, 'line/line_id_record_list.html', context)
+
+
+@log_func
+def lqr_record_list_view(request):
+    classify = request.GET['classify']
+    context = {
+        "classify": classify
+    }
+    return render(request, 'line/line_qr_record_list.html', context)
 
 
 """

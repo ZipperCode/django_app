@@ -27,6 +27,12 @@ def search_account_id_page(body, start_row, end_row, user: User):
         logging.info("当前用户是角色是上传人，取上传的数据")
         query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
 
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return [], 0
+    query = query.filter(classify=int(classify))
+
     res = list(
         query.values(
             'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used', 'is_bind',
@@ -35,6 +41,8 @@ def search_account_id_page(body, start_row, end_row, user: User):
     )
 
     return list(res), query.count()
+
+
 
 
 @log_func
@@ -46,7 +54,11 @@ def search_account_qr_page(body, start_row, end_row, user: User):
     if user.role == USER_ROLE_UPLOADER:
         logging.info("当前用户是角色是上传人，取上传的数据")
         query = query.filter(used=UsedStatus.Default, op_user__id=user.id)
-
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return [], 0
+    query = query.filter(classify=int(classify))
     res = list(
         query.values(
             'id', 'qr_content', 'qr_path', 'country', 'age', 'work', 'money', 'mark', 'used', 'is_bind',
@@ -57,7 +69,7 @@ def search_account_qr_page(body, start_row, end_row, user: User):
     return list(res), query.count()
 
 
-def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
+def dispatcher_account_id(classify: int, is_all: bool = False) -> Tuple[int, str]:
     logging.info("lineAccountId#处理id数据分发")
     # 用户表id列表和长度
     u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_LINE)
@@ -65,7 +77,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"
     # AccountId表数据
-    a_ids, len_ids = dispatch.get_account_list(AccountId.objects, is_all)
+    a_ids, len_ids = dispatch.get_account_list(AccountId.objects.filter(classify=classify), is_all)
     if len_ids == 0:
         return -1, "未找到当日可分配的数据"
     logging.info("lineAccountId#查询到当天新增的数据量为 = %s", len_ids)
@@ -75,7 +87,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
 
     bat_aid_record_list: List[LineUserAccountIdRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects, u_ids, RECORD_TYPE_LINE_ID)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountIdRecord.objects.filter(classify=classify), u_ids, RECORD_TYPE_LINE_ID)
     add_u_ids = set()
     add_a_ids = set()
 
@@ -93,6 +105,7 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
                 user_id=_u_id,
                 account_id=_a_id,
                 used=UsedStatus.Default,
+                classify=classify,
                 create_time=time_utils.get_now_bj_time_str(),
                 update_time=time_utils.get_now_bj_time_str()
             )
@@ -114,12 +127,12 @@ def dispatcher_account_id(is_all: bool = False) -> Tuple[int, str]:
         logging.info("lineAccountId#开始处理用户当天数据数量")
         dispatch.handle_user_record(u_record_map, RECORD_TYPE_LINE_ID)
         logging.info("lineAccountId#将数据 bind 设置为True ids = %s", add_a_ids)
-        AccountId.objects.filter(id__in=add_a_ids).update(is_bind=True)
+        AccountId.objects.filter(id__in=add_a_ids, classify=classify).update(is_bind=True)
 
     return 0, f"成功分配{len_ids}条数据到{len(add_u_ids)}个业务员手中"
 
-
-def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
+@log_func
+def dispatcher_account_qr(classify: int, is_all: bool) -> Tuple[int, str]:
     logging.info("lineAccountQr#处理二维码数据分发")
     # 用户表id列表和长度
     u_ids, len_u_ids = dispatch.get_business_user_ids2(USER_BACK_TYPE_LINE)
@@ -127,14 +140,14 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
     if len_u_ids == 0:
         return -1, "未找到可用的业务员"
     # AccountId表数据
-    data_ids, len_ids = dispatch.get_account_list(AccountQr.objects, is_all)
+    data_ids, len_ids = dispatch.get_account_list(AccountQr.objects.filter(classify=classify), is_all)
     if len_ids == 0:
         return -1, "未找到当日可分配的数据"
     logging.info("lineAccountQr#查询到当天新增的数据量为 = %s", len_ids)
     logging.info("lineAccountQr#二维码数量为 = %s, 用户数量为= %s", len_ids, len_u_ids)
     bat_aid_record_list: List[LineUserAccountQrRecord] = []
 
-    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects, u_ids, RECORD_TYPE_LINE_QR)
+    u_record_map, max_num = dispatch.user_num_record2(LineUserAccountQrRecord.objects.filter(classify=classify), u_ids, RECORD_TYPE_LINE_QR)
     add_u_ids = set()
     add_a_ids = set()
 
@@ -152,6 +165,7 @@ def dispatcher_account_qr(is_all: bool) -> Tuple[int, str]:
             LineUserAccountQrRecord(
                 user_id=_u_id,
                 account_id=_a_id,
+                classify=classify,
                 create_time=time_utils.get_now_bj_time_str(),
                 update_time=time_utils.get_now_bj_time_str()
             )

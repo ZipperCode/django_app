@@ -10,7 +10,7 @@ from typing import Iterable
 from django.db.models import QuerySet, Q
 from django.http import HttpRequest
 
-from web_app.model.const import UsedStatus
+from web_app.model.const import UsedStatus, LineClassify
 
 CONFIG_DICT = []
 
@@ -137,6 +137,14 @@ def get_status(val):
     elif str(val) == "2":
         return UsedStatus.Unable
     return UsedStatus.Default
+
+
+def check_line_classify(val: str) -> bool:
+    if not is_int(val):
+        return False
+    if int(val) in [LineClassify.Line, LineClassify.Pairs]:
+        return True
+    return False
 
 def get_date_q(cur_year, cur_month, cur_day) -> Q:
     logging.info("【get_date_q】 year = %s, month = %s, day = %s", cur_year, cur_month, cur_day)

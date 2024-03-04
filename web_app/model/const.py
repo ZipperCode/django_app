@@ -10,3 +10,10 @@ class UsedStatus(models.IntegerChoices):
     Used = 1
     # 不可用
     Unable = 2
+
+
+class LineClassify(models.IntegerChoices):
+    # line
+    Line = 0
+    # pairs
+    Pairs = 1

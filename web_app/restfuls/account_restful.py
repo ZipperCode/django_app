@@ -56,10 +56,16 @@ def account_id_business_list(request: HttpRequest):
     logging.info("七天前时间 = %s", end_t)
     q = Q(used=UsedStatus.Default) | Q(used=UsedStatus.Used)
     record_query = LineUserAccountIdRecord.objects
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return [], 0
+    record_query = record_query.filter(classify=int(classify))
     account_id = body.get("account_id", "")
     if not utils.str_is_null(account_id):
         logging.info("添加账号id过滤")
         record_query = record_query.filter(account__account_id__contains=account_id)
+
     record_ids = list(
         map(
             lambda x: x.get('account_id'),
@@ -79,7 +85,7 @@ def account_id_business_list(request: HttpRequest):
     logging.info("当前用户所分配的ids = %s", record_ids)
 
     query = rest_list_util.search_account_common_field(AccountId.objects, body)
-    query = query.filter(id__in=record_ids)
+    query = query.filter(id__in=record_ids, classify=int(classify))
     res = list(
         query.values(
             'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used',
@@ -103,6 +109,12 @@ def dispatch_record_list(request: HttpRequest):
     logging.info("ID分配记录搜索 用户 = %s, body = %s", user.username, body)
     # 记录列表
     query = LineUserAccountIdRecord.objects.filter(user__isnull=False, account__isnull=False)
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return [], 0
+    query = query.filter(classify=int(classify))
+
     account_id = body.get('account_id')
     # 输入的account_id进行查询，非数据库主键
     if not utils.str_is_null(account_id):
@@ -127,6 +139,10 @@ def account_id_add(request: HttpRequest):
     work = body.get("work", "")
     money = body.get('money', 0.0)
     mark = body.get('mark', "")
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("添加失败，请刷新页面后重试")
 
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
@@ -138,6 +154,7 @@ def account_id_add(request: HttpRequest):
         account_id=account_id, country=country, age=age,
         work=work, money=money, mark=mark,
         op_user_id=user_id,
+        classify=int(classify),
         create_time=time_utils.get_now_bj_time_str(),
         update_time=time_utils.get_now_bj_time_str()
     )
@@ -161,6 +178,11 @@ def account_id_update(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("修改失败，a_id不能为空")
 
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("修改失败，请刷新页面后重试")
+
     country = body.get("country", "")
     age = body.get("age", 0)
     work = body.get("work", "")
@@ -168,7 +190,7 @@ def account_id_update(request: HttpRequest):
     mark = body.get('mark', "")
     used = body.get('used')
 
-    query = AccountId.objects.filter(id=int(a_id), op_user__isnull=False)
+    query = AccountId.objects.filter(id=int(a_id), op_user__isnull=False, classify=int(classify))
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
@@ -271,8 +293,13 @@ def account_id_upload(request: HttpRequest):
         logging.info("account_line_id_upload#已经存在")
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
 
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(classify):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("上传失败，请刷新页面后重试")
+
     AccountId.objects.create(
-        account_id=a_id, op_user_id=int(user_id),
+        account_id=a_id, op_user_id=int(user_id),classify=int(classify),
         create_time=time_utils.get_now_bj_time_str(),
         update_time=time_utils.get_now_bj_time_str()
     )
@@ -293,6 +320,11 @@ def account_id_batch_upload(request: HttpRequest):
     user_id = request.session.get('user_id')
     if not http_utils.check_user_id(user_id):
         return RestResponse.failure("上传，未获取到登录用户信息")
+
+    classify = request.GET['line_classify'] or request.POST['line_classify']
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("上传失败，请刷新页面后重试")
 
     logging.info("batch_upload = %s", f)
     logging.info("account_id_batch_upload#name = %s", filename)
@@ -317,7 +349,7 @@ def account_id_batch_upload(request: HttpRequest):
     logging.info("account_id_batch_upload#data_list 1 = %s", data_list)
     data_list = list(map(lambda x: str(x).strip(), data_list))
 
-    exists_query = AccountId.objects.filter(account_id__in=data_list)
+    exists_query = AccountId.objects.filter(account_id__in=data_list, classify=int(str(classify)))
 
     exists_list = []
     for query in exists_query:
@@ -331,7 +363,7 @@ def account_id_batch_upload(request: HttpRequest):
     db_data_list = []
     for data in data_list:
         db_data_list.append(AccountId(
-            account_id=data, op_user_id=int(user_id),
+            account_id=data, op_user_id=int(user_id), classify=int(str(classify)),
             create_time=time_utils.get_now_bj_time_str(),
             update_time=time_utils.get_now_bj_time_str()
         ))
@@ -423,7 +455,11 @@ def handle_dispatcher(request: HttpRequest):
     body = utils.request_body(request)
     is_all = utils.is_bool_val(body.get("isAll"))
     try:
-        code, msg = line_account_dao.dispatcher_account_id(is_all)
+        classify = body.get("line_classify")
+        if not utils.check_line_classify(str(classify)):
+            logging.info("不存在分类, classify = %s", classify)
+            return RestResponse.failure("失败，请刷新页面后重试")
+        code, msg = line_account_dao.dispatcher_account_id(int(classify), is_all)
         if code < 0:
             return RestResponse.failure(str(msg))
         return RestResponse.success(msg)
@@ -443,6 +479,12 @@ def unused_list(request: HttpRequest):
     if not utils.str_is_null(dispatch_id):
         filter_args['account_id__contains'] = dispatch_id
 
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
+
+    filter_args['classify'] = classify
     query = AccountId.objects.filter(**filter_args)
     res = query.values(
         "id", 'account_id', 'op_user__username', 'is_bind', 'create_time'
@@ -465,7 +507,12 @@ def dispatch(request: HttpRequest):
     if not User.objects.filter(id=user_id).exists():
         raise BusinessException.msg("用户不存在")
 
-    logging.info("ID分配#user_id = %s, aids = %s", user_id, str(aids))
+    classify = body.get("line_classify")
+    if not utils.check_line_classify(str(classify)):
+        logging.info("不存在分类, classify = %s", classify)
+        return RestResponse.failure("失败，请刷新页面后重试")
+
+    logging.info("ID分配#user_id = %s, aids = %s, classify = %s", user_id, str(aids), classify)
     with transaction.atomic():
         bat_record_list = []
         LineUserAccountIdRecord.objects.filter(account__id__in=aids).delete()
@@ -474,6 +521,7 @@ def dispatch(request: HttpRequest):
                 'user_id': user_id,
                 'account_id': a_id,
                 'used': UsedStatus.Default,
+                "classify": classify,
                 'create_time': time_utils.get_now_bj_time_str(),
                 'update_time': time_utils.get_now_bj_time_str()
             }
