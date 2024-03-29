@@ -16,11 +16,11 @@ class InitConfig(AppConfig):
     def ready(self):
         logging.info(">>>>>>>>>>>>ready")
         print("init ready")
-        # try:
-        #     import web_app.service.wa_service
-        #     web_app.service.wa_service.sync_id_hash()
-        #     web_app.service.wa_service.sync_qr_hash()
-        #     web_app.service.wa_service.sync_used_id()
-        #     web_app.service.wa_service.sync_used_qr()
-        # except:
-        #     pass
+        try:
+            import web_app.service.wa_service
+            web_app.service.wa_service.sync_id_hash()
+            web_app.service.wa_service.sync_qr_hash()
+            web_app.service.wa_service.sync_used_id()
+            web_app.service.wa_service.sync_used_qr()
+        except:
+            pass

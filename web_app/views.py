@@ -3,6 +3,7 @@ import logging
 import os
 import platform
 import time
+import traceback
 
 import psutil
 from django.http import HttpRequest
@@ -74,6 +75,7 @@ def login_view(request: HttpRequest):
                 role=USER_ROLE_ADMIN
             )
     except BaseException:
+        logging.info("append excel fail = %s", traceback.format_exc())
         pass
 
     if request.session.get('user') is not None:
