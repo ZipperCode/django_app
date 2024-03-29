@@ -45,7 +45,7 @@ RUN pip3 install uwsgi
 
 # 更新pip版本
 RUN /usr/local/bin/python -m pip install --upgrade pip
-RUN pip3 install zxing
+RUN pip3 install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 # 安装项目依赖
 RUN pip3 install -r requirements.txt
 
