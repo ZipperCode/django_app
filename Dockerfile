@@ -45,7 +45,7 @@ RUN pip3 install uwsgi
 
 # 更新pip版本
 RUN /usr/local/bin/python -m pip install --upgrade pip
-
+RUN pip3 install zxing
 # 安装项目依赖
 RUN pip3 install -r requirements.txt
 
