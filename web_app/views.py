@@ -220,12 +220,7 @@ def lid_list_view(request: HttpRequest):
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-    classify=None
-    try:
-        classify = request.GET['classify']
-    except:
-        classify = request.GET['line_classify']
-        pass
+    classify = request.GET['line_classify']
     context = {
         "classify": classify
     }
@@ -273,7 +268,7 @@ def lqr_list_view(request:HttpRequest):
         classify = request.GET['line_classify']
         pass
     context = {
-        "classify": classify or "0"
+        "classify": classify
     }
     if user.get('role') == USER_ROLE_ADMIN:
         return render(request, 'line/line_qr_list.html', context)

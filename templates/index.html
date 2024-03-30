@@ -91,14 +91,14 @@
                         </a>
                         <dl>
                             <dd>
-                                <a data-url="/view/auth/lid/list?classify=0">
+                                <a data-url="/view/auth/lid/list?line_classify=0">
                                     <i class="iconfont icon-guanliyuan"></i>
                                     <span>LinesID</span>
                                 </a>
                             </dd>
                             {% if request.session.user.role == 0 %}
                                 <dd>
-                                    <a data-url="/view/auth/lid_record/list?classify=0">
+                                    <a data-url="/view/auth/lid_record/list?line_classify=0">
                                         <i class="iconfont icon-guanliyuan"></i>
                                         <span>LinesID分配数据</span>
                                     </a>
@@ -107,14 +107,14 @@
 
 
                             <dd>
-                                <a data-url="/view/auth/lqr/list?classify=0">
+                                <a data-url="/view/auth/lqr/list?line_classify=0">
                                     <i class="iconfont icon-guanliyuan"></i>
                                     <span>Lines二维码</span>
                                 </a>
                             </dd>
                             {% if request.session.user.role == 0 %}
                                 <dd>
-                                    <a data-url="/view/auth/lqr_record/list?classify=0">
+                                    <a data-url="/view/auth/lqr_record/list?line_classify=0">
                                         <i class="iconfont icon-guanliyuan"></i>
                                         <span>Lines二维码分配数据</span>
                                     </a>
