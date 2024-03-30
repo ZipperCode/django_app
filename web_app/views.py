@@ -261,10 +261,13 @@ def lqr_list_view(request:HttpRequest):
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-    classify = request.GET['classify']
-    context = {
-        "classify": classify
-    }
+    try:
+        classify = request.GET['classify']
+        context = {
+            "classify": classify or "0"
+        }
+    except:
+        pass
     if user.get('role') == USER_ROLE_ADMIN:
         return render(request, 'line/line_qr_list.html', context)
     elif user.get("role") == USER_ROLE_UPLOADER:
