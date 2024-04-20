@@ -17,7 +17,7 @@ from util.restful import RestResponse
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.link import AccountLink
-from web_app.model.users import User
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_ROLE_UPLOADER
 from web_app.service import link_service
 from util.exception import BusinessException
 from web_app.settings import BASE_DIR
@@ -42,6 +42,8 @@ def add_data(request: HttpRequest):
     user = user_dao.get_user(request)
     if not user:
         return RestResponse.failure("操作用户不存在")
+    if user.role == USER_ROLE_UPLOADER:
+        return RestResponse.failure("非业务员不可操作")
     try:
         link_service.insert(body, user)
     except BusinessException as e:
@@ -55,6 +57,8 @@ def update_data(request: HttpRequest):
     user = user_dao.get_user(request)
     if not user:
         return RestResponse.failure("操作用户不存在")
+    if user.role == USER_ROLE_UPLOADER:
+        return RestResponse.failure("非业务员不可操作")
     try:
         link_service.update(body, user)
     except BusinessException as e:
@@ -65,7 +69,12 @@ def update_data(request: HttpRequest):
 @log_func
 def delete_data(request: HttpRequest):
     body = utils.request_body(request)
-    link_service.delete(body)
+    user = user_dao.get_user(request)
+    if not user:
+        return RestResponse.failure("操作用户不存在")
+    if user.role == USER_ROLE_UPLOADER:
+        return RestResponse.failure("非业务员不可操作")
+
     return RestResponse.success("成功")
 
 
