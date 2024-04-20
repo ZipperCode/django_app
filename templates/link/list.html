@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>链接列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
+    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <style>
+        .box_parent {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<div class="page-main scrollbar-inner">
+    <div class="page-container">
+        <div class="page-fluid">
+            <form class="layui-form layui-unselect table-form" action="">
+                <div class="layui-block" style="margin-bottom: 5px">
+                    <label class="layui-form-label">链接</label>
+                    <div class="layui-input-block">
+                        <input type="text" placeholder="请输入链接关键字" autocomplete="off" name="link"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="请输入备注" name="remark" autocomplete="off"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">范围日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_start">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input test-item" placeholder="yyyy-MM-dd HH:mm:ss"
+                               name="date_end">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">上传人</label>
+                    <div class="layui-input-inline">
+                        <input type="text" placeholder="上传人用户名关键字" name="op_username" autocomplete="off"
+                               lay-verify="op_username"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+
+                <div class="layui-inline">
+                    <button type="button" lay-filter="search" lay-submit class="layui-btn" data-type="reload">搜索
+                    </button>
+                </div>
+            </form>
+
+            <table id="list" lay-filter="list"></table>
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/static/admin/iconfont/iconfont.js"></script>
+<script type="text/javascript" src="/static/jquery/jquery-3.4.1.js"></script>
+<script type="text/javascript" src="/static/admin/js/common.js"></script>
+<script type="text/javascript" src="/static/scrollbar/jquery.scrollbar.min.js"></script>
+<script type="text/javascript" src="/static/layui/layui.js"></script>
+<script type="text/javascript" src="/static/admin/js/user_form.js"></script>
+<script type="text/javascript" src="/static/admin/js/utils.js"></script>
+
+
+{% comment %} component {% endcomment %}
+
+<script type="text/html" id="toolbar">
+    <div class="layui-row">
+        <div class="layui-col-md10">
+            <label class="layui-form-label">链接</label>
+            <div class="layui-input-block">
+                <input id="link_input" type="text" placeholder="请输入您要上传检测的链接" autocomplete="off" name="link"
+                       class="layui-input"/>
+            </div>
+        </div>
+        <div class="layui-col-md1" style="margin-left: 10px">
+            <a class="layui-btn layui-btn-sm" lay-event="upload">检测并上传</a>
+        </div>
+    </div>
+
+</script>
+
+<script type="text/html" id="table_control">
+    <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
+    <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
+    {% if request.session.user.role == 0 %}
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    {% endif %}
+</script>
+
+{% comment %} Form {% endcomment %}
+<div class="layui-row" id="addForm" style="display:none;">
+    <div class="layui-col-md10">
+        <form class="layui-form" action="" style="margin-top:20px" lay-filter="addForm">
+            <div class="layui-form-item">
+                <label class="layui-form-label required">链接<span style="color: red">*</span> </label>
+                <div class="layui-input-block required">
+                    <textarea name="link" placeholder="请输入链接" class="layui-textarea" autocomplete="off"></textarea>
+                </div>
+            </div>
+
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="layui-row" id="editForm" style="display:none;">
+    <div class="layui-col-md10">
+        <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
+            <input type="hidden" name="id">
+            <div class="layui-form-item">
+                <label class="layui-form-label required">链接</label>
+                <div class="layui-input-block required">
+                    <textarea name="link" placeholder="请输入链接" class="layui-textarea" autocomplete="off"></textarea>
+                </div>
+            </div>
+
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                    <textarea name="remark" placeholder="备注信息" class="layui-textarea"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item" style="margin-top:40px">
+                <div class="layui-input-block">
+                    <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="editSubmit">确认修改
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% comment %} {% endcomment %}
+{% csrf_token %}
+<script type="text/javascript">
+    layui.use(['layer', 'form', 'table', 'laytpl', 'laydate', 'upload', 'jquery'], function () {
+        const layer = layui.layer,
+            form = layui.form;
+        const $ = layui.jquery;
+        const table = layui.table;
+        const laydate = layui.laydate;
+        const laytpl = layui.laytpl;
+        const upload = layui.upload
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const headers = {
+            "Accept": "application/json; charset=utf-8",
+            "X-CSRFToken": csrftoken
+        };
+
+        lay('.test-item').each(function () {
+            const date = new Date()
+            const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+            laydate.render({
+                elem: this,
+                type: 'datetime',
+                min: '2023-1-1 00:00:00',
+                max: max
+                , trigger: 'click'
+            });
+        });
+        var globalCurrentPage = 1;
+        let op_col_width = 120
+        {% if request.session.user.role == 0 %}
+            op_col_width = 180
+        {% endif %}
+
+        /*表格渲染*/
+        table.render({
+            id: 'list',
+            elem: '#list',
+            url: '/api/link/page_list',
+            page: true,
+            toolbar: '#toolbar',
+            cellMinWidth: 80,
+            cols: [[
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'id', title: '编号', width: 70, align: 'center'},
+                {field: 'link', title: '链接', align: 'center', minWidth: 200},
+                {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
+                {field: 'remark', title: '备注', align: 'center'},
+                {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'update_time', title: '更新时间', align: 'center', sort: true, minWidth: 160},
+                {field: 'action', title: '操作', fixed: 'right', toolbar: '#table_control', width: op_col_width}
+
+            ]],
+            defaultToolbar: ['filter'],
+            done: function (res, curr, count) {
+                globalCurrentPage = curr
+            }
+        });
+
+        /*表格头工具监听*/
+        table.on('toolbar(list)', function (obj) {
+            const data = obj.data; //获得当前行数据
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            if (layEvent === 'upload') {
+                let link = $("#link_input").val()
+                console.log("link = ", link)
+                handleAdd(link);
+            } else if (layEvent === 'batch_export') {
+                handleExport()
+            }
+        });
+
+        /*表格行工具监听*/
+        table.on('tool(list)', function (obj) {
+            const layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            if (layEvent === 'edit') {
+                layer.open({
+                    type: 1,
+                    title: "修改数据",
+                    area: ['600px', '400px'],
+                    content: $("#editForm")
+                });
+                initEditForm(obj);
+            } else if (layEvent === 'del') {
+                handleDel(obj);
+            } else if (layEvent === 'copy') {
+                const text = obj.data.link
+                {% comment %}if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text);
+                }{% endcomment %}
+                const copyipt = document.createElement("input");
+                copyipt.setAttribute("value", text);
+                document.body.appendChild(copyipt);
+                copyipt.select();
+                document.execCommand("copy");
+                document.body.removeChild(copyipt);
+                layer.msg("复制成功，内容为：" + text, {icon: 6});
+            }
+        });
+
+        function initSearchForm() {
+            form.on('submit(search)', function (data) {
+                table.reload('list', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    },
+                    where: data.field
+                });
+                return false;
+            });
+            form.render();
+        }
+
+        initSearchForm();
+
+        function handleAdd(link) {
+            const load_index = layer.load();
+            $.ajax({
+                url: '/api/link/add',
+                type: 'POST',
+                headers: headers,
+                data: {
+                    link: link,
+                },
+                success: function (res) {
+                    if (res.code >= 0) {
+                        console.log("添加成功")
+                        $("#link_input").val('')
+                        layer.closeAll('loading');
+                        layer.load(2);
+                        layer.msg("添加成功", {icon: 6});
+                        setTimeout(function () {
+                            table.reload("list", {
+                                page: {
+                                    curr: globalCurrentPage
+                                }
+                            });
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
+                    } else {
+                        layer.msg(res.msg, {icon: 5})
+                        layer.close(load_index)
+                    }
+                },
+                error: function () {
+                    layer.msg("请求失败", {icon: 5})
+                    layer.close(load_index)
+                }
+            });
+            return false
+        }
+
+        function initEditForm(obj) {
+            const data = obj.data;
+            console.log("data = ", data);
+            form.val("editForm", {
+                id: data.id,
+                link: data.link,
+                remark: data.remark,
+            });
+
+            form.verify({
+                link: function (value, item) {
+                    if (!/^.+$/.test(value)) {
+                        $(item).focus();
+                        return '链接不能为空';
+                    }
+                }
+            });
+            form.on('submit(editSubmit)', function (massage) {
+                console.log("updatw = massage", massage)
+                layer.load(1);
+                $.ajax({
+                    url: '/api/link/update',
+                    type: 'POST',
+                    headers: headers,
+                    data: {
+                        ...massage.field,
+                    },
+                    success: function (res) {
+                        if (res.code >= 0) {
+                            console.log("修改成功")
+                            layer.closeAll('loading');
+                            layer.load(2);
+                            layer.msg("修改成功", {icon: 6});
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层
+                                table.reload("list", {
+                                    page: {
+                                        curr: globalCurrentPage
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
+                        } else {
+                            layer.msg("修改失败", {icon: 5});
+                            layer.closeAll();
+                        }
+                    }
+                });
+                return false
+            });
+        }
+
+        function handleDel(obj) {
+            layer.confirm('确定删除吗？', function (index) {
+                layer.close(index);
+                const index2 = layer.load(0);
+                $.ajax({
+                    url: "/api/link/delete",
+                    data: {
+                        id: obj.data.id,
+                    },
+                    type: "post",
+                    headers: headers,
+                    dataType: "JSON",
+                    success: function (msg) {
+                        if (msg.code === 0) {
+                            layer.msg(msg.msg);
+                            setTimeout(function () {
+                                layer.closeAll();//关闭所有的弹出层2
+                                table.reload("list", {
+                                    page: {
+                                        curr: 1
+                                    }
+                                });//修改成功修改表格数据不进行跳转
+                            }, 1000);
+                            return;
+                        }
+                        layer.msg(msg.msg, {icon: 5});
+                    },
+                    error: function () {
+                        layer.msg("请求失败", {icon: 5})
+                    },
+                    complete() {
+                        layer.close(index2);
+                    }
+                });
+            });
+        }
+
+        function handleExport() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('get', "/api/link/export?back_type={{ back_type }}", true); // 也可以使用POST方式，根据接口
+            xhr.responseType = "blob"; // 返回类型blob
+            // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
+            xhr.onload = function () {
+                // 请求完成
+                if (this.status === 200) {
+                    // 返回200
+                    const blob = new Blob([this.response], {
+                        type: "application/vnd.ms-excel"
+                    });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    $("body").append(a); // 修复firefox中无法触发click
+                    a.click();
+                    $(a).remove();
+                } else if (this.status === 404 || this.status === 500) {
+                    console.log("404 response = ", this.response)
+                    layer.msg("导出失败，" + this.status, {icon: 5})
+                }
+            };
+            xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
+            xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
+                layer.msg("导出失败，请求超时", {icon: 5})
+            }
+            // 发送ajax请求
+            xhr.send()
+        }
+
+        (function initUserList() {
+            $.ajax({
+                url: '/api/user_simple_list',
+                success: function (res) {
+                    if (res.code >= 0) {
+                        let data = res.data;
+                        let selectElements = $("select[name='op_user_select']");
+                        for (let j = 0; j < selectElements.length; j++) {
+                            for (let i = 0; i < data.length; i++) {
+                                let item = data[i];
+                                selectElements.eq(j).append(
+                                    `<option value="${item.id}">${item.username}</option>`
+                                );
+                            }
+                        }
+                        form.render('select');
+                    } else {
+                        console.log("策略列表，错误：", res.msg)
+                    }
+                }
+            });
+        })();
+
+        //滚动条
+        jQuery(".page-main").scrollbar();
+
+
+    })
+    ;
+</script>
+</body>
+</html>

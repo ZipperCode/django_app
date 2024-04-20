@@ -169,6 +169,11 @@ def console_view(request: HttpRequest):
 
 
 @log_func
+def link_view(request: HttpRequest):
+    return render(request, 'link/list.html')
+
+
+@log_func
 def modify_pwd(request: HttpRequest):
     return render(request, 'modify_pwd.html')
 
@@ -212,6 +217,7 @@ def account_id_list_view(request: HttpRequest):
         "msg": "请先登录"
     })
 
+
 @log_func
 def lid_list_view(request: HttpRequest):
     logging.info(request)
@@ -254,14 +260,15 @@ def account_qr_list_view(request: HttpRequest):
         "msg": "请先登录"
     })
 
+
 @log_func
-def lqr_list_view(request:HttpRequest):
+def lqr_list_view(request: HttpRequest):
     user = request.session['user']
     if user is None:
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-    classify=None
+    classify = None
     try:
         classify = request.GET['classify']
     except:
@@ -293,7 +300,7 @@ def lines_qr_record_list_view(request):
 
 @log_func
 def lid_record_list_view(request):
-    classify=None
+    classify = None
     try:
         classify = request.GET['classify']
     except:
@@ -307,7 +314,7 @@ def lid_record_list_view(request):
 
 @log_func
 def lqr_record_list_view(request):
-    classify=None
+    classify = None
     try:
         classify = request.GET['classify']
     except:

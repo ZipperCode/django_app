@@ -13,9 +13,12 @@ class CommonException(Exception):
 class BusinessException(CommonException):
     """业务异常类"""
 
+    def __init__(self, msg:str):
+        super().__init__(-1, msg)
+
     @classmethod
     def msg(cls, msg: str):
-        return BusinessException(-1, msg)
+        return BusinessException(msg)
 
 
 class APIException(CommonException):

@@ -64,6 +64,12 @@
                         <span>主页</span>
                     </a>
                 </li>
+                <li>
+                    <a data-url="/view/auth/link.html" data-title="链接管理">
+                        <i class="iconfont layui-icon layui-icon-senior"></i>
+                        <span>链接管理</span>
+                    </a>
+                </li>
                 {% if request.session.user.role == 0 %}
                     <li>
                         <a>
@@ -124,7 +130,7 @@
                         </dl>
                     </li>
 
-                     <li>
+                    <li>
                         <a data-url="admin">
                             <i class="iconfont icon-quanxian"></i>
                             <span>Pairs管理</span>

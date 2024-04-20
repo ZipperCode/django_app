@@ -53,7 +53,7 @@ def search_account_common_field(query: QuerySet, body) -> QuerySet:
         query = query.filter(country__contains=country)
     # 模糊搜索备注
     if not utils.str_is_null(mark):
-        query = query.filter(mark__contains=country)
+        query = query.filter(mark__contains=mark)
     # 开始结束时间
     if not utils.str_is_null(date_start):
         start = convert_time(date_start)
