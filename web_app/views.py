@@ -220,7 +220,12 @@ def lid_list_view(request: HttpRequest):
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-    classify = request.GET['line_classify']
+    classify=None
+    try:
+        classify = request.GET['classify']
+    except:
+        classify = request.GET['line_classify']
+        pass
     context = {
         "classify": classify
     }
