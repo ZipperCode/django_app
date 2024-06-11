@@ -19,13 +19,14 @@ from django.views.static import serve
 
 from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_restful, wa_qr_restful, \
-    wa2_id_restful, wa2_qr_restful, wa_id_api, wa_qr_api, link_api
+    wa2_id_restful, wa2_qr_restful, wa_id_api, wa_qr_api, link_api, link2_api
 
 urlpatterns = [
     path('', views.login_view),
     path('view/auth/index', views.index_view),
     path('view/auth/console.html', views.console_view),
     path('view/auth/link.html', views.link_view),
+    path('view/auth/link2.html', views.link2_view),
     path('view/auth/user/modify_pwd', views.modify_pwd),
     path('view/auth/setting.html', views.setting_view),
     path('view/auth/user_view', views.user_list_view),
@@ -55,7 +56,9 @@ urlpatterns = [
     path('view/auth/wa/account_id/list', views.wa_account_id_list_view),
     path('view/auth/wa/account_qr/list', views.wa_account_qr_list_view),
     path('view/auth/wa/aid_record/list', views.wa_aid_record_list_view),
-    path('view/auth/wa/qr_record/list', views.wa_qr_record_list_view),
+    path('view/vue/index', views.vue_index),
+
+    path('view/', views.wa_qr_record_list_view),
 
     path('view/login', views.login_view),
     path('logout', views.logout),
@@ -144,6 +147,11 @@ urlpatterns = [
     path('api/link/add', link_api.add_data),
     path('api/link/update', link_api.update_data),
     path('api/link/delete', link_api.delete_data),
+
+    path('api/link2/page_list', link2_api.page_list),
+    path('api/link2/add', link2_api.add_data),
+    path('api/link2/update', link2_api.update_data),
+    path('api/link2/delete', link2_api.delete_data),
 
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
 ]

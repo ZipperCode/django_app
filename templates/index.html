@@ -65,10 +65,25 @@
                     </a>
                 </li>
                 <li>
-                    <a data-url="/view/auth/link.html" data-title="链接管理">
+                    <a>
                         <i class="iconfont layui-icon layui-icon-senior"></i>
                         <span>链接管理</span>
+                        <i class="iconfont icon-jiantouyou1"></i>
                     </a>
+                    <dl>
+                        <dd>
+                            <a data-url="/view/auth/link.html">
+                                <i class="iconfont layui-icon layui-icon-senior"></i>
+                                <span>链接一</span>
+                            </a>
+                        </dd>
+                        <dd>
+                            <a data-url="/view/auth/link2.html">
+                                <i class="iconfont layui-icon layui-icon-senior"></i>
+                                <span>链接一</span>
+                            </a>
+                        </dd>
+                    </dl>
                 </li>
                 {% if request.session.user.role == 0 %}
                     <li>

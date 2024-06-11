@@ -174,6 +174,11 @@ def link_view(request: HttpRequest):
 
 
 @log_func
+def link2_view(request: HttpRequest):
+    return render(request, 'link/list2.html')
+
+
+@log_func
 def modify_pwd(request: HttpRequest):
     return render(request, 'modify_pwd.html')
 
@@ -506,3 +511,7 @@ def wa_qr_record_list_view(request):
         "back_type": back_type
     }
     return render(request, 'whatsapp/wa_qr_record_list.html', context)
+
+
+def vue_index(request):
+    return render(request, "question/index.html")
