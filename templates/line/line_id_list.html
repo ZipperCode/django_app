@@ -637,7 +637,8 @@
                                 });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg("修改失败", {icon: 5});
+                            layer.closeAll();//关闭所有的弹出层
+                            layer.msg("修改失败, " + res.msg, {icon: 5});
                         }
                     }
                 });
@@ -737,6 +738,7 @@
                             }, 1000);
                             return;
                         }
+                        layer.closeAll();//关闭所有的弹出层
                         layer.msg(msg.msg, {icon: 5});
                     },
                     error: function () {
@@ -778,7 +780,7 @@
                 console.log("updatw = massage", massage)
                 layer.load(1);
                 let formData = {
-                    'line_classify':"{{ classify }}",
+                    'line_classify': "{{ classify }}",
                     "used": massage.field.used,
                     "ids": ids.join(",")
                 }
@@ -803,7 +805,8 @@
                                 });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg("修改失败", {icon: 5});
+                            layer.closeAll();//关闭所有的弹出层
+                            layer.msg("修改失败，" + res.msg, {icon: 5});
                         }
                     }
                 });
