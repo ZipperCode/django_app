@@ -12,7 +12,8 @@ if [ ! -d "$BACKUP_DIR" ]; then
 fi
 
 # 获取当前日期时间，作为备份文件名的一部分
-CURRENT_TIME=$(date +"%Y%m%d_%H%M%S")
+#CURRENT_TIME=$(date +"%Y%m%d_%H%M%S")
+CURRENT_TIME=$(date +"%Y%m%d_%H%M%S_%3N")
 
 # 创建备份文件路径
 BACKUP_FILE="$BACKUP_DIR/logfile_$CURRENT_TIME.log"
