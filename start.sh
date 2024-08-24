@@ -47,5 +47,8 @@ echo "exec migrate web_app"
 python3 manage.py migrate web_app
 #python3 manage.py migrate --fake web_app
 echo "exec migrate end"
+
+python3 manage.py collectstatic
+
 uwsgi --ini /var/www/html/django_app/uwsgi.ini && tail -f /dev/null
 exec "$@"
