@@ -2,10 +2,10 @@
 
 # 设置日志文件路径
 echo "pwd = ${PWD}"
-LOG_FILE="${PWD}/compose/uswgi/web_app-uwsgi.log"
+LOG_FILE="${PWD}/compose/uwsgi/web_app-uwsgi.log"
 
 # 设置备份目录
-BACKUP_DIR="${PWD}/compose/uswgi/backup"
+BACKUP_DIR="${PWD}/compose/uwsgi/backup"
 
 # 检查备份目录是否存在，不存在则创建
 if [ ! -d "$BACKUP_DIR" ]; then
