@@ -1,13 +1,14 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>业务员id列表</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link type="text/css" rel="stylesheet" href="/static/layui/css/layui.css"/>
-    <link type="text/css" rel="stylesheet" href="/static/scrollbar/jquery.scrollbar.css"/>
-    <link type="text/css" rel="stylesheet" href="/static/admin/iconfont/iconfont.css"/>
-    <link type="text/css" rel="stylesheet" href="/static/admin/css/page-item.css"/>
+    <link type="text/css" rel="stylesheet" href="{% static 'layui/css/layui.css' %}"/>
+    <link type="text/css" rel="stylesheet" href="{% static 'scrollbar/jquery.scrollbar.css' %}"/>
+    <link type="text/css" rel="stylesheet" href="{% static 'admin/iconfont/iconfont.css' %}"/>
+    <link type="text/css" rel="stylesheet" href="{% static 'admin/css/page-item.css' %}"/>
     <style>
         .box_parent {
             display: flex;
@@ -79,13 +80,13 @@
     </div>
 </div>
 
-<script type="text/javascript" src="/static/admin/iconfont/iconfont.js"></script>
-<script type="text/javascript" src="/static/jquery/jquery-3.4.1.js"></script>
-<script type="text/javascript" src="/static/admin/js/common.js"></script>
-<script type="text/javascript" src="/static/scrollbar/jquery.scrollbar.min.js"></script>
-<script type="text/javascript" src="/static/layui/layui.js"></script>
-<script type="text/javascript" src="/static/admin/js/user_form.js"></script>
-<script type="text/javascript" src="/static/admin/js/utils.js"></script>
+<script type="text/javascript" src="{% static 'admin/iconfont/iconfont.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery/jquery-3.4.1.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/common.js' %}"></script>
+<script type="text/javascript" src="{% static 'scrollbar/jquery.scrollbar.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'layui/layui.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/user_form.js' %}"></script>
+<script type="text/javascript" src="{% static 'admin/js/utils.js' %}"></script>
 
 
 {% comment %} component {% endcomment %}
