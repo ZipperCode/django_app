@@ -172,7 +172,7 @@ def wa_id_add(request: HttpRequest):
         wa_service.del_aid_with_hash(del_ids)
         no_user_query.delete()
 
-    if wa_service.check_aid_with_hash(account_id):
+    if wa_service.check_aid_with_hash_over60(account_id):
         logging.info("添加Id#%s#%s#已经存在", back_type, account_id)
         return RestResponse.failure("添加失败，该id已经存在")
 
@@ -330,7 +330,7 @@ def wa_id_upload(request: HttpRequest):
     if user is None or not isinstance(user, User):
         return RestResponse.failure("添加失败，未获取到登录用户信息")
 
-    if wa_service.check_id(a_id):
+    if wa_service.check_aid_with_hash_over60(a_id):
         return RestResponse.failure("添加失败，该Id已经存在")
 
     user_id = user.id
@@ -348,14 +348,15 @@ def wa_id_upload(request: HttpRequest):
         no_user_query.delete()
 
         wa_service.add_aid_hash(a_id, back_type, user_id)
-        query, created = queryset.get_or_create(
+        created = queryset.create(
             account_id=a_id,
-            defaults={
+            **{
                 'op_user_id': int(user_id),
                 "create_time": time_utils.get_now_bj_time_str(),
                 "update_time": time_utils.get_now_bj_time_str()
             }
         )
+        print("created")
     if not created:
         logging.info("account_wa2_id_upload#已经存在")
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")

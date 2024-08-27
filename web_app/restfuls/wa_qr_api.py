@@ -160,7 +160,7 @@ def wa_qr_add(request: HttpRequest):
         logging.info("backType错误，%s", back_type)
         return RestResponse.failure(f"添加失败backType错误 {back_type}")
 
-    if wa_service.check_aqr_with_hash(qr_content):
+    if wa_service.check_aqr_with_hash_over60(qr_content):
         logging.info("添加Qr#%s#%s#已经存在", back_type, qr_content)
         return RestResponse.failure("添加失败，该Qr已经存在")
 

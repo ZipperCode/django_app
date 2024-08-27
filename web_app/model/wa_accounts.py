@@ -7,7 +7,7 @@ from web_app.model.users import User
 
 class WaAccountId(models.Model):
     id = models.AutoField(primary_key=True)
-    account_id = models.CharField("ID", max_length=255, null=False, unique=True)
+    account_id = models.CharField("ID", max_length=255, null=False)
     country = models.CharField("国家", max_length=100, null=True)
     age = models.IntegerField("年龄", default=0)
     work = models.CharField("工作", max_length=255, null=True, default="无")

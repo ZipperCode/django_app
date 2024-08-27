@@ -50,13 +50,23 @@ def wa_id_query_set(back_type) -> Optional[QuerySet]:
 
 
 def check_id(a_id) -> bool:
-    return WaIdHash.objects.filter(id_hash=md5_encode(a_id)).exists()
+    start_time, end_time = time_utils.get_two_months_time_range()
+    return WaIdHash.objects.filter(
+        id_hash=md5_encode(a_id),
+        create_time__gt=start_time,
+        create_time__lte=end_time
+    ).exists()
 
 
 def check_id_list(ids):
     origin_ids = list(ids)
     ids = list(map(lambda x: md5_encode(str(x).strip()), ids))
-    exists_hash_list = WaIdHash.objects.filter(id_hash__in=ids).values_list("id_hash", flat=True)
+    start_time, end_time = time_utils.get_two_months_time_range()
+    exists_hash_list = WaIdHash.objects.filter(
+        id_hash__in=ids,
+        create_time__gt=start_time,
+        create_time__lte=end_time
+    ).values_list("id_hash", flat=True)
     for h in exists_hash_list:
         i = ids.index(h)
         if i > 0:
@@ -115,7 +125,12 @@ def wa_qr_queryset(back_type) -> Optional[QuerySet]:
 
 
 def check_qr(qr_content) -> bool:
-    return WaQrHash.objects.filter(id_hash=md5_encode(qr_content)).exists()
+    start_time, end_time = time_utils.get_two_months_time_range()
+    return WaQrHash.objects.filter(
+        id_hash=md5_encode(qr_content),
+        create_time__gt=start_time,
+        create_time__lte=end_time
+    ).exists()
 
 
 def wa_qr_record_queryset(back_type) -> Optional[QuerySet]:
@@ -463,6 +478,15 @@ def check_aid_with_hash(account_id) -> bool:
     return WaIdHash.objects.filter(id_hash=md5_encode(str(account_id).strip())).exists()
 
 
+def check_aid_with_hash_over60(account_id) -> bool:
+    start_time, end_time = time_utils.get_two_months_time_range()
+    return WaIdHash.objects.filter(
+        id_hash=md5_encode(str(account_id).strip()),
+        create_time__gt=start_time,
+        create_time__lte=end_time
+    ).exists()
+
+
 def del_aid_with_hash(ids):
     if len(ids) == 0:
         return
@@ -475,13 +499,20 @@ def del_aid_with_hash(ids):
 def add_aid_hash(account_id, back_type, op_user_id):
     try:
         id_hash = md5_encode(str(account_id).strip())
-        WaIdHash.objects.create(
-            id_hash=id_hash,
-            account_id=account_id,
-            back_type=back_type,
-            op_user_id=op_user_id,
-            create_time=time_utils.get_now_bj_time_str()
-        )
+        if WaIdHash.objects.filter(id_hash=id_hash).exists():
+            WaIdHash.objects.filter(id_hash=id_hash).update(
+                back_type=back_type,
+                op_user_id=op_user_id,
+                create_time=time_utils.get_now_bj_time_str()
+            )
+        else:
+            WaIdHash.objects.create(
+                id_hash=id_hash,
+                account_id=account_id,
+                back_type=back_type,
+                op_user_id=op_user_id,
+                create_time=time_utils.get_now_bj_time_str()
+            )
     except:
         logging.warning("%s#处理WaIdHash数据失败", back_type)
 
@@ -533,6 +564,15 @@ def sync_id_hash():
 
 def check_aqr_with_hash(qr_content) -> bool:
     return WaQrHash.objects.filter(id_hash=md5_encode(str(qr_content).strip())).exists()
+
+
+def check_aqr_with_hash_over60(account_id) -> bool:
+    start_time, end_time = time_utils.get_two_months_time_range()
+    return WaQrHash.objects.filter(
+        id_hash=md5_encode(str(account_id).strip()),
+        create_time__gt=start_time,
+        create_time__lte=end_time
+    ).exists()
 
 
 def del_aqr_with_hash(qr_content_list):

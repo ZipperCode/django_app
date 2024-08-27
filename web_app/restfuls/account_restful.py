@@ -147,7 +147,10 @@ def account_id_add(request: HttpRequest):
     if utils.str_is_null(account_id):
         return RestResponse.failure("添加失败，a_id不能为空")
 
-    if AccountId.objects.filter(account_id=account_id, op_user__isnull=False).exists():
+    start_time, end_time = time_utils.get_two_months_time_range()
+    if AccountId.objects.filter(
+            account_id=account_id, op_user__isnull=False, create_time__gt=start_time, create_time__lt=end_time
+    ).exists():
         return RestResponse.failure("添加失败，该id已经存在")
 
     AccountId.objects.create(
@@ -287,8 +290,8 @@ def account_id_upload(request: HttpRequest):
     if not http_utils.check_user_id(user_id):
         logging.info("account_line_id_upload#上传失败，未获取到用户信息")
         return RestResponse.failure("上传，未获取到登录用户信息")
-
-    query = AccountId.objects.filter(account_id=a_id)
+    start_time, end_time = time_utils.get_two_months_time_range()
+    query = AccountId.objects.filter(account_id=a_id, create_time__gt=start_time, create_time__lt=end_time)
     if query.exists():
         logging.info("account_line_id_upload#已经存在")
         return RestResponse.failure(f"上传失败，id={a_id}已经存在")
@@ -299,7 +302,7 @@ def account_id_upload(request: HttpRequest):
         return RestResponse.failure("上传失败，请刷新页面后重试")
 
     AccountId.objects.create(
-        account_id=a_id, op_user_id=int(user_id),classify=int(classify),
+        account_id=a_id, op_user_id=int(user_id), classify=int(classify),
         create_time=time_utils.get_now_bj_time_str(),
         update_time=time_utils.get_now_bj_time_str()
     )
@@ -348,8 +351,11 @@ def account_id_batch_upload(request: HttpRequest):
     data_list = list(set(data_list))
     logging.info("account_id_batch_upload#data_list 1 = %s", data_list)
     data_list = list(map(lambda x: str(x).strip(), data_list))
-
-    exists_query = AccountId.objects.filter(account_id__in=data_list, classify=int(str(classify)))
+    start_time, end_time = time_utils.get_two_months_time_range()
+    exists_query = AccountId.objects.filter(
+        account_id__in=data_list, classify=int(str(classify)),
+        create_time__gt=start_time, create_time__lt=end_time
+    )
 
     exists_list = []
     for query in exists_query:
