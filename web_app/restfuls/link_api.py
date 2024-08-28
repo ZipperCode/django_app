@@ -45,7 +45,7 @@ def add_data(request: HttpRequest):
     if user.role == USER_ROLE_UPLOADER:
         return RestResponse.failure("非业务员不可操作")
     try:
-        link_service.insert(body, user)
+        link_service.insert_new(AccountLink.objects, body, user)
     except BusinessException as e:
         return RestResponse.failure(e.errmsg)
     return RestResponse.success("添加成功")

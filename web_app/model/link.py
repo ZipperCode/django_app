@@ -6,7 +6,7 @@ from web_app.model.users import User
 
 class AccountLink(models.Model):
     id = models.AutoField(primary_key=True)
-    link = models.CharField("链接", max_length=1000, null=False, unique=True)
+    link = models.CharField("链接", max_length=1000, null=False)
     remark = models.CharField("备注", max_length=255, null=True, blank=True)
     op_user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
@@ -16,7 +16,7 @@ class AccountLink(models.Model):
 
 class AccountLink2(models.Model):
     id = models.AutoField(primary_key=True)
-    link = models.CharField("链接", max_length=1000, null=False, unique=True)
+    link = models.CharField("链接", max_length=1000, null=False)
     remark = models.CharField("备注", max_length=255, null=True, blank=True)
     op_user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)

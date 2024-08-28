@@ -104,8 +104,12 @@ def insert(body, user):
 
     if len(link) < 15:
         raise BusinessException("链接长度不能小于15")
-
-    exists = AccountLink.objects.filter(link=link).exists()
+    start_time, end_time = time_utils.get_two_months_time_range()
+    exists = AccountLink.objects.filter(
+        link=link,
+        create_time__gte=start_time,
+        create_time__lt=end_time
+    ).exists()
     if exists:
         raise BusinessException("记录已存在")
 
@@ -128,8 +132,12 @@ def insert_new(queryset: QuerySet, body, user):
 
     if len(link) < 15:
         raise BusinessException("链接长度不能小于15")
-
-    exists = queryset.filter(link=link).exists()
+    start_time, end_time = time_utils.get_two_months_time_range()
+    exists = queryset.filter(
+        link=link,
+        create_time__gte=start_time,
+        create_time__lt=end_time
+    ).exists()
     if exists:
         raise BusinessException("记录已存在")
 
