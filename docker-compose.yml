@@ -28,7 +28,7 @@ services:
   #   restart: always # always表容器运行发生错误时一直重启
 
   db:
-    image: mysql
+    image: mysql:8.0
     env_file:  
       - .env # 使用了环境变量文件
     networks:  
