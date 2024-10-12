@@ -363,6 +363,9 @@
                         } else {
                             layer.msg("修改失败", {icon: 5});
                         }
+                    },
+                    complete() {
+                        layer.closeAll();
                     }
                 });
                 return false

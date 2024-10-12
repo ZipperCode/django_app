@@ -615,7 +615,8 @@
                                 });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg("修改失败", {icon: 5});
+                            layer.msg("修改失败, " + res.msg, {icon: 5});
+                            layer.closeAll();//关闭所有的弹出层
                         }
                     }
                 });
