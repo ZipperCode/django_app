@@ -58,7 +58,7 @@ def get_cur_over_7day_time_range() -> tuple:
 
 def get_two_months_time_range() -> tuple:
     bj_t = get_now_bj_datetime()
-    before60 = bj_t - timedelta(days=60)
+    before60 = bj_t - timedelta(days=90)
     return before60.astimezone(TIME_ZONE_ASIA_SHANG_HAI).strftime(DATE_TIME_FORMAT), bj_t.strftime(DATE_TIME_FORMAT)
 
 
