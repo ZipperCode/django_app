@@ -458,7 +458,7 @@ def wa_account_id_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    back_type = request.GET['back_type'] or user.get('back_type')
+    back_type = request.GET.get('back_type') or 0
     context = {
         "back_type": back_type
     }
@@ -480,7 +480,7 @@ def wa_account_qr_list_view(request: HttpRequest):
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-    back_type = request.GET['back_type'] or user.get('back_type')
+    back_type = request.GET.get('back_type') or user.get('back_type') or 0
     context = {
         "back_type": back_type
     }
