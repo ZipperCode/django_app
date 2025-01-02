@@ -124,10 +124,11 @@
 <script type="text/html" id="toolbar">
     <a class="layui-btn layui-btn-sm" lay-event="upload">上传</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_upload">批量上传</a>
-{#    <a class="layui-btn layui-btn-sm" href="/api/wa_id/export?back_type={{ back_type }}">全部批量导出</a>#}
     <a class="layui-btn layui-btn-sm" lay-event="dispatch">分发当日新增数据</a>
     <a class="layui-btn layui-btn-sm" lay-event="dispatch_all">分配所有未使用数据（管理员）</a>
     <a class="layui-btn layui-btn-sm" lay-event="batch_used_state">批量修改状态</a>
+    {#    <a class="layui-btn layui-btn-sm" href="/api/wa_id/export?back_type={{ back_type }}">全部批量导出</a>#}
+    <a class="layui-btn layui-btn-sm" lay-event="batch_export">全部批量导出</a>
 </script>
 
 <script type="text/html" id="table_control">
@@ -321,7 +322,7 @@
         const table = layui.table;
         const laydate = layui.laydate;
         const laytpl = layui.laytpl;
-        const upload = layui.upload
+        const upload = layui.upload;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const headers = {
             "Accept": "application/json; charset=utf-8",
@@ -407,7 +408,8 @@
                 });
                 initBatchUpload()
             } else if (layEvent === 'batch_export') {
-                handleExport()
+                {#handleExport()#}
+                exportDataWithType()
             } else if (layEvent === 'dispatch') {
                 handleDispatch();
             } else if (layEvent === 'dispatch_all') {
@@ -694,7 +696,7 @@
         }
 
         function exportDataWithType() {
-            layer.open({
+            const panel = layer.open({
                 type: 1,
                 title: "请选择",
                 area: ['400px', '300px'],
@@ -704,14 +706,18 @@
                 exportType: "0"
             });
 
-            form.on('submit(usedSubmit)', function (massage) {
+            form.on('submit(handleExport)', function (massage) {
                 let exportType = massage.field.exportType
+                var loadingIndex = layer.load(1, {shade: [0.3, '#000']});
                 console.log("导出数据选择类型 = " + massage.field.exportType)
                 const xhr = new XMLHttpRequest();
                 xhr.open('get', "/api/wa_id/export?back_type={{ back_type }}&export_type=" + exportType, true); // 也可以使用POST方式，根据接口
                 xhr.responseType = "blob"; // 返回类型blob
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
                 // 定义请求完成的处理函数，请求前也可以增加加载框/禁用下载按钮逻辑
                 xhr.onload = function () {
+                    layer.close(loadingIndex);
+                    console.log("handleExport onload")
                     // 请求完成
                     if (this.status === 200) {
                         // 返回200
@@ -728,12 +734,21 @@
                         layer.msg("导出失败，" + this.status, {icon: 5})
                     }
                 };
+                xhr.onerror = function () {
+                    layer.msg("导出失败，请求错误", {icon: 5})
+                };
+                xhr.onloadend = function () {
+                    layer.close(loadingIndex);
+                    layer.close(panel);
+                    console.log("handleExport onloadend")
+                }
                 xhr.timeout = 1000 * 60 * 60 * 24; //将超时时间设置为1天
                 xhr.ontimeout = function () { //请求终止时，会执行ontimeout事件处理程序
                     layer.msg("导出失败，请求超时", {icon: 5})
                 }
                 // 发送ajax请求
                 xhr.send()
+                return false;
             });
         }
 
