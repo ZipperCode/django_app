@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'web_app',
-    # 'web_app.InitConfig',
+    # 'web_app',
+    'web_app.config.configs.InitConfig',
 
 ]
 

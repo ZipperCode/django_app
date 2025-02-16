@@ -86,7 +86,7 @@
                         </dd>
                     </dl>
                 </li>
-                {% if request.session.user.role == 0 %}
+                {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                     <li>
                         <a>
                             <i class="iconfont icon-guanliyuan"></i>
@@ -104,7 +104,7 @@
                     </li>
                 {% endif %}
 
-                {% if request.session.user.role == 0 or request.session.user.back_type == 1 %}
+                {% if request.session.user.role == -1 or request.session.user.role == 0 or request.session.user.back_type == 1 %}
                     <li>
                         <a data-url="admin">
                             <i class="iconfont icon-quanxian"></i>
@@ -118,7 +118,7 @@
                                     <span>LinesID</span>
                                 </a>
                             </dd>
-                            {% if request.session.user.role == 0 %}
+                            {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                 <dd>
                                     <a data-url="/admin/view/auth/lid_record/list?line_classify=0">
                                         <i class="iconfont icon-guanliyuan"></i>
@@ -134,7 +134,7 @@
                                     <span>Lines二维码</span>
                                 </a>
                             </dd>
-                            {% if request.session.user.role == 0 %}
+                            {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                 <dd>
                                     <a data-url="/admin/view/auth/lqr_record/list?line_classify=0">
                                         <i class="iconfont icon-guanliyuan"></i>
@@ -159,7 +159,7 @@
                                     <span>PairsID</span>
                                 </a>
                             </dd>
-                            {% if request.session.user.role == 0 %}
+                            {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                 <dd>
                                     <a data-url="/admin/view/auth/lid_record/list?classify=1">
                                         <i class="iconfont icon-guanliyuan"></i>
@@ -175,7 +175,7 @@
                                     <span>Pairs二维码</span>
                                 </a>
                             </dd>
-                            {% if request.session.user.role == 0 %}
+                            {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                 <dd>
                                     <a data-url="/admin/view/auth/lqr_record/list?classify=1">
                                         <i class="iconfont icon-guanliyuan"></i>
@@ -187,7 +187,6 @@
                         </dl>
                     </li>
                 {% endif %}
-
                 {% if wa_menu_list %}
                     {% for menu in wa_menu_list %}
                         <li>
@@ -203,7 +202,7 @@
                                         <span>{{ menu.wa_id.name }}</span>
                                     </a>
                                 </dd>
-                                {% if request.session.user.role == 0 %}
+                                {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                     <dd>
                                         <a data-url="{{ menu.wa_id_rec.path }}">
                                             <i class="iconfont icon-guanliyuan"></i>
@@ -219,7 +218,7 @@
                                 </dd>
 
 
-                                {% if request.session.user.role == 0 %}
+                                {% if request.session.user.role == -1 or request.session.user.role == 0 %}
                                     <dd>
                                         <a data-url="{{ menu.wa_qr_rec.path }}">
                                             <i class="iconfont icon-guanliyuan"></i>

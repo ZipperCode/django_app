@@ -24,7 +24,7 @@ from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.accounts import AccountQr, LineUserAccountQrRecord
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS, USER_ROLE_SUPER_ADMIN
 from web_app.settings import BASE_DIR, MEDIA_ROOT
 from web_app.util import rest_list_util
 from util.exception import BusinessException
@@ -208,14 +208,6 @@ def account_qr_update(request: HttpRequest):
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 elif _status == UsedStatus.Used:
                     return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
-                # else:
-                #     LineUserAccountQrRecord.objects.create(
-                #         user_id=user_id,
-                #         account_id=db_id,
-                #         used=UsedStatus.Default,
-                #         create_time=time_utils.get_now_bj_time_str(),
-                #         update_time=time_utils.get_now_bj_time_str()
-                #     )
             elif is_business_user:
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
@@ -224,13 +216,6 @@ def account_qr_update(request: HttpRequest):
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 else:
                     return RestResponse.failure("修改失败，记录不存在")
-                    # LineUserAccountQrRecord.objects.create(
-                    #     user_id=user_id,
-                    #     account_id=db_id,
-                    #     used=UsedStatus.Default,
-                    #     create_time=time_utils.get_now_bj_time_str(),
-                    #     update_time=time_utils.get_now_bj_time_str()
-                    # )
 
         query.update(**upd_field)
 
@@ -495,7 +480,7 @@ def account_qr_export(request: HttpRequest):
         logging.info("export id 失败，需要登录")
         return HttpResponse(status=404, content="下载失败，需要登录")
 
-    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+    if request.session['user'].get('role') == USER_ROLE_SUPER_ADMIN:
         # 管理员导出全部数据
         logging.info("管理员导出全部数据")
         query_list = AccountQr.objects.all()
@@ -652,12 +637,17 @@ def update_bind(request: HttpRequest):
 def handle_used_state(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("批量修改使用状态#line_qr#body = %s", str(body))
+    role = request.session.get('user').get('role')
+    is_admin = role == USER_ROLE_SUPER_ADMIN
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")
         used = body.get('used')
         used = utils.get_status(used)
-        AccountQr.objects.filter(id__in=ids).update(used=used)
+        if is_admin:
+            AccountQr.objects.filter(id__in=ids).update(used=used)
+        else:
+            AccountQr.objects.filter(id__in=ids, is_modify=False).update(used=used,  is_modify=True)
         LineUserAccountQrRecord.objects.filter(account__id__in=ids).update(used=used)
         return RestResponse.success()
     except BaseException as e:

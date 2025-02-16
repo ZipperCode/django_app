@@ -20,7 +20,7 @@ from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.decorators.restful_decorator import api_post
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS, USER_TYPES
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_BUSINESS, USER_TYPES, USER_ROLE_SUPER_ADMIN
 from web_app.model.wa_accounts import WaAccountQr
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR, MEDIA_ROOT
@@ -216,6 +216,7 @@ def wa_qr_update(request: HttpRequest):
     role = request.session.get('user').get('role')
     is_business_user = role == USER_ROLE_BUSINESS
     is_admin = role == USER_ROLE_ADMIN
+    is_super_admin = role == USER_ROLE_SUPER_ADMIN
     upd_field = {
         "country": country, "age": age,
         "work": work, "money": money, "mark": mark, "link_mark": link_mark,
@@ -225,8 +226,12 @@ def wa_qr_update(request: HttpRequest):
         if not utils.str_is_null(used):
             _status = utils.get_status(used)
             logging.info("修改状态，当前状态值为%s", str(_status))
-            if is_admin:
+            if is_admin or is_super_admin:
                 upd_field['used'] = _status
+                if old_used == _status and is_admin:
+                    return RestResponse.failure("修改失败，使用状态只能修改一次")
+                elif old_used != _status and is_admin:
+                    upd_field['is_modify'] = True
                 logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
                 if _status == UsedStatus.Used:
                     # 修改is_bind=True，分发的时候就过滤这个了
@@ -581,7 +586,7 @@ def wa_qr_export(request: HttpRequest):
     if not queryset:
         return HttpResponse(status=404, content=f"失败，用户类型错误 {back_type}")
 
-    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+    if request.session['user'].get('role') == USER_ROLE_SUPER_ADMIN:
         # 管理员导出全部数据
         logging.info("管理员导出全部数据")
         query_list = queryset.values(

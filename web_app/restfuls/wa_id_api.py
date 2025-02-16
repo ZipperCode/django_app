@@ -17,7 +17,7 @@ from util.utils import handle_uploaded_file
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_TYPES
+from web_app.model.users import User, USER_ROLE_SUPER_ADMIN, USER_ROLE_ADMIN, USER_TYPES, USER_ROLE_SUPER_ADMIN
 from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR
@@ -227,8 +227,9 @@ def wa_id_update(request: HttpRequest):
     old_used = data.used
     is_modify = data.is_modify
     role = request.session.get('user').get('role')
-    is_business_user = role == USER_ROLE_BUSINESS
+    is_super_admin = role == USER_ROLE_SUPER_ADMIN
     is_admin = role == USER_ROLE_ADMIN
+    logging.info("当前用户角色 = %s", role)
     upd_field = {
         "account_id": account_id, "country": country, "age": age,
         "work": work, "money": money, "mark": mark, "link_mark": link_mark,
@@ -239,8 +240,12 @@ def wa_id_update(request: HttpRequest):
         if not utils.str_is_null(used):
             _status = utils.get_status(used)
             logging.info("修改状态，当前状态值为%s", str(_status))
-            if is_admin:
+            if is_admin or is_super_admin:
+                if is_modify and old_used != _status and is_admin:
+                    return RestResponse.failure("修改失败，使用状态只能修改一次")
                 upd_field['used'] = _status
+                if old_used != _status and is_admin:
+                    upd_field['is_modify'] = True
                 logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
                 if _status == UsedStatus.Used:
                     # 修改is_bind=True，分发的时候就过滤这个了
@@ -254,7 +259,7 @@ def wa_id_update(request: HttpRequest):
                     return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
             else:
                 if is_modify and old_used != _status:
-                    return RestResponse.failure("修改失败，只能修改一次")
+                    return RestResponse.failure("修改失败，使用状态只能修改一次")
 
                 logging.info("业务员编辑, 直接状态为 = %s is_modify = %s", str(_status), is_modify)
                 upd_field['used'] = _status
@@ -464,7 +469,8 @@ def wa_id_export(request):
         }
         queryset = queryset.filter(**filter_field)
 
-    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+    role = request.session['user'].get('role')
+    if role == USER_ROLE_SUPER_ADMIN:
         logging.info("管理员导出全部数据")
         # 管理员导出全部数据
         WaAccountId.objects.values("account_id")
@@ -677,7 +683,7 @@ def handle_used_state(request: HttpRequest):
     queryset = wa_service.wa_id_query_set(back_type)
     record_query = wa_service.wa_id_record_queryset(back_type)
     role = request.session.get('user').get('role')
-    is_admin = role == USER_ROLE_ADMIN
+    is_admin = role == USER_ROLE_SUPER_ADMIN
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")

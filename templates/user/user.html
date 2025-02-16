@@ -62,16 +62,22 @@
 <script type="text/javascript" src="{% static 'jquery/jquery-md5.js' %}"></script>
 
 {% comment %} component {% endcomment %}
-{% if request.session.user.role == 0 %}
+{% if request.session.user.role == 0 or request.session.user.role == -1 %}
     <script type="text/html" id="toolbar">
         <a class="layui-btn layui-btn-sm" lay-event="add">添加账号</a>
     </script>
     <script type="text/html" id="table_control">
         <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
         <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="modify_pwd">修改密码</a>
-        {% verbatim %} {{# if(!d.role == 0) { }}{% endverbatim %}
-        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
-        {% verbatim %} {{# } }}{% endverbatim %}
+        {% if request.session.user.role == -1 %}
+            {% verbatim %} {{# if(d.role != -1) { }}{% endverbatim %}
+            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            {% verbatim %} {{# } }}{% endverbatim %}
+        {% elif request.session.user.role == 0 %}
+             {% verbatim %} {{# if(d.role != -1 && d.role != 0) { }}{% endverbatim %}
+            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            {% verbatim %} {{# } }}{% endverbatim %}
+        {% endif %}
     </script>
 
 {% endif %}
@@ -272,7 +278,7 @@
             elem: '#list',
             url: '/api/user_list',
             page: true,
-            {% if request.session.user.role == 0 %}
+            {% if request.session.user.role == 0 or request.session.user.role == -1 %}
                 toolbar: '#toolbar',
             {% endif %}
             cellMinWidth: 80,
@@ -292,7 +298,7 @@
                 {field: 'back_type', title: '后台类型', align: 'center', templet: backTypeTemplet,},
                 {field: 'create_time', title: '创建时间', align: 'center'},
                 {field: 'update_time', title: '更新时间', align: 'center'},
-                {% if request.session.user.role == 0 %}
+                {% if request.session.user.role == 0 or request.session.user.role == -1 %}
                     {
                         field: 'action',
                         title: '操作',

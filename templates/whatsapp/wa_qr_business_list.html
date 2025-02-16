@@ -304,7 +304,7 @@
 
         var globalCurrentPage = 1;
         let op_col_width = 120
-        {% if request.session.user.role == 0 %}
+        {% if request.session.user.role == 0 or request.session.user.role == -1 %}
             op_col_width = 180
         {% endif %}
         /*表格渲染*/

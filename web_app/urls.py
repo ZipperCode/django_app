@@ -18,8 +18,8 @@ from django.urls import path, re_path
 from django.views.static import serve
 
 from web_app import views, settings
-from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_restful, wa_qr_restful, \
-    wa2_id_restful, wa2_qr_restful, wa_id_api, wa_qr_api, link_api, link2_api
+from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_api, wa_qr_api, link_api, \
+    link2_api
 
 urlpatterns = [
     path('admin', views.login_view),

@@ -12,7 +12,7 @@ from django.utils.crypto import md5
 
 from util import time_utils
 from web_app.decorators.admin_decorator import log_func
-from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_UPLOADER, USER_ROLE_BUSINESS
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_UPLOADER, USER_ROLE_BUSINESS, USER_ROLE_SUPER_ADMIN
 from web_app.util.wa_map import MENU_MAP
 
 logging.basicConfig(
@@ -42,7 +42,8 @@ async def hello(request: HttpRequest):
 def index_view(request: HttpRequest):
     user = request.session.get('user')
     context = {}
-    if user.get('role') != 0:
+    role = user.get('role')
+    if role != 0 and role != -1:
         back_type = user.get('back_type')
         wa_menu_list = []
         # menu_list = UserMenu.objects.filter(user_id=user.id).all()
@@ -65,23 +66,11 @@ def index_view(request: HttpRequest):
 
 @log_func
 def login_view(request: HttpRequest):
-    try:
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create(
-                username='admin',
-                password=md5("admin".encode()).digest().hex().lower(),
-                is_admin=True,
-                name="Admin",
-                role=USER_ROLE_ADMIN
-            )
-    except BaseException:
-        logging.info("append excel fail = %s", traceback.format_exc())
-        pass
-
     if request.session.get('user') is not None:
         context = {}
         user = request.session.get('user')
-        if user.get('role') != 0:
+        role = user.get('role')
+        if role != 0 and role != -1:
             back_type = user.get('back_type')
             wa_menu_list = []
             # menu_list = UserMenu.objects.filter(user_id=user.id).all()
@@ -211,8 +200,8 @@ def account_id_list_view(request: HttpRequest):
         return render(request, 'login.html', {
             "msg": "请先登录"
         })
-
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/line_id_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/line_id_uploader_list.html')
@@ -241,7 +230,8 @@ def lid_list_view(request: HttpRequest):
         "classify": classify
     }
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'line/line_id_list.html', context)
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'line/line_id_uploader_list.html', context)
@@ -260,7 +250,8 @@ def account_qr_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/line_qr_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/line_qr_uploader_list.html')
@@ -287,7 +278,8 @@ def lqr_list_view(request: HttpRequest):
     context = {
         "classify": classify
     }
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'line/line_qr_list.html', context)
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'line/line_qr_uploader_list.html', context)
@@ -350,7 +342,8 @@ def whatsapp_account_id_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/wa_id_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/wa_id_uploader_list.html')
@@ -369,7 +362,8 @@ def whatsapp_account_qr_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/wa_qr_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/wa_qr_uploader_list.html')
@@ -404,7 +398,8 @@ def whatsapp2_account_id_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/wa2_id_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/wa2_id_uploader_list.html')
@@ -423,7 +418,8 @@ def whatsapp2_account_qr_list_view(request: HttpRequest):
             "msg": "请先登录"
         })
 
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'account/wa2_qr_list.html')
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'account/wa2_qr_uploader_list.html')
@@ -462,7 +458,8 @@ def wa_account_id_list_view(request: HttpRequest):
     context = {
         "back_type": back_type
     }
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'whatsapp/wa_id_list.html', context)
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'whatsapp/wa_id_uploader_list.html', context)
@@ -484,7 +481,8 @@ def wa_account_qr_list_view(request: HttpRequest):
     context = {
         "back_type": back_type
     }
-    if user.get('role') == USER_ROLE_ADMIN:
+    role = user.get('role')
+    if role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN:
         return render(request, 'whatsapp/wa_qr_list.html', context)
     elif user.get("role") == USER_ROLE_UPLOADER:
         return render(request, 'whatsapp/wa_qr_uploader_list.html', context)

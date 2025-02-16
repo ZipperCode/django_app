@@ -87,7 +87,7 @@
                                name="date_end">
                     </div>
                 </div>
-                {% if request.session.user.role == 0 %}
+                {% if request.session.user.role == 0 or request.session.user.role == -1 %}
                     {% comment %} <div class="layui-inline">
                         <label class="layui-form-label">上传人</label>
                         <div class="layui-input-inline">
@@ -152,7 +152,7 @@
 <script type="text/html" id="table_control">
     <a class="layui-btn layui-btn-xs layui-btn layui-btn-warm" lay-event="copy">复制</a>
     <a class="layui-btn layui-btn-xs layui-btn-primary" lay-event="edit">编辑</a>
-    {% if request.session.user.role == 0 %}
+    {% if request.session.user.role == 0 or request.session.user.role == -1 %}
         <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     {% endif %}
 </script>
@@ -437,7 +437,7 @@
             });
             var globalCurrentPage = 1;
             let op_col_width = 120
-            {% if request.session.user.role == 0 %}
+            {% if request.session.user.role == 0 or request.session.user.role == -1 %}
                 op_col_width = 180
             {% endif %}
             /*表格渲染*/
@@ -456,7 +456,7 @@
                     {field: 'country', title: '国家', align: 'center', sort: true, minWidth: 80},
                     {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate, minWidth: 110},
 
-                    {% if request.session.user.role == 0 %}
+                    {% if request.session.user.role == 0 or request.session.user.role == -1 %}
                         {field: 'op_user__username', title: '上传人', align: 'center', sort: true, minWidth: 120},
                     {% endif %}
                     {

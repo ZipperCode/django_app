@@ -12,16 +12,16 @@ from django.views.decorators.csrf import csrf_exempt
 
 from util import utils, time_utils, excel_util, http_utils
 from util.excel_util import ExcelBean
+from util.exception import BusinessException
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
 from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.accounts import AccountId, LineUserAccountIdRecord
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_ROLE_SUPER_ADMIN
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util
-from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -197,9 +197,13 @@ def account_id_update(request: HttpRequest):
     if not query.exists():
         return RestResponse.failure("修改失败，记录不存在")
 
+    data = query.get()
+    old_used = data.used
+    is_modify = data.is_modify
     role = request.session.get('user').get('role')
-    is_business_user = role == USER_ROLE_BUSINESS
+    is_super_admin = role == USER_ROLE_SUPER_ADMIN
     is_admin = role == USER_ROLE_ADMIN
+    logging.info("当前用户角色 = %s", role)
     upd_field = {
         "account_id": account_id, "country": country, "age": age,
         "work": work, "money": money, "mark": mark,
@@ -210,8 +214,12 @@ def account_id_update(request: HttpRequest):
         if not utils.str_is_null(used):
             _status = utils.get_status(used)
             logging.info("修改状态，当前状态值为%s", str(_status))
-            if is_admin:
+            if is_admin or is_super_admin:
+                if is_modify and old_used != _status and is_admin:
+                    return RestResponse.failure("修改失败，使用状态只能修改一次")
                 upd_field['used'] = _status
+                if old_used != _status and is_admin:
+                    upd_field['is_modify'] = True
                 logging.info("管理员编辑，且数据的状态为 %s, 修改", used)
                 # if _status == UsedStatus.Used:
                 # 修改is_bind=True，分发的时候就过滤这个了
@@ -223,17 +231,14 @@ def account_id_update(request: HttpRequest):
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 elif _status == UsedStatus.Used:
                     return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
-                # else:
-                #     LineUserAccountIdRecord.objects.create(
-                #         user_id=user_id,
-                #         account_id=account_id,
-                #         used=UsedStatus.Default,
-                #         create_time=time_utils.get_now_bj_time_str(),
-                #         update_time=time_utils.get_now_bj_time_str()
-                #     )
 
-            elif is_business_user:
+            else:
+                if is_modify and old_used != _status:
+                    return RestResponse.failure("修改失败，使用状态只能修改一次")
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
+                upd_field['used'] = _status
+                if old_used != _status:
+                    upd_field['is_modify'] = True
                 upd_field['used'] = _status
                 _q = LineUserAccountIdRecord.objects.filter(user_id=user_id, account__account_id=account_id)
                 if _q.exists():
@@ -388,7 +393,7 @@ def account_id_export(request):
     if not http_utils.check_user_id(user_id):
         return RestResponse.failure("导出，未获取到登录用户信息")
 
-    if request.session['user'].get('role') == USER_ROLE_ADMIN:
+    if request.session['user'].get('role') == USER_ROLE_SUPER_ADMIN:
         logging.info("管理员导出全部数据")
         # 管理员导出全部数据
         query_list = list(AccountId.objects.values(
@@ -565,12 +570,17 @@ def update_bind(request: HttpRequest):
 def handle_used_state(request: HttpRequest):
     body = utils.request_body(request)
     logging.info("批量修改使用状态#line_id#body = %s", str(body))
+    role = request.session.get('user').get('role')
+    is_admin = role == USER_ROLE_SUPER_ADMIN
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")
         used = body.get('used')
         used = utils.get_status(used)
-        AccountId.objects.filter(id__in=ids).update(used=used)
+        if is_admin:
+            AccountId.objects.filter(id__in=ids).update(used=used)
+        else:
+            AccountId.objects.filter(id__in=ids, is_modify=False).update(used=used, is_modify=True)
         LineUserAccountIdRecord.objects.filter(account__id__in=ids).update(used=used)
         return RestResponse.success()
     except BaseException as e:

@@ -1,10 +1,12 @@
 from django.db import models
 
+USER_ROLE_SUPER_ADMIN = -1
 USER_ROLE_ADMIN = 0
 USER_ROLE_UPLOADER = 1
 USER_ROLE_BUSINESS = 2
 
 ROLE_CHOOSE = (
+    (USER_ROLE_SUPER_ADMIN, u"超级管理员"),
     (USER_ROLE_ADMIN, u"管理员"),
     (USER_ROLE_UPLOADER, u"粉端账号"),
     (USER_ROLE_BUSINESS, u"业务员"),

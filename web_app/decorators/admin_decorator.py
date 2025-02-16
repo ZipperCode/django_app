@@ -5,7 +5,7 @@ from django.http import HttpRequest
 
 from util import utils
 from util.restful import RestResponse
-from web_app.model.users import User
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_SUPER_ADMIN
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -40,7 +40,9 @@ def op_admin(func):
         if isinstance(request, HttpRequest):
             logging.debug(f"admin 权限拦截器, 处理函数 {func.__name__}")
             user = request.session.get('user')
-            if user is None or user.get('role') != 0:
+            role = user.get('role')
+            is_admin = role == USER_ROLE_ADMIN or role == USER_ROLE_SUPER_ADMIN
+            if user is None or not is_admin:
                 return RestResponse.failure("非管理员无法操作")
 
         return func(*args, **kw)
