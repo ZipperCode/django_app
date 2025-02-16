@@ -361,11 +361,13 @@
                                 });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                            layer.msg("修改失败", {icon: 5});
+                            layer.msg("修改失败： " + res.msg, {icon: 5});
                         }
                     },
                     complete() {
-                        layer.closeAll();
+                        setTimeout(function () {
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
                     }
                 });
                 return false

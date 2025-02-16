@@ -164,20 +164,19 @@ def wa_id_add(request: HttpRequest):
 
     if not queryset:
         return RestResponse.failure("添加失败，用户状态错误")
-
+    logging.info("添加WaId时#aid = %s", account_id)
     logging.info("添加WaId时，删除空映射的数据")
-    with transaction.atomic():
-        no_user_query = queryset.filter(op_user__isnull=True)
-        del_ids = list(no_user_query.values_list("account_id", flat=True))
-        wa_service.del_aid_with_hash(del_ids)
-        no_user_query.delete()
+    # with transaction.atomic():
+    #     no_user_query = queryset.filter(op_user__isnull=True)
+    #     del_ids = list(no_user_query.values_list("account_id", flat=True))
+    #     wa_service.del_aid_with_hash(del_ids)
+    #     no_user_query.delete()
 
     if wa_service.check_aid_with_hash_over60(account_id):
         logging.info("添加Id#%s#%s#已经存在", back_type, account_id)
         return RestResponse.failure("添加失败，该id已经存在")
-
     wa_service.add_aid_hash(account_id, back_type, user_id)
-
+    logging.info("上传#aid = %s", account_id)
     queryset.create(
         account_id=account_id, country=country, age=age,
         work=work, money=money, mark=mark, link_mark=link_mark,
@@ -224,7 +223,9 @@ def wa_id_update(request: HttpRequest):
     queryset = queryset.filter(id=int(a_id), op_user__isnull=False)
     if not queryset.exists():
         return RestResponse.failure("修改失败，记录不存在")
-
+    data = queryset.get()
+    old_used = data.used
+    is_modify = data.is_modify
     role = request.session.get('user').get('role')
     is_business_user = role == USER_ROLE_BUSINESS
     is_admin = role == USER_ROLE_ADMIN
@@ -251,32 +252,19 @@ def wa_id_update(request: HttpRequest):
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 elif _status == UsedStatus.Used:
                     return RestResponse.failure("失败，该条数据还未分配, 无法修改为已使用")
-                # else:
-                #     create_dict = {
-                #         'user_id': user_id,
-                #         'account_id': a_id,
-                #         'used': UsedStatus.Default,
-                #         'create_time': time_utils.get_now_bj_time_str(),
-                #         'update_time': time_utils.get_now_bj_time_str()
-                #     }
-                #     wa_service.wa_id_record_create_model(back_type, **create_dict)
-            elif is_business_user:
-                logging.info("业务员编辑, 直接状态为 = %s", str(_status))
+            else:
+                if is_modify and old_used != _status:
+                    return RestResponse.failure("修改失败，只能修改一次")
+
+                logging.info("业务员编辑, 直接状态为 = %s is_modify = %s", str(_status), is_modify)
                 upd_field['used'] = _status
+                upd_field['is_modify'] = True
                 _q = record_query.filter(user_id=user_id, account_id=a_id)
                 if _q.exists():
                     logging.info("业务员编辑为%s，同步更新记录状态", _status)
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
                 else:
                     return RestResponse.failure("修改失败，记录不存在")
-                    # create_dict = {
-                    #     'user_id': user_id,
-                    #     'account_id': a_id,
-                    #     'used': UsedStatus.Default,
-                    #     'create_time': time_utils.get_now_bj_time_str(),
-                    #     'update_time': time_utils.get_now_bj_time_str()
-                    # }
-                    # wa_service.wa_id_record_create_model(back_type, **create_dict)
 
         logging.info("要跟新的字段 = %s", upd_field)
         queryset.update(**upd_field)
@@ -687,12 +675,17 @@ def handle_used_state(request: HttpRequest):
         return RestResponse.failure("错误，backType类型错误")
     queryset = wa_service.wa_id_query_set(back_type)
     record_query = wa_service.wa_id_record_queryset(back_type)
+    role = request.session.get('user').get('role')
+    is_admin = role == USER_ROLE_ADMIN
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")
         used = body.get('used')
         used = utils.get_status(used)
-        queryset.filter(id__in=ids).update(used=used)
+        if is_admin:
+            queryset.filter(id__in=ids).update(used=used)
+        else:
+            queryset.filter(id__in=ids, is_modify=False).update(used=used, is_modify=True)
         record_query.filter(account__id__in=ids).update(used=used)
         return RestResponse.success()
     except BaseException as e:

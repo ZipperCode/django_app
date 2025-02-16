@@ -200,7 +200,6 @@ def wa_qr_update(request: HttpRequest):
     user = user_dao.get_user(request)
     if not user:
         return RestResponse.failure("添加失败，操作用户不存在")
-
     user_id = user.id
     back_type = body.get('back_type') or user.back_type
     queryset = wa_service.wa_qr_queryset(back_type)
@@ -211,6 +210,9 @@ def wa_qr_update(request: HttpRequest):
     queryset = queryset.filter(id=db_id)
     if not queryset.exists():
         return RestResponse.failure("修改失败，记录不存在")
+    data = queryset.get()
+    old_used = data.used
+    is_modify = data.is_modify
     role = request.session.get('user').get('role')
     is_business_user = role == USER_ROLE_BUSINESS
     is_admin = role == USER_ROLE_ADMIN
@@ -244,9 +246,12 @@ def wa_qr_update(request: HttpRequest):
                 #         'update_time': time_utils.get_now_bj_time_str()
                 #     }
                 #     wa_service.wa_qr_record_create_model(back_type, **create_dict)
-            elif is_business_user:
+            else:
+                if is_modify and old_used != _status:
+                    return RestResponse.failure("修改失败，只能修改一次")
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
+                upd_field['is_modify'] = True
                 _q = record_queryset.filter(user_id=user_id, account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())
@@ -790,12 +795,17 @@ def handle_used_state(request: HttpRequest):
     record_queryset = wa_service.wa_qr_record_queryset(back_type)
     if not queryset or not record_queryset:
         return RestResponse.failure(f"失败，用户类型错误 {back_type}")
+    role = request.session.get('user').get('role')
+    is_admin = role == USER_ROLE_ADMIN
     try:
         ids = body.get("ids", "")
         ids = ids.split(",")
         used = body.get('used')
         used = utils.get_status(used)
-        queryset.filter(id__in=ids).update(used=used)
+        if is_admin:
+            queryset.filter(id__in=ids).update(used=used)
+        else:
+            queryset.filter(id__in=ids, is_modify=False).update(used=used, is_modify=True)
         record_queryset.filter(account__id__in=ids).update(used=used)
         return RestResponse.success()
     except BaseException as e:

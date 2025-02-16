@@ -659,7 +659,9 @@
                         layer.msg("请求失败", {icon: 5})
                     },
                     complete() {
-                        layer.close(index2);
+                        setTimeout(function () {
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
                     }
                 });
             });

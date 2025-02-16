@@ -497,7 +497,9 @@
                         }
                     },
                     complete() {
-                        layer.closeAll();
+                        setTimeout(function () {
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
                     }
                 });
                 return false

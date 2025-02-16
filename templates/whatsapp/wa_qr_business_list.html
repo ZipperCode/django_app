@@ -295,7 +295,7 @@
             const max = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
             laydate.render({
                 elem: this,
-              type: 'datetime',
+                type: 'datetime',
                 min: '2023-1-1 00:00:00',
                 max: max
                 , trigger: 'click'
@@ -589,7 +589,7 @@
                                 });//修改成功修改表格数据不进行跳转
                             }, 1000);
                         } else {
-                             layer.msg("修改失败, " + res.msg, {icon: 5});
+                            layer.msg("修改失败, " + res.msg, {icon: 5});
                             layer.closeAll();//关闭所有的弹出层
                         }
                     }, error: function (err) {
@@ -634,7 +634,9 @@
                         layer.msg("请求失败", {icon: 5})
                     },
                     complete() {
-                        layer.close(index2);
+                        setTimeout(function () {
+                            layer.closeAll();//关闭所有的弹出层
+                        }, 1000);
                     }
                 });
             });
