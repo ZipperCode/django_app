@@ -251,7 +251,8 @@ def wa_qr_update(request: HttpRequest):
                     return RestResponse.failure("修改失败，只能修改一次")
                 logging.info("业务员编辑, 直接状态为 = %s", str(_status))
                 upd_field['used'] = _status
-                upd_field['is_modify'] = True
+                if old_used != _status:
+                    upd_field['is_modify'] = True
                 _q = record_queryset.filter(user_id=user_id, account_id=db_id)
                 if _q.exists():
                     _q.update(used=_status, update_time=time_utils.get_now_bj_time_str())

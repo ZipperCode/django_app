@@ -258,7 +258,8 @@ def wa_id_update(request: HttpRequest):
 
                 logging.info("业务员编辑, 直接状态为 = %s is_modify = %s", str(_status), is_modify)
                 upd_field['used'] = _status
-                upd_field['is_modify'] = True
+                if old_used != _status:
+                    upd_field['is_modify'] = True
                 _q = record_query.filter(user_id=user_id, account_id=a_id)
                 if _q.exists():
                     logging.info("业务员编辑为%s，同步更新记录状态", _status)
