@@ -480,8 +480,10 @@ def check_aid_with_hash(account_id) -> bool:
 
 def check_aid_with_hash_over60(account_id) -> bool:
     start_time, end_time = time_utils.get_5_months_time_range()
+    hash_val = md5_encode(str(account_id).strip())
+    logging.info("check_aid_with_hash_over60#start = %s, end = %s, hash_val = %s", start_time, end_time, hash_val)
     return WaIdHash.objects.filter(
-        id_hash=md5_encode(str(account_id).strip()),
+        id_hash=hash_val,
         create_time__gt=start_time,
         create_time__lte=end_time
     ).exists()

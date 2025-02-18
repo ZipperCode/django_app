@@ -320,6 +320,9 @@ def wa_id_upload(request: HttpRequest):
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
 
+    if ' ' in a_id:
+        return RestResponse.failure("上传失败，id格式错误")
+
     user = user_dao.get_user(request)
     if user is None or not isinstance(user, User):
         return RestResponse.failure("添加失败，未获取到登录用户信息")

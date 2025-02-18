@@ -290,7 +290,8 @@ def account_id_upload(request: HttpRequest):
     logging.info("account_line_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
-
+    if ' ' in a_id:
+        return RestResponse.failure("上传失败，id格式错误")
     user_id = request.session.get('user_id')
     if not http_utils.check_user_id(user_id):
         logging.info("account_line_id_upload#上传失败，未获取到用户信息")
