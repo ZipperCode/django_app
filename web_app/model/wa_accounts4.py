@@ -19,6 +19,7 @@ class WaAccountId4(models.Model):
     is_bind = models.BooleanField("是否绑定用户", default=False)
     is_modify = models.BooleanField("是否修改", default=False)
     used = models.SmallIntegerField("是否使用", default=UsedStatus.Default, choices=UsedStatus.choices)
+    images = models.TextField("图片路径，逗号分割", null=True)
     create_time = models.DateTimeField("创建时间（上传时间）", null=True, auto_now_add=True)
     update_time = models.DateTimeField("更新时间", null=True, auto_now=True)
 
