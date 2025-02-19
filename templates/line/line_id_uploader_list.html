@@ -409,6 +409,7 @@
                     ...massage.field
                 }
                 formData.append("back_type", "{{ back_type }}")
+                formData.append("line_classify", "{{ classify }}")
                 Object.keys(field).forEach((key) => {
                     formData.append(key, field[key]);
                 })
