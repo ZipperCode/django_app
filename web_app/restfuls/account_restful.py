@@ -19,7 +19,8 @@ from web_app.dao import line_account_dao, user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.accounts import AccountId, LineUserAccountIdRecord
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_ROLE_SUPER_ADMIN
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_ROLE_SUPER_ADMIN
+from web_app.restfuls.common import upload_images
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util
 
@@ -89,7 +90,7 @@ def account_id_business_list(request: HttpRequest):
     res = list(
         query.values(
             'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used',
-            'op_user__username', 'create_time'
+            'op_user__username', 'create_time', 'images'
         )[start_row: end_row]
     )
     res, count = list(res), query.count()
@@ -307,10 +308,13 @@ def account_id_upload(request: HttpRequest):
         logging.info("不存在分类, classify = %s", classify)
         return RestResponse.failure("上传失败，请刷新页面后重试")
 
+    file_paths_str = upload_images(request)
+    logging.info("添加LineId file_paths_str = %s", file_paths_str)
     AccountId.objects.create(
         account_id=a_id, op_user_id=int(user_id), classify=int(classify),
         create_time=time_utils.get_now_bj_time_str(),
-        update_time=time_utils.get_now_bj_time_str()
+        update_time=time_utils.get_now_bj_time_str(),
+        images=file_paths_str,
     )
     return RestResponse.success("上传成功")
 

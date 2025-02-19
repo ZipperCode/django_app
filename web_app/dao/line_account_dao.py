@@ -36,7 +36,7 @@ def search_account_id_page(body, start_row, end_row, user: User):
     res = list(
         query.values(
             'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'used', 'is_bind',
-            'op_user__username', 'create_time', 'update_time'
+            'op_user__username', 'create_time', 'update_time', 'images'
         ).order_by('create_time')[start_row: end_row]
     )
 

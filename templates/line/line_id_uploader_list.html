@@ -112,7 +112,11 @@
                            autocomplete="off" placeholder="请输入ID" class="layui-input">
                 </div>
             </div>
+            <div class="layui-form-item">
+                <div id="uploadView">
 
+                </div>
+            </div>
             <div class="layui-form-item" style="margin-top:40px">
                 <div class="layui-input-block">
                     <button class="layui-btn  layui-btn-submit " lay-submit="" lay-filter="addSubmit">确认添加
@@ -120,6 +124,15 @@
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="layui-row" id="tableImageDialog" style="display:none;">
+    <div class="layui-col-md10">
+        <div class="layui-form-item">
+            <div id="tableImagePreview">
+            </div>
+        </div>
     </div>
 </div>
 
@@ -229,6 +242,9 @@
         </form>
     </div>
 </div>
+<script type="text/html" id="operateImageTpl">
+    <button class="layui-btn layui-btn-xs" lay-event="preview">查看</button>
+</script>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -243,7 +259,8 @@
             "Accept": "application/json; charset=utf-8",
             "X-CSRFToken": csrftoken
         };
-
+        let files = [];
+        const uploadContainer = $('#uploadView')
         var globalCurrentPage = 1;
         /*表格渲染*/
         table.render({
@@ -269,6 +286,12 @@
                     sort: true,
                     templet: bindTemplate,
                     minWidth: 110
+                }, {
+                    field: 'images',
+                    title: '截图',
+                    align: 'center',
+                    templet: "#operateImageTpl",
+                    minWidth: 80
                 },
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
@@ -302,6 +325,31 @@
                 initBatchUpload()
             } else if (layEvent === 'dispatch') {
                 handleDispatch();
+            } else if (layEvent === "preview") {
+                console.log("obj.data ", obj.data)
+                const images = obj.data.images
+                if (images === null || images === undefined) {
+                    layer.msg('无图片内容');
+                    return
+                }
+                const urls = images.split(",")
+                if (urls.length === 0) {
+                    layer.msg('无图片内容');
+                    return;
+                }
+
+                $("#tableImagePreview").children().remove()
+                layer.open({
+                    type: 1,
+                    area: ['500px', '400px'],
+                    title: ['截图查看', 'text-align:center;'],
+                    content: $("#tableImageDialog"),
+                    success: function () {
+                        urls.forEach(function (url) {
+                            $("#tableImagePreview").append(createTableImage("/media/" + url))
+                        })
+                    }
+                });
             }
         });
 
@@ -350,18 +398,29 @@
             form.val("addForm", {
                 account_id: "",
             });
-
+            files = []
+            uploadContainer.children().remove()
             form.on('submit(addSubmit)', function (massage) {
+                const formData = new FormData()
+                for (let i = 0; i < files.length; i++) {
+                    formData.append("files[]", files[i]); // 将每个文件添加到 FormData 对象中
+                }
+                const field = {
+                    ...massage.field
+                }
+                formData.append("back_type", "{{ back_type }}")
+                Object.keys(field).forEach((key) => {
+                    formData.append(key, field[key]);
+                })
                 console.log(massage)
                 const load_index = layer.load();
                 $.ajax({
                     url: '/api/account_id/upload?line_classify={{ classify }}',
                     type: 'POST',
                     headers: headers,
-                    data: {
-                        "line_classify": "{{ classify }}",
-                        ...massage.field
-                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function (res) {
                         if (res.code >= 0) {
                             console.log("添加成功")
@@ -479,7 +538,7 @@
                     url: '/api/account_id/update?line_classify={{ classify }}',
                     type: 'POST',
                     headers: headers,
-                    data: {...massage.field, "line_classify":"{{ classify }}"},
+                    data: {...massage.field, "line_classify": "{{ classify }}"},
                     success: function (res) {
                         if (res.code >= 0) {
                             console.log("修改成功")
@@ -548,6 +607,127 @@
 
         //滚动条
         jQuery(".page-main").scrollbar();
+
+        document.addEventListener('paste', function (event) {
+            const items = event.clipboardData && event.clipboardData.items;
+            let file = null;
+            if (items && items.length) {
+                // 检索剪切板items
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        file = items[i].getAsFile();
+                        break;
+                    }
+                }
+            }
+            if (file === null || file === undefined) {
+                return
+            }
+            console.log("file = ", file, file.type)
+            const type = file.type
+            if (!type.startsWith("image")) {
+                console.log("上传的不是图片")
+                return;
+            }
+            files.push(file)
+            // 此时file就是剪切板中的图片文件
+            let fileReader = new FileReader()
+            fileReader.readAsDataURL(file)
+            fileReader.onload = function (f) {
+                console.log("fileReader  onload = ", f)
+                console.log("fileReader  onload = ", this)
+                console.log("fileReader  onload = ", this.result)
+                uploadContainer.removeClass('layui-hide')
+                uploadContainer.append(createUploadPreview(this.result))
+            }
+
+        });
+
+        function createUploadPreview(fileResult) {
+            const container = $(document.createElement("div")) // 创建一个容器元素
+                .css({
+                    position: "relative", // 设置容器为相对定位
+                    display: "inline-block" // 设置容器为内联块元素，使其可以与图片并排显示
+                });
+
+            const image = $(document.createElement("img"))
+                .attr('src', fileResult)
+                .attr('alt', '截图' + files.length)
+                .attr("key", files.indexOf(fileResult))
+                .css({
+                    width: '100px',
+                    height: '100px'
+                });
+
+            const closeButton = $(document.createElement("i"))
+                .addClass("layui-icon layui-icon-close")
+                .css({
+                    position: "absolute", // 设置关闭按钮为绝对定位
+                    top: "5px",
+                    right: "5px",
+                    cursor: "pointer",
+                    color: "black",
+                    "font-size": "16px"
+                });
+
+            closeButton.on("click", function (event) {
+                event.stopPropagation();
+                container.remove(); // 移除整个容器，包括图片和关闭按钮
+
+                const index = files.indexOf(fileResult);
+                if (index > -1) {
+                    files.splice(index, 1);
+                }
+            });
+
+            image.on("click", function () {
+                console.log("点击了图片");
+                layer.photos({
+                    photos: {
+                        title: '图片预览',
+                        data: [{src: fileResult, alt: '截图' + files.length}], // 注意这里也需要修改
+                    },
+                    shadeClose: true,
+                    closeBtn: 2
+                });
+            });
+
+            container.append(image); // 将图片添加到容器中
+            container.append(closeButton); // 将关闭按钮添加到容器中
+
+            return container; // 返回容器元素
+        }
+
+        function createTableImage(src) {
+            const container = $(document.createElement("div")) // 创建一个容器元素
+                .css({
+                    position: "relative", // 设置容器为相对定位
+                    display: "inline-block" // 设置容器为内联块元素，使其可以与图片并排显示
+                });
+
+            const image = $(document.createElement("img"))
+                .attr('src', src)
+                .attr('alt', '截图' + files.length)
+                .css({
+                    width: '100px',
+                    height: '100px'
+                });
+
+            image.on("click", function () {
+                console.log("点击了图片");
+                layer.photos({
+                    photos: {
+                        title: '图片预览',
+                        data: [{src: src, alt: '截图'}], // 注意这里也需要修改
+                    },
+                    shadeClose: true,
+                    closeBtn: 2
+                });
+            });
+
+            container.append(image);
+            return container; // 返回容器元素
+        }
 
 
     });

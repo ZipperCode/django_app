@@ -108,6 +108,14 @@
 
 {% comment %} Form {% endcomment %}
 
+<div class="layui-row" id="tableImageDialog" style="display:none;">
+    <div class="layui-col-md10">
+        <div class="layui-form-item">
+            <div id="tableImagePreview">
+            </div>
+        </div>
+    </div>
+</div>
 <div class="layui-row" id="editForm" style="display:none;">
     <div class="layui-col-md10">
         <form class="layui-form layui-from-pane" action="" style="margin-top:20px" lay-filter="editForm">
@@ -214,6 +222,9 @@
         </form>
     </div>
 </div>
+<script type="text/html" id="operateImageTpl">
+    <button class="layui-btn layui-btn-xs" lay-event="preview">查看</button>
+</script>
 {% comment %} {% endcomment %}
 {% csrf_token %}
 <script type="text/javascript">
@@ -251,6 +262,13 @@
                 {field: 'money', title: '收入', align: 'center', sort: true},
                 {field: 'op_user__username', title: '上传人', align: 'center', sort: true},
                 {field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,},
+                {
+                    field: 'images',
+                    title: '截图',
+                    align: 'center',
+                    templet: "#operateImageTpl",
+                    minWidth: 80
+                },
                 {field: 'mark', title: '备注', align: 'center'},
                 {field: 'create_time', title: '上传时间', align: 'center', sort: true, minWidth: 160},
                 {% if request.session.user.role != 1 %}
@@ -297,6 +315,31 @@
                 document.execCommand("copy");
                 document.body.removeChild(copyipt);
                 layer.msg("复制成功，内容为：" + text, {icon: 6});
+            } else if (layEvent === "preview") {
+                console.log("obj.data ", obj.data)
+                const images = obj.data.images
+                if (images === null || images === undefined) {
+                    layer.msg('无图片内容');
+                    return
+                }
+                const urls = images.split(",")
+                if (urls.length === 0) {
+                    layer.msg('无图片内容');
+                    return;
+                }
+
+                $("#tableImagePreview").children().remove()
+                layer.open({
+                    type: 1,
+                    area: ['500px', '400px'],
+                    title: ['截图查看', 'text-align:center;'],
+                    content: $("#tableImageDialog"),
+                    success: function () {
+                        urls.forEach(function (url) {
+                            $("#tableImagePreview").append(createTableImage("/media/" + url))
+                        })
+                    }
+                });
             }
         });
 
@@ -449,7 +492,36 @@
         //滚动条
         jQuery(".page-main").scrollbar();
 
+        function createTableImage(src) {
+            const container = $(document.createElement("div")) // 创建一个容器元素
+                .css({
+                    position: "relative", // 设置容器为相对定位
+                    display: "inline-block" // 设置容器为内联块元素，使其可以与图片并排显示
+                });
 
+            const image = $(document.createElement("img"))
+                .attr('src', src)
+                .attr('alt', '截图' + files.length)
+                .css({
+                    width: '100px',
+                    height: '100px'
+                });
+
+            image.on("click", function () {
+                console.log("点击了图片");
+                layer.photos({
+                    photos: {
+                        title: '图片预览',
+                        data: [{src: src, alt: '截图'}], // 注意这里也需要修改
+                    },
+                    shadeClose: true,
+                    closeBtn: 2
+                });
+            });
+
+            container.append(image);
+            return container; // 返回容器元素
+        }
     });
 </script>
 </body>

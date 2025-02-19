@@ -12,17 +12,18 @@ from django.views.decorators.csrf import csrf_exempt
 
 from util import utils, time_utils, excel_util
 from util.excel_util import ExcelBean
+from util.exception import BusinessException
 from util.restful import RestResponse
 from util.utils import handle_uploaded_file
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, api_op_user, op_admin
 from web_app.model.const import UsedStatus
-from web_app.model.users import User, USER_ROLE_SUPER_ADMIN, USER_ROLE_ADMIN, USER_TYPES, USER_ROLE_SUPER_ADMIN
-from web_app.model.wa_accounts import WaAccountId, WaUserIdRecord
+from web_app.model.users import User, USER_ROLE_ADMIN, USER_TYPES, USER_ROLE_SUPER_ADMIN
+from web_app.model.wa_accounts import WaAccountId
+from web_app.restfuls.common import upload_images
 from web_app.service import wa_service
 from web_app.settings import BASE_DIR
 from web_app.util import rest_list_util, wa_util
-from util.exception import BusinessException
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -97,7 +98,7 @@ def wa_id_business_list(request: HttpRequest):
         res = list(
             queryset.values(
                 'id', 'account_id', 'country', 'age', 'work', 'money', 'mark', 'link_mark', 'used',
-                'op_user__username', 'create_time'
+                'op_user__username', 'create_time', 'images'
             )[start_row: end_row]
         )
         count = queryset.count()
@@ -337,7 +338,8 @@ def wa_id_upload(request: HttpRequest):
     if not queryset:
         return RestResponse.failure("添加失败，用户状态错误")
 
-    logging.info("添加WaId时，删除空映射的数据")
+    file_paths_str = upload_images(request)
+    logging.info("添加WaId时，删除空映射的数据 file_paths_str = %s", file_paths_str)
     with transaction.atomic():
         no_user_query = queryset.filter(op_user__isnull=True)
         del_ids = list(no_user_query.values_list("account_id", flat=True))
@@ -350,7 +352,8 @@ def wa_id_upload(request: HttpRequest):
             **{
                 'op_user_id': int(user_id),
                 "create_time": time_utils.get_now_bj_time_str(),
-                "update_time": time_utils.get_now_bj_time_str()
+                "update_time": time_utils.get_now_bj_time_str(),
+                "images": file_paths_str
             }
         )
         print("created")
