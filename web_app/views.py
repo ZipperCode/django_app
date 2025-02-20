@@ -511,5 +511,14 @@ def wa_qr_record_list_view(request):
     return render(request, 'whatsapp/wa_qr_record_list.html', context)
 
 
+@log_func
+def search_id_views(request):
+    back_type = request.GET.get('back_type')
+    context = {
+        "back_type": back_type
+    }
+    return render(request, 'whatsapp/search_id.html', context)
+
+
 def vue_index(request):
     return render(request, "question/index.html")

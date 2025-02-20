@@ -57,6 +57,7 @@ urlpatterns = [
     path('admin/view/auth/wa/account_qr/list', views.wa_account_qr_list_view),
     path('admin/view/auth/wa/aid_record/list', views.wa_aid_record_list_view),
     path('admin/view/auth/wa/qr_record/list', views.wa_qr_record_list_view),
+    path('admin/view/auth/search', views.search_id_views),
     path('view/vue/index', views.vue_index),
 
     path('view/', views.wa_qr_record_list_view),
@@ -143,6 +144,7 @@ urlpatterns = [
     path('api/wa/sync_id_hash', wa_id_api.sync_id_hash),
     path('api/wa/sync_qr_hash', wa_id_api.sync_qr_hash),
     path('api/wa/sync_used', wa_id_api.sync_used),
+    path('api/wa/search', wa_id_api.search_list),
 
     path('api/link/page_list', link_api.page_list),
     path('api/link/add', link_api.add_data),
