@@ -20,7 +20,9 @@ def query_list_page(body, start_row, end_row):
     mark = body.get("remark")
     link = body.get('link')
     query_args = {}
-
+    id_no = body.get('id')
+    if utils.is_int(id_no):
+        query_args['id'] = id_no
     if not utils.str_is_null(link):
         query_args['link__contains'] = link
 
@@ -62,7 +64,9 @@ def query_list_page_new(queryset: QuerySet, body, start_row, end_row):
     mark = body.get("remark")
     link = body.get('link')
     query_args = {}
-
+    id_no = body.get('id')
+    if utils.is_int(id_no):
+        query_args['id'] = id_no
     if not utils.str_is_null(link):
         query_args['link__contains'] = link
 

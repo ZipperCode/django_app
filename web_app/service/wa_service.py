@@ -273,6 +273,9 @@ def wa_qr_record_create_model(back_type, **create_dict):
 
 def search_aid_page(body, start_row, end_row, user: User, queryset: QuerySet):
     query = rest_list_util.search_account_common_field(queryset, body)
+    id_no = body.get('id')
+    if utils.is_int(id_no):
+        query = query.filter(id=id_no)
     account_id = body.get("account_id")
     if not utils.str_is_null(account_id):
         query = query.filter(account_id__contains=account_id)

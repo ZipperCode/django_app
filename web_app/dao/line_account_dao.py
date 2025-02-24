@@ -21,6 +21,9 @@ logging.basicConfig(
 def search_account_id_page(body, start_row, end_row, user: User):
     query = rest_list_util.search_account_common_field(AccountId.objects, body)
     account_id = body.get("account_id")
+    id_no = body.get('id')
+    if utils.is_int(id_no):
+        query = query.filter(id=id_no)
     if not utils.str_is_null(account_id):
         query = query.filter(account_id__contains=account_id)
     if user.role == USER_ROLE_UPLOADER:
