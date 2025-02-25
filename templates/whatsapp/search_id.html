@@ -23,6 +23,14 @@
         <div class="page-fluid">
             <form class="layui-form layui-unselect table-form" action="">
                 <div class="layui-form-item">
+                    <label class="layui-form-label" style="width: 50px">编号</label>
+                    <div class="layui-input-block">
+                        <input type="text" placeholder="请输入编号" autocomplete="off" name="id"
+                               class="layui-input"/>
+                    </div>
+
+                </div>
+                <div class="layui-form-item">
                     <label class="layui-form-label" style="width: 50px">账号id</label>
                     <div class="layui-input-block">
                         <input type="text" placeholder="请输入ID" autocomplete="off" name="account_id"
@@ -95,7 +103,8 @@
             url: '/api/wa/search',
             page: true,
             cols: [[
-                {field: 'id', title: '账号', align: 'center'},
+                {field: 'id', title: '编号', align: 'center', width: 200},
+                {field: 'account_id', title: '账号', align: 'center'},
                 {field: 'type', title: '类型', align: 'center'},
                 {
                     field: 'used', title: '使用状态', align: 'center', sort: true, templet: usedTemplate,

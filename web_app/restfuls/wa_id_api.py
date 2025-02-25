@@ -736,12 +736,20 @@ def search_list(request: HttpRequest):
     query_params = utils.request_body(request)
     start_row, end_row = utils.page_query(request)
     account_id = str(query_params.get('account_id'))
-    if utils.str_is_null(str(account_id)):
+    id_no = str(query_params.get('id'))
+    if utils.str_is_null(str(account_id)) and utils.str_is_null(id_no):
         return RestResponse.success("")
 
     start_time = query_params.get('date_start')
     end_time = query_params.get('date_end')
     query_args = {}
+
+    if not utils.str_is_null(id_no) and utils.is_int(id_no):
+        query_args['id'] = int(id_no)
+
+    if not utils.str_is_null(account_id):
+        query_args['account_id__contains'] = account_id
+
     if not utils.str_is_null(start_time):
         start_time = time_utils.convert_time(start_time)
         if start_time is not None:
@@ -756,23 +764,24 @@ def search_list(request: HttpRequest):
 
     def query_data(_query, t):
         _queryset = _query.filter(**query_args).values(
-            'account_id', 'is_bind', 'used', 'create_time'
+            'id', 'account_id', 'is_bind', 'used', 'create_time'
         )
         logging.info("query_data = %s", _queryset)
         for _item in list(_queryset):
             data_list.append({
-                'id': _item['account_id'],
+                'id': _item['id'],
+                'account_id': _item['account_id'],
                 'is_bind': _item['is_bind'],
                 'used': _item['used'],
                 'create_time': _item['create_time'],
                 'type': t
             })
-    query_data(WaAccountId.objects.filter(account_id__contains=account_id), "WhatsApp1")
-    query_data(WaAccountId2.objects.filter(account_id__contains=account_id), "WhatsApp2")
-    query_data(WaAccountId3.objects.filter(account_id__contains=account_id), "WhatsApp3")
-    query_data(WaAccountId4.objects.filter(account_id__contains=account_id), "WhatsApp4")
-    query_data(WaAccountId5.objects.filter(account_id__contains=account_id), "WhatsApp5")
-    query_data(WaAccountId6.objects.filter(account_id__contains=account_id), "WhatsApp6")
-    query_data(WaAccountId7.objects.filter(account_id__contains=account_id), "WhatsApp7")
+    query_data(WaAccountId.objects.filter(), "WhatsApp1")
+    query_data(WaAccountId2.objects.filter(), "WhatsApp2")
+    query_data(WaAccountId3.objects.filter(), "WhatsApp3")
+    query_data(WaAccountId4.objects.filter(), "WhatsApp4")
+    query_data(WaAccountId5.objects.filter(), "WhatsApp5")
+    query_data(WaAccountId6.objects.filter(), "WhatsApp6")
+    query_data(WaAccountId7.objects.filter(), "WhatsApp7")
 
     return RestResponse.success_list(count=len(data_list), data=data_list[start_row:end_row])
