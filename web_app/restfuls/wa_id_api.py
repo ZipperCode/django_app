@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import traceback
 import uuid
 from typing import List
@@ -315,6 +316,30 @@ def wa_id_del(request: HttpRequest):
     return RestResponse.success("删除成功")
 
 
+def keep_alphanumeric_and_symbols(text, extra_symbols=''):
+    """
+    保留字符串中的字母（大小写）、数字和常用符号
+
+    参数:
+        text (str): 要处理的字符串
+        extra_symbols (str): 额外需要保留的符号
+
+    返回:
+        str: 只包含字母、数字和符号的字符串
+    """
+    # 默认保留的常用符号（可根据需求调整）
+    common_symbols = r'.,!?;:\-+=*/%&$#@()[]{}<>"\''
+
+    # 组合正则表达式模式：字母（A-Za-z）、数字（0-9）、常用符号和额外指定的符号
+    pattern = f'[A-Za-z0-9{re.escape(common_symbols)}{re.escape(extra_symbols)}]'
+
+    # 使用正则表达式找出所有匹配的字符
+    filtered_chars = re.findall(pattern, text)
+
+    # 将字符列表组合成字符串
+    return ''.join(filtered_chars)
+
+
 @log_func
 @api_op_user
 def wa_id_upload(request: HttpRequest):
@@ -323,6 +348,7 @@ def wa_id_upload(request: HttpRequest):
 
     body = utils.request_body(request)
     a_id = str(body.get('account_id', "")).strip()
+    a_id = keep_alphanumeric_and_symbols(a_id)
     logging.info("account_wa2_id_upload#a_id = %s", a_id)
     if utils.str_is_null(a_id):
         return RestResponse.failure("上传失败，id不能为空")
@@ -776,6 +802,7 @@ def search_list(request: HttpRequest):
                 'create_time': _item['create_time'],
                 'type': t
             })
+
     query_data(WaAccountId.objects.filter(), "WhatsApp1")
     query_data(WaAccountId2.objects.filter(), "WhatsApp2")
     query_data(WaAccountId3.objects.filter(), "WhatsApp3")
@@ -785,3 +812,9 @@ def search_list(request: HttpRequest):
     query_data(WaAccountId7.objects.filter(), "WhatsApp7")
 
     return RestResponse.success_list(count=len(data_list), data=data_list[start_row:end_row])
+
+
+def export():
+    query = list()
+
+    pass
