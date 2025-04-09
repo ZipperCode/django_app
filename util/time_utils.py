@@ -61,6 +61,12 @@ def get_two_months_time_range() -> tuple:
     return before60.astimezone(TIME_ZONE_ASIA_SHANG_HAI).strftime(DATE_TIME_FORMAT), bj_t.strftime(DATE_TIME_FORMAT)
 
 
+def get_3_months_time_range() -> tuple:
+    bj_t = get_now_bj_datetime()
+    before60 = bj_t - timedelta(days=60)
+    return before60.astimezone(TIME_ZONE_ASIA_SHANG_HAI).strftime(DATE_TIME_FORMAT), bj_t.strftime(DATE_TIME_FORMAT)
+
+
 def get_5_months_time_range() -> tuple:
     bj_t = get_now_bj_datetime()
     before60 = bj_t - timedelta(days=150)

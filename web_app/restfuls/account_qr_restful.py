@@ -287,7 +287,7 @@ def account_qr_upload(request: HttpRequest):
         logging.info("account_qr_upload#parsed = %s", parsed)
         if not parsed:
             return RestResponse.failure("上传失败，无法解析二维码")
-        start_time, end_time = time_utils.get_two_months_time_range()
+        start_time, end_time = time_utils.get_3_months_time_range()
         query = AccountQr.objects.filter(
             qr_content=str(parsed).strip(), op_user__isnull=False,
             create_time__gte=start_time, create_time__lte=end_time
