@@ -25,7 +25,7 @@ RUN apt-get update && apt-get upgrade -y
 # 安装netcat
 RUN apt install -y netcat-traditional
 RUN apt install -y gcc && apt install -y python3-dev
-RUN apt-get install -y vim
+#RUN apt-get install -y vim
 
 # 设置 python 环境变量
 ENV PYTHONDONTWRITEBYTECODE 1
