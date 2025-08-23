@@ -50,7 +50,7 @@ def wa_id_query_set(back_type) -> Optional[QuerySet]:
 
 
 def check_id(a_id) -> bool:
-    start_time, end_time = time_utils.get_5_months_time_range()
+    start_time, end_time = time_utils.get_3_months_time_range()
     return WaIdHash.objects.filter(
         id_hash=md5_encode(a_id),
         create_time__gt=start_time,
@@ -61,7 +61,7 @@ def check_id(a_id) -> bool:
 def check_id_list(ids):
     origin_ids = list(ids)
     ids = list(map(lambda x: md5_encode(str(x).strip()), ids))
-    start_time, end_time = time_utils.get_5_months_time_range()
+    start_time, end_time = time_utils.get_3_months_time_range()
     exists_hash_list = WaIdHash.objects.filter(
         id_hash__in=ids,
         create_time__gt=start_time,
@@ -125,7 +125,7 @@ def wa_qr_queryset(back_type) -> Optional[QuerySet]:
 
 
 def check_qr(qr_content) -> bool:
-    start_time, end_time = time_utils.get_5_months_time_range()
+    start_time, end_time = time_utils.get_3_months_time_range()
     return WaQrHash.objects.filter(
         id_hash=md5_encode(qr_content),
         create_time__gt=start_time,
@@ -482,7 +482,7 @@ def check_aid_with_hash(account_id) -> bool:
 
 
 def check_aid_with_hash_over60(account_id) -> bool:
-    start_time, end_time = time_utils.get_5_months_time_range()
+    start_time, end_time = time_utils.get_3_months_time_range()
     hash_val = md5_encode(str(account_id).strip())
     logging.info("check_aid_with_hash_over60#start = %s, end = %s, hash_val = %s", start_time, end_time, hash_val)
     return WaIdHash.objects.filter(
@@ -572,7 +572,7 @@ def check_aqr_with_hash(qr_content) -> bool:
 
 
 def check_aqr_with_hash_over60(account_id) -> bool:
-    start_time, end_time = time_utils.get_5_months_time_range()
+    start_time, end_time = time_utils.get_3_months_time_range()
     return WaQrHash.objects.filter(
         id_hash=md5_encode(str(account_id).strip()),
         create_time__gt=start_time,
