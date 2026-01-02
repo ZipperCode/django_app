@@ -119,15 +119,18 @@ def merge_account_id():
         for n in news:
             aid = n["account_id"]
             record = record_map.get(aid)
-            if record is not None:
-                record.pop("account__account_id")
-                # 获取对应的account_id (WaAccountId2的id)
-                account_id_2 = n["id"]
-                record['account_id'] = account_id_2
-                record['create_time'] = t
-                record['update_time'] = t
-                m = WaUserIdRecord2(**record)
-                record_items.append(m)
+            try:
+                if record is not None:
+                    record.pop("account__account_id")
+                    # 获取对应的account_id (WaAccountId2的id)
+                    account_id_2 = n["id"]
+                    record['account_id'] = account_id_2
+                    record['create_time'] = t
+                    record['update_time'] = t
+                    m = WaUserIdRecord2(**record)
+                    record_items.append(m)
+            except Exception as e:
+                logger.error(f"处理WaUserIdRecord2数据时出错: {e}")
         prep_record_end = time.time()
         logger.info(f"WaUserIdRecord2实例准备耗时: {prep_record_end - prep_record_start:.2f}秒, 准备实例数: {len(record_items)}")
         
@@ -240,14 +243,17 @@ def merge_account_id():
             qr_content = n["qr_content"]
             record = qr_record_map.get(qr_content)
             if record is not None:
-                record.pop("account__qr_content")
-                # 获取对应的account_id (WaAccountQr2的id)
-                qr_account_id = n["id"]
-                record['account_id'] = qr_account_id
-                record['create_time'] = t
-                record['update_time'] = t
-                m = WaUserQrRecord2(**record)
-                qr_record_items.append(m)
+                try:
+                    record.pop("account__qr_content")
+                    # 获取对应的account_id (WaAccountQr2的id)
+                    qr_account_id = n["id"]
+                    record['account_id'] = qr_account_id
+                    record['create_time'] = t
+                    record['update_time'] = t
+                    m = WaUserQrRecord2(**record)
+                    qr_record_items.append(m)
+                except Exception as e:
+                    logger.error(f"处理WaUserQrRecord2实例错误: {e}")
         qr_prep_record_end = time.time()
         logger.info(f"WaUserQrRecord2实例准备耗时: {qr_prep_record_end - qr_prep_record_start:.2f}秒, 准备实例数: {len(qr_record_items)}")
         
