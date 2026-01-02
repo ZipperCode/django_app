@@ -77,6 +77,7 @@ urlpatterns = [
     path('api/user_update', user_restful.user_update),
     path('api/user_del', user_restful.user_del),
     path('api/user/bind_dispatch', user_restful.user_bind_dispatch),
+    path('api/user/merge_account_1_2', user_restful.merge_account_1_2),
 
     path('api/account_id/list', account_restful.account_id_list),
     path('api/account_id/business_list', account_restful.account_id_business_list),

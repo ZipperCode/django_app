@@ -49,6 +49,10 @@ def get_cur_day_time_range() -> tuple:
     return cur_start_t, cur_end_t
 
 
+def get_pre_date_time() -> str:
+    bg_t = get_now_bj_time()
+    return (bg_t - timedelta(days=1)).strftime(DATE_FORMAT)
+
 def get_cur_over_7day_time_range() -> tuple:
     bj_t = get_now_bj_datetime()
     before7 = bj_t - timedelta(days=7)

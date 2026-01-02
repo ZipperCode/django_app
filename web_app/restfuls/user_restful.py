@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, FileResponse
@@ -8,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from util import utils, http_utils, time_utils
 from util.restful import RestResponse
+from web_app.config.merge import merge_account_id
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func, op_admin, api_op_user
 from web_app.model.users import *
@@ -395,3 +397,49 @@ def back_type_list(request: HttpRequest):
             "value": USER_BACK_TYPE_WA7,
         },
     ])
+
+
+# @csrf_exempt
+# def export(request: HttpRequest):
+#     logging.info("开始生成数据")
+#     query = User.objects.values(
+#         'id', "username", "role", 'name', 'back_type', 'bind_dispatch', 'create_time', 'update_time'
+#     )
+#
+#     def get_role_code(r):
+#         if r == USER_ROLE_SUPER_ADMIN:
+#             return "超级管理员"
+#         elif r == USER_ROLE_ADMIN:
+#             return "管理员"
+#         elif r == USER_ROLE_UPLOADER:
+#             return "粉端"
+#         else:
+#             return "业务员"
+#
+#     TEMP_DIR = os.path.join(BASE_DIR, "data", 'temp')
+#     out_file = os.path.join(TEMP_DIR, "user_export.txt")
+#     password = '$2a$10$.poXtZE0p5.vKpZHzjkLDehPrFE//SDWaGiuThdMiYd.kOzQji4Ci'
+#     with open(out_file, 'w') as f:
+#         for q in query:
+#             row_id = q['id']
+#             username = q['username']
+#             role = q['role']
+#             name = q['name'] or username
+#             back_type = q['back_type']
+#             bind_dispatch = q['bind_dispatch']
+#             create_time = q['create_time']
+#             update_time = q['update_time']
+#             dispatch = '1' if bind_dispatch else '0'
+#             remark = get_role_code(role) + ", type = " + str(back_type)
+#
+#             line = "INSERT INTO `sys_user` VALUES ({id}, 100, '{username}', '{name}', 'sys_user', '', '', '0', NULL, '{password}', '0', '0', '{dispatch}', '', NULL, NULL, 1, '{create_time}', 1, '{update_time}', '{remark}');\n".format(
+#                 id=row_id, username=username, name=name, password=password, dispatch=dispatch, create_time=create_time,
+#                 update_time=update_time, remark=remark
+#             )
+#             f.write(line)
+
+@csrf_exempt
+def merge_account_1_2(request: HttpRequest):
+    # 使用线程异步运行
+    threading.Thread(target=merge_account_id).start()
+    return RestResponse.success("开始合并")
