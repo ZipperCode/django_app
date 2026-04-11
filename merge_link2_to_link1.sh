@@ -8,16 +8,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-CSV_FILE="$SCRIPT_DIR/merge_link2_to_link1.csv"
-
 echo "开始迁移 AccountLink2 -> AccountLink1 ..."
 
-python manage.py shell << 'PYTHON_SCRIPT'
+# 通过 docker exec 在 web 容器中执行
+docker exec -i django_app-web-1 python manage.py shell << 'PYTHON_SCRIPT'
 import csv
 import os
-import sys
-from django.db import connection
-
 from web_app.model.link import AccountLink, AccountLink2
 
 csv_path = os.path.join(os.getcwd(), "merge_link2_to_link1.csv")
@@ -80,4 +76,4 @@ else:
     print("AccountLink2 表为空，无需清空。")
 PYTHON_SCRIPT
 
-echo "迁移脚本执行完毕喵～"
+echo "迁移脚本执行完毕～"

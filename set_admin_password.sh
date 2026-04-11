@@ -8,7 +8,7 @@ cd "$SCRIPT_DIR"
 
 echo "正在设置 admin 用户密码 ..."
 
-python manage.py shell << 'PYTHON_SCRIPT'
+docker exec -i django_app-web-1 python manage.py shell << 'PYTHON_SCRIPT'
 from web_app.model.users import User
 
 username = "admin"
