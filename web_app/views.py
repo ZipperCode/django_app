@@ -168,6 +168,11 @@ def link2_view(request: HttpRequest):
 
 
 @log_func
+def link3_view(request: HttpRequest):
+    return render(request, 'link/list3.html')
+
+
+@log_func
 def modify_pwd(request: HttpRequest):
     return render(request, 'modify_pwd.html')
 

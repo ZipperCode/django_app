@@ -19,7 +19,7 @@ from django.views.static import serve
 
 from web_app import views, settings
 from web_app.restfuls import user_restful, account_restful, account_qr_restful, wa_id_api, wa_qr_api, link_api, \
-    link2_api
+    link2_api, link3_api
 
 urlpatterns = [
     path('admin', views.login_view),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/view/auth/console.html', views.console_view),
     path('admin/view/auth/link.html', views.link_view),
     path('admin/view/auth/link2.html', views.link2_view),
+    path('admin/view/auth/link3.html', views.link3_view),
     path('admin/view/auth/user/modify_pwd', views.modify_pwd),
     path('admin/view/auth/setting.html', views.setting_view),
     path('admin/view/auth/user_view', views.user_list_view),
@@ -156,6 +157,11 @@ urlpatterns = [
     path('api/link2/add', link2_api.add_data),
     path('api/link2/update', link2_api.update_data),
     path('api/link2/delete', link2_api.delete_data),
+
+    path('api/link3/page_list', link3_api.page_list),
+    path('api/link3/add', link3_api.add_data),
+    path('api/link3/update', link3_api.update_data),
+    path('api/link3/delete', link3_api.delete_data),
 
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
 ]
