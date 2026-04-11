@@ -1,7 +1,7 @@
 #!/bin/bash
 # 设置 admin 用户的密码为 zipper949389
 
-set -euo pipefail
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"

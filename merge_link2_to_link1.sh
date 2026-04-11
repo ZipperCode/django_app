@@ -3,7 +3,7 @@
 # 冲突规则：link 字段已存在则跳过
 # 冲突数据导出为 CSV，合并完成后清空 AccountLink2 表
 
-set -euo pipefail
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
