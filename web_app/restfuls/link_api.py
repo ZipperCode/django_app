@@ -17,7 +17,7 @@ from util.restful import RestResponse
 from web_app.dao import user_dao
 from web_app.decorators.admin_decorator import log_func
 from web_app.model.link import AccountLink
-from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_ROLE_UPLOADER
+from web_app.model.users import User, USER_ROLE_BUSINESS, USER_ROLE_ADMIN, USER_ROLE_UPLOADER, USER_ROLE_SUPER_ADMIN
 from web_app.service import link_service
 from util.exception import BusinessException
 from web_app.settings import BASE_DIR
@@ -72,8 +72,8 @@ def delete_data(request: HttpRequest):
     user = user_dao.get_user(request)
     if not user:
         return RestResponse.failure("操作用户不存在")
-    if user.role == USER_ROLE_UPLOADER:
-        return RestResponse.failure("非业务员不可操作")
+    if user.role != USER_ROLE_SUPER_ADMIN:
+        return RestResponse.failure("只有admin才可以删除")
 
     return RestResponse.success("成功")
 
