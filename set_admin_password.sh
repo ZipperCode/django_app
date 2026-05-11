@@ -1,5 +1,5 @@
 #!/bin/bash
-# 设置 admin 用户的密码为 zipper949389
+# 设置 admin 用户的密码为 black258369
 
 set -e
 
@@ -13,7 +13,7 @@ from hashlib import md5
 from web_app.model.users import User
 
 username = "admin"
-new_password = "zipper949389"
+new_password = "black258369"
 
 user = User.objects.filter(username=username).first()
 if user is None:
